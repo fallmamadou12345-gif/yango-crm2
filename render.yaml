@@ -1,24 +1,11 @@
 services:
   - type: web
-    name: yango-crm-pro
+    name: yango_crm2
     env: node
-    region: frankfurt  # Le plus proche de Dakar
-    plan: starter      # 7$/mois — suffisant pour votre usage
     buildCommand: npm install
     startCommand: node server.js
-    healthCheckPath: /api/health
-
-    # Variables d'environnement
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATA_DIR
         value: /data
-      - key: PORT
-        value: 3000
-
-    # Disque persistant — vos données survivent aux redémarrages
-    disk:
-      name: yango-crm-data
-      mountPath: /data
-      sizeGB: 1          # 1 GB largement suffisant (vos données = quelques MB)
