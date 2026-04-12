@@ -425,7 +425,17 @@ textarea.form-input{resize:vertical;min-height:70px;}
     <div class="card" style="padding:0;">
       <div class="tw">
         <table>
-          <thead><tr><th>Nom</th><th>Téléphone</th><th>Statut</th><th>Courses</th><th>Inactivité</th><th>Comm. est.</th><th>Dernier contact</th><th>Prochain rappel</th><th></th></tr></thead>
+          <thead><tr>
+  <th onclick="sortTable('name')" style="cursor:pointer;user-select:none;" id="th-name">Nom <span id="si-name">↕</span></th>
+  <th>Téléphone</th>
+  <th onclick="sortTable('segment')" style="cursor:pointer;user-select:none;" id="th-segment">Statut <span id="si-segment">↕</span></th>
+  <th onclick="sortTable('orders')" style="cursor:pointer;user-select:none;" id="th-orders">Courses <span id="si-orders">↕</span></th>
+  <th onclick="sortTable('days')" style="cursor:pointer;user-select:none;" id="th-days">Inactivité <span id="si-days">↕</span></th>
+  <th onclick="sortTable('comm')" style="cursor:pointer;user-select:none;" id="th-comm">Comm. est. <span id="si-comm">↕</span></th>
+  <th>Dernier contact</th>
+  <th>Prochain rappel</th>
+  <th></th>
+</tr></thead>
           <tbody id="drivers-tbody"></tbody>
         </table>
       </div>
@@ -1350,6 +1360,13 @@ function getFiltered(q){
 }
 function renderTable(q=''){
   filteredDrivers=getFiltered(q);
+  // Appliquer le tri
+  filteredDrivers.sort(function(a,b){
+    var va=getSortValue(a,sortCol);
+    var vb=getSortValue(b,sortCol);
+    if(typeof va==='string') return va.localeCompare(vb)*sortDir;
+    return (va-vb)*sortDir;
+  });
   const tot=filteredDrivers.length,pages=Math.ceil(tot/PER);
   const slice=filteredDrivers.slice((currentPage-1)*PER,currentPage*PER);
   document.getElementById('tbl-count').textContent=tot.toLocaleString()+' chauffeurs';
@@ -2175,7 +2192,7 @@ async function sendChat(){
   msgs.scrollTop=msgs.scrollHeight;
 
   try {
-    var response = await fetch("https://api.anthropic.com/v1/messages", {
+    var response = await fetch("/api/chat", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
@@ -2494,6 +2511,52 @@ function updateAllPageStats(stats){
 
   // ── Détection précoce dashboard ──
   renderEarlyAlerts();
+}
+
+
+// ═══════════════════════════════════════════
+// TRI DES COLONNES
+// ═══════════════════════════════════════════
+var sortCol = 'orders';   // colonne par défaut
+var sortDir = -1;         // -1 = décroissant, 1 = croissant
+
+function sortTable(col){
+  if(sortCol === col){
+    sortDir *= -1; // inverser direction
+  } else {
+    sortCol = col;
+    sortDir = col === 'name' || col === 'segment' ? 1 : -1; // texte asc, nombres desc par défaut
+  }
+  // Mettre à jour les icônes
+  var cols = ['name','segment','orders','days','comm'];
+  cols.forEach(function(c){
+    var el = document.getElementById('si-'+c);
+    if(!el) return;
+    if(c === sortCol){
+      el.textContent = sortDir === 1 ? ' ↑' : ' ↓';
+      el.style.color = 'var(--acc)';
+      document.getElementById('th-'+c).style.color = 'var(--acc)';
+    } else {
+      el.textContent = ' ↕';
+      el.style.color = 'var(--mu)';
+      document.getElementById('th-'+c).style.color = '';
+    }
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function getSortValue(d, col){
+  switch(col){
+    case 'name':    return (d.name||'').toLowerCase();
+    case 'segment': return (d.segment||'').toLowerCase();
+    case 'orders':  return d.orders||0;
+    case 'days':
+      if(!d.lastDate) return 9999;
+      return Math.round((new Date()-new Date(d.lastDate))/864e5);
+    case 'comm':    return d.orders>0?d.orders*2026*0.03/30:0;
+    default:        return 0;
+  }
 }
 
 
