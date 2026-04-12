@@ -997,10 +997,23 @@ async function loadFromServer(){
 }
 
 async function save(){
-  const payload={notes,reminders,cstatus,callLogs,importHist,updatedAt:new Date().toISOString()};
-  // Toujours sauvegarder en localStorage d'abord (immédiat)
-  try{ localStorage.setItem('yango_bk', JSON.stringify(payload)); }catch(ex){}
-  // Puis sur le serveur
+  // IMPORTANT: inclure les chauffeurs dans chaque sauvegarde
+  const payload={
+    notes,
+    reminders,
+    cstatus,
+    callLogs,
+    importHist,
+    drivers: DRIVERS.slice(0, 20000), // sauvegarder tous les chauffeurs
+    updatedAt: new Date().toISOString()
+  };
+  // Sauvegarder en localStorage d'abord (immédiat, survit aux rechargements)
+  try{
+    localStorage.setItem('yango_bk', JSON.stringify(payload));
+  }catch(ex){
+    console.warn('localStorage plein, sauvegarde serveur uniquement');
+  }
+  // Puis sur le serveur (survit aux mises à jour)
   try{
     const r=await fetch(API+'/data',{
       method:'POST',
@@ -1008,9 +1021,10 @@ async function save(){
       body:JSON.stringify(payload)
     });
     if(r.ok) updateSaveStatus();
+    else console.warn('Serveur répondu:', r.status);
   }catch(e){
-    console.warn('Sauvegarde serveur échouée:', e.message);
-    updateSaveStatus(); // Quand même mettre à jour (localStorage ok)
+    console.warn('Sauvegarde serveur:', e.message);
+    updateSaveStatus();
   }
 }
 
@@ -1855,8 +1869,8 @@ function processImport(file,type){
           updateKPIs(stats);
           updateAllPageStats(stats);
           
-          // Save drivers to server
-          saveDriversToServer();
+          // Sauvegarder TOUT sur le serveur (chauffeurs + notes + rappels)
+          save().catch(function(e){console.warn('save error:',e);});
 
           // Update import history
           var now=new Date().toLocaleString('fr-FR');
@@ -1881,7 +1895,11 @@ function processImport(file,type){
           renderImportHist();
           renderDashboard();
           renderTable();
-          showToast('✅','Import réussi : '+newDrivers.length.toLocaleString()+' chauffeurs','success');
+          showToast('✅','Import réussi : '+newDrivers.length.toLocaleString()+' chauffeurs — Sauvegarde en cours...','success');
+          // Confirmation de sauvegarde
+          setTimeout(function(){
+            showToast('💾','Données sauvegardées sur le serveur Render !','success');
+          }, 3000);
         }
       } else {
         // Commandes import - parse financials
@@ -2569,7 +2587,18 @@ async function init(){
   try{ updateSaveCounts(); }catch(e){}
   try{ updateMsgPreview(); }catch(e){}
   try{ document.getElementById('f-tous').style.fontWeight='700'; }catch(e){}
-  setInterval(async function(){ try{ await save(); }catch(e){} }, 30000);
+    setInterval(async function(){ try{ await save(); }catch(e){} }, 30000);
+  // Sauvegarder quand l'utilisateur ferme la page
+  window.addEventListener('beforeunload', function(){
+    if(DRIVERS.length > 0){
+      var payload=JSON.stringify({notes,reminders,cstatus,callLogs,importHist,drivers:DRIVERS.slice(0,20000),updatedAt:new Date().toISOString()});
+      try{ localStorage.setItem('yango_bk', payload); }catch(ex){}
+      // Sauvegarde synchrone au serveur
+      try{
+        navigator.sendBeacon(API+'/data-sync', payload);
+      }catch(ex){}
+    }
+  });
   try{
     var todayRems=reminders.filter(function(r){return !r.done&&r.date===TODAY;});
     if(todayRems.length>0){

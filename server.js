@@ -140,6 +140,19 @@ app.get('/api/export', (req, res) => {
   res.send(JSON.stringify(db, null, 2));
 });
 
+// Sauvegarde synchrone (sendBeacon avant fermeture page)
+app.post('/api/data-sync', (req, res) => {
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', () => {
+    try {
+      const data = JSON.parse(body);
+      writeDB({ ...data, updatedAt: new Date().toISOString() });
+    } catch(e) {}
+    res.status(200).end();
+  });
+});
+
 // Santé du serveur
 app.get('/api/health', (req, res) => {
   const db = readDB();
@@ -155,6 +168,44 @@ app.get('/api/health', (req, res) => {
     lastUpdate: db.updatedAt || 'jamais'
   };
   res.json(stats);
+});
+
+// ─── PROXY COACH IA ────────────────────────
+// Proxifie l'API Anthropic pour éviter les erreurs CORS
+app.post('/api/chat', async (req, res) => {
+  try {
+    const https = require('https');
+    const body = JSON.stringify(req.body);
+    
+    const options = {
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+        'anthropic-version': '2023-06-01',
+        'x-api-key': req.headers['x-api-key'] || ''
+      }
+    };
+
+    const apiReq = https.request(options, (apiRes) => {
+      let data = '';
+      apiRes.on('data', chunk => data += chunk);
+      apiRes.on('end', () => {
+        res.status(apiRes.statusCode).json(JSON.parse(data));
+      });
+    });
+
+    apiReq.on('error', (e) => {
+      res.status(500).json({ error: e.message });
+    });
+
+    apiReq.write(body);
+    apiReq.end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Servir le CRM (toutes les routes → index.html)
