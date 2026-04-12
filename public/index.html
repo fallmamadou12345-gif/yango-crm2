@@ -1,0 +1,2523 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Yango CRM Pro v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07090f;--s0:#0f1219;--s1:#13171f;--s2:#181e2a;--s3:#1e2535;
+  --b1:#1f2736;--b2:#2a3347;
+  --acc:#f5c518;--acc2:#ff6240;
+  --blue:#4d9fff;--purple:#a78bfa;
+  --text:#dde3f0;--mu:#5a6480;--mu2:#8494b8;
+  --green:#22d3a0;--orange:#fb923c;--red:#f87171;
+  --r:10px;--r2:14px;--r3:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;height:100vh;overflow:hidden;display:flex;}
+
+/* ─── SIDEBAR ─── */
+.sb{width:215px;background:var(--s0);border-right:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0;}
+.sb-logo{padding:16px 15px 13px;border-bottom:1px solid var(--b1);}
+.sb-icon{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px;}
+.sb-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;}
+.sb-sub{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:1.2px;margin-top:2px;}
+.sb-nav{padding:10px 6px;flex:1;overflow-y:auto;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;color:var(--mu2);font-size:12px;font-weight:500;border-radius:8px;margin:2px 0;border-left:3px solid transparent;transition:all .15s;}
+.ni:hover{color:var(--text);background:var(--s2);}
+.ni.active{color:var(--acc);background:rgba(245,197,24,.08);border-color:var(--acc);font-weight:600;}
+.ni-ic{font-size:15px;width:18px;text-align:center;}
+.ni-badge{margin-left:auto;border-radius:20px;padding:2px 7px;font-size:9px;font-weight:800;}
+.ni-badge.red{background:var(--red);color:#fff;}
+.ni-badge.acc{background:var(--acc);color:#000;}
+.ni-badge.orange{background:var(--orange);color:#fff;}
+.sb-bot{margin-top:auto;padding:12px;border-top:1px solid var(--b1);}
+.save-info{background:rgba(34,211,160,.08);border:1px solid rgba(34,211,160,.2);border-radius:8px;padding:9px 11px;font-size:10px;color:var(--green);display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+.agent-c{background:var(--s2);border:1px solid var(--b1);border-radius:9px;padding:9px 11px;display:flex;align-items:center;gap:9px;}
+.agent-av{width:30px;height:30px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+
+/* ─── MAIN ─── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:var(--s0);border-bottom:1px solid var(--b1);height:52px;padding:0 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.tb-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.sw{position:relative;flex:1;max-width:300px;margin-left:10px;}
+.sw::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;}
+.si{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:7px 11px 7px 30px;font-size:12px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;outline:none;}
+.si:focus{border-color:var(--acc);}
+.tba{margin-left:auto;display:flex;gap:7px;align-items:center;}
+.btn{padding:7px 13px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn-p{background:var(--acc);color:#000;}.btn-p:hover{background:#e6b800;}
+.btn-g{background:var(--s2);color:var(--text);border:1px solid var(--b1);}.btn-g:hover{border-color:var(--acc);color:var(--acc);}
+.btn-ok{background:rgba(34,211,160,.1);color:var(--green);border:1px solid rgba(34,211,160,.2);}
+.btn-r{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+.btn-wa{background:rgba(37,211,102,.15);color:#25d366;border:1px solid rgba(37,211,102,.3);}
+.btn-sms{background:rgba(77,159,255,.1);color:var(--blue);border:1px solid rgba(77,159,255,.2);}
+.btn-sm{padding:5px 10px;font-size:10px;}
+.content{flex:1;overflow-y:auto;padding:20px;}
+.page{display:none;}.page.active{display:block;}
+
+/* ─── ALERT BANNER ─── */
+.alert-banner{background:linear-gradient(135deg,rgba(248,113,113,.15),rgba(255,98,64,.1));border:1px solid rgba(248,113,113,.3);border-radius:var(--r2);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{border-color:rgba(248,113,113,.3)}50%{border-color:rgba(248,113,113,.7)}}
+.alert-banner .icon{font-size:24px;}
+.alert-banner .info{flex:1;}
+.alert-banner .info h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--red);}
+.alert-banner .info p{font-size:12px;color:var(--mu2);margin-top:2px;}
+.alert-banner.warn{background:linear-gradient(135deg,rgba(251,146,60,.12),rgba(245,197,24,.08));border-color:rgba(251,146,60,.3);}
+.alert-banner.warn h3{color:var(--orange);}
+@keyframes pulseWarn{0%,100%{border-color:rgba(251,146,60,.3)}50%{border-color:rgba(251,146,60,.7)}}
+.alert-banner.warn{animation:pulseWarn 2.5s infinite;}
+
+/* ─── CARDS ─── */
+.card{background:var(--s0);border:1px solid var(--b1);border-radius:var(--r2);padding:18px;}
+.ct{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ct small{font-size:10px;color:var(--mu);font-weight:400;text-transform:none;letter-spacing:0;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.mb16{margin-bottom:16px;}
+
+/* ─── KPI ─── */
+.kc{background:var(--s0);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s;}
+.kc:hover{transform:translateY(-2px);}
+.kc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kc.ca::after{background:var(--acc);}.kc.cg::after{background:var(--green);}
+.kc.co::after{background:var(--orange);}.kc.cr::after{background:var(--red);}
+.kc.cb::after{background:var(--blue);}.kc.cm::after{background:var(--mu);}
+.kl{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.kv{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1;}
+.ks{font-size:10px;color:var(--mu);margin-top:3px;}
+
+/* ─── TABLE ─── */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--mu);padding:7px 10px 9px;border-bottom:1px solid var(--b1);white-space:nowrap;}
+td{padding:8px 10px;font-size:12px;border-bottom:1px solid var(--b1);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--s2);cursor:pointer;}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;}
+.pill.g{background:rgba(34,211,160,.12);color:var(--green);}
+.pill.o{background:rgba(251,146,60,.12);color:var(--orange);}
+.pill.r{background:rgba(248,113,113,.12);color:var(--red);}
+.pill.m{background:rgba(90,100,128,.12);color:var(--mu2);}
+.pill.b{background:rgba(77,159,255,.12);color:var(--blue);}
+.pill.y{background:rgba(245,197,24,.12);color:var(--acc);}
+.pill.wa{background:rgba(37,211,102,.12);color:#25d366;}
+
+/* ─── RAPPEL CARDS ─── */
+.rem-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:all .2s;}
+.rem-card:hover{border-color:var(--b2);}
+.rem-card.today{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.06);animation:pulseCard 2s infinite;}
+.rem-card.soon{border-color:rgba(251,146,60,.4);background:rgba(251,146,60,.05);}
+@keyframes pulseCard{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,0)}50%{box-shadow:0 0 0 4px rgba(248,113,113,.15)}}
+.rem-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.rem-info{flex:1;}
+.rem-name{font-size:13px;font-weight:600;}
+.rem-sub{font-size:11px;color:var(--mu);margin-top:2px;}
+.rem-date{font-size:11px;font-weight:700;white-space:nowrap;}
+.rem-actions{display:flex;gap:5px;}
+
+/* ─── CALL LOG ─── */
+.call-item{background:var(--s2);border-radius:var(--r);padding:12px 14px;border-left:3px solid var(--b2);margin-bottom:8px;}
+.call-item.appel{border-color:var(--blue);}
+.call-item.wapp{border-color:var(--green);}
+.call-item.sms{border-color:var(--purple);}
+.call-item.terrain{border-color:var(--orange);}
+.call-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.call-type{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--s3);}
+.call-res{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.call-res.pos{background:rgba(34,211,160,.15);color:var(--green);}
+.call-res.neg{background:rgba(248,113,113,.15);color:var(--red);}
+.call-res.neu{background:rgba(251,146,60,.15);color:var(--orange);}
+.call-res.abs{background:rgba(90,100,128,.15);color:var(--mu2);}
+.call-date{font-size:9px;color:var(--mu);margin-left:auto;}
+.call-agent{font-size:9px;color:var(--mu2);}
+.call-txt{font-size:12px;line-height:1.6;margin-top:4px;}
+.call-next{font-size:10px;color:var(--acc);margin-top:4px;}
+
+/* ─── PANEL ─── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:200;display:none;}
+.overlay.open{display:flex;justify-content:flex-end;}
+.panel{width:560px;height:100vh;background:var(--s0);border-left:1px solid var(--b1);overflow-y:auto;animation:slideIn .22s cubic-bezier(.4,0,.2,1);}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.ph{padding:16px 20px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--s0);z-index:2;}
+.pav{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.pname{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.pmeta{font-size:11px;color:var(--mu);margin-top:1px;}
+.pclose{margin-left:auto;background:var(--s2);border:1px solid var(--b1);border-radius:7px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--mu2);}
+.pclose:hover{color:var(--red);}
+.pb{padding:16px 20px;}
+.psec{margin-bottom:20px;}
+.psect{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--mu);margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.psect::after{content:'';flex:1;height:1px;background:var(--b1);}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.si2{background:var(--s2);border-radius:8px;padding:10px;text-align:center;}
+.sv{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;}
+.sl{font-size:9px;color:var(--mu);margin-top:2px;}
+
+/* ─── COACH ─── */
+.coach-box{background:linear-gradient(135deg,rgba(245,197,24,.07),rgba(255,98,64,.05));border:1px solid rgba(245,197,24,.18);border-radius:var(--r2);padding:14px;}
+.coach-hd{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+.coach-av{width:30px;height:30px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.coach-nm{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--acc);}
+.coach-sub{font-size:10px;color:var(--mu);}
+.coach-msg{font-size:12px;line-height:1.8;}
+.coach-msg strong{color:var(--acc);}
+.thinking{display:flex;gap:4px;align-items:center;padding:4px 0;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--acc);animation:bou .8s infinite;}
+.dot:nth-child(2){animation-delay:.15s;}.dot:nth-child(3){animation-delay:.3s;}
+@keyframes bou{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* ─── SCRIPT ─── */
+.stabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;}
+.stab{padding:5px 12px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--b1);background:var(--s2);color:var(--mu2);transition:all .15s;}
+.stab.active,.stab:hover{background:var(--acc);color:#000;border-color:var(--acc);}
+.script-box{background:var(--s2);border-radius:var(--r);padding:13px;font-size:12px;line-height:1.9;border-left:3px solid var(--acc);position:relative;}
+.scopy{position:absolute;top:8px;right:8px;background:var(--s0);border:1px solid var(--b1);border-radius:5px;padding:3px 9px;font-size:9px;cursor:pointer;color:var(--mu2);}
+.scopy:hover{color:var(--acc);}
+.sn{color:var(--acc);font-weight:700;}
+.sd{color:var(--blue);}
+.so{color:var(--green);font-weight:700;}
+
+/* ─── CALL FORM ─── */
+.call-form{background:rgba(245,197,24,.05);border:1px solid rgba(245,197,24,.15);border-radius:var(--r2);padding:14px;margin-bottom:14px;}
+.call-form-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--acc);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.cf-full{grid-column:1/-1;}
+.form-label{font-size:10px;color:var(--mu);margin-bottom:4px;display:block;}
+.form-input{width:100%;background:var(--s0);border:1px solid var(--b1);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;outline:none;}
+.form-input:focus{border-color:var(--acc);}
+textarea.form-input{resize:vertical;min-height:70px;}
+.form-select{width:100%;background:var(--s0);border:1px solid var(--b1);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;outline:none;cursor:pointer;}
+.form-select:focus{border-color:var(--acc);}
+
+/* ─── STATUS BTNS ─── */
+.sr{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.sb2{padding:6px 11px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--b1);background:var(--s2);color:var(--mu2);transition:all .15s;font-family:'IBM Plex Sans',sans-serif;}
+.sb2:hover{border-color:var(--acc);color:var(--acc);}
+.sb2.sel{background:var(--acc);color:#000;border-color:var(--acc);}
+
+/* ─── WA / SMS GENERATOR ─── */
+.msg-gen{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);overflow:hidden;margin-bottom:16px;}
+.msg-gen-header{padding:14px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px;}
+.msg-gen-body{padding:16px;}
+.msg-preview{background:var(--s0);border-radius:var(--r);padding:14px;font-size:13px;line-height:1.9;border-left:3px solid #25d366;white-space:pre-wrap;margin-bottom:12px;max-height:200px;overflow-y:auto;}
+.msg-preview.sms-style{border-color:var(--blue);}
+.contacts-list{background:var(--s0);border-radius:var(--r);padding:10px;max-height:180px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:2;margin-bottom:10px;}
+.copy-contacts{display:flex;gap:7px;flex-wrap:wrap;}
+
+/* ─── IMPORT ─── */
+.dz{border:2px dashed var(--b2);border-radius:var(--r2);padding:30px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2);margin-bottom:14px;}
+.dz:hover,.dz.drag{border-color:var(--acc);background:rgba(245,197,24,.04);}
+.dz-ico{font-size:36px;margin-bottom:8px;}
+.dz-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;}
+.dz-sub{font-size:12px;color:var(--mu);}
+.pbar-wrap{background:var(--s3);border-radius:5px;height:6px;margin:10px 0;overflow:hidden;}
+.pbar{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:5px;transition:width .4s;}
+.log{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:12px;max-height:160px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1.9;}
+.lok{color:var(--green);}.lwarn{color:var(--orange);}.lerr{color:var(--red);}.linfo{color:var(--blue);}
+
+/* ─── CHAT ─── */
+.chat-msgs{height:300px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--s2);border-radius:var(--r2) var(--r2) 0 0;border:1px solid var(--b1);border-bottom:none;}
+.msg{max-width:82%;display:flex;flex-direction:column;gap:3px;}
+.msg.u{align-self:flex-end;align-items:flex-end;}
+.msg.a{align-self:flex-start;}
+.mb{padding:10px 13px;border-radius:14px;font-size:12px;line-height:1.7;}
+.msg.u .mb{background:var(--acc);color:#000;border-radius:14px 14px 3px 14px;}
+.msg.a .mb{background:var(--s0);border:1px solid var(--b1);border-radius:14px 14px 14px 3px;}
+.mt{font-size:9px;color:var(--mu);}
+.ci-row{display:flex;gap:8px;padding:10px;border:1px solid var(--b1);border-radius:0 0 var(--r2) var(--r2);background:var(--s2);}
+.ci{flex:1;background:var(--s0);border:1px solid var(--b1);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;outline:none;}
+.ci:focus{border-color:var(--acc);}
+
+/* ─── NOTIF POPUP ─── */
+.notif-popup{position:fixed;top:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.notif{background:var(--s0);border:1px solid var(--b1);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.5);transform:translateX(120px);opacity:0;transition:all .35s;pointer-events:all;max-width:320px;}
+.notif.show{transform:translateX(0);opacity:1;}
+.notif.urgent{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.07);}
+.notif.warn{border-color:rgba(251,146,60,.5);background:rgba(251,146,60,.07);}
+.notif.ok{border-color:rgba(34,211,160,.5);background:rgba(34,211,160,.07);}
+.notif-icon{font-size:20px;flex-shrink:0;}
+.notif-body strong{display:block;font-size:13px;margin-bottom:3px;}
+.notif-body span{color:var(--mu2);}
+.notif-close{margin-left:auto;cursor:pointer;color:var(--mu);font-size:14px;flex-shrink:0;}
+.notif-close:hover{color:var(--red);}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:18px;right:20px;background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:11px 15px;display:flex;align-items:center;gap:8px;font-size:12px;z-index:998;transform:translateY(60px);opacity:0;transition:all .3s;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:var(--green);}
+.toast.error{border-color:var(--red);}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+
+/* ─── MISC ─── */
+.div{height:1px;background:var(--b1);margin:12px 0;}
+.empty-state{text-align:center;padding:30px;color:var(--mu);}
+.empty-state .ico{font-size:36px;margin-bottom:10px;}
+.empty-state p{font-size:13px;}
+.empty-state small{font-size:11px;display:block;margin-top:4px;}
+.highlight-today{background:rgba(248,113,113,.08);border-radius:8px;padding:2px 6px;color:var(--red);font-weight:700;font-size:10px;}
+.highlight-soon{background:rgba(251,146,60,.08);border-radius:8px;padding:2px 6px;color:var(--orange);font-weight:700;font-size:10px;}
+</style>
+</head>
+<body>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<div class="sb">
+  <div class="sb-logo">
+    <div class="sb-icon">🚖</div>
+    <div class="sb-name">Yango CRM Pro</div>
+    <div class="sb-sub">Partenaire Dakar · v3</div>
+  </div>
+  <div class="sb-nav">
+    <div class="ni active" onclick="nav('dashboard')"><span class="ni-ic">📊</span>Dashboard<span class="ni-badge red" id="badge-alerts">0</span></div>
+    <div class="ni" onclick="nav('rappels')"><span class="ni-ic">🔔</span>Rappels & Alertes<span class="ni-badge orange" id="badge-rappels">0</span></div>
+    <div class="ni" onclick="nav('chauffeurs')"><span class="ni-ic">🚗</span>Chauffeurs CRM</div>
+    <div class="ni" onclick="nav('messages')"><span class="ni-ic">📱</span>WhatsApp / SMS</div>
+    <div class="ni" onclick="nav('coach')"><span class="ni-ic">🤖</span>Coach IA</div>
+    <div class="ni" onclick="nav('import')"><span class="ni-ic">📥</span>Import CSV</div>
+    <div class="ni" onclick="nav('finances')"><span class="ni-ic">💰</span>Finances</div>
+    <div class="ni" onclick="nav('equipe')"><span class="ni-ic">👥</span>Équipe</div>
+    <div class="ni" onclick="nav('settings')"><span class="ni-ic">⚙️</span>Paramètres</div>
+  </div>
+  <div class="sb-bot">
+    <div class="save-info">💾 <span id="save-status">Sauvegarde automatique active</span></div>
+    <div class="agent-c">
+      <div class="agent-av">👑</div>
+      <div><div style="font-size:11px;font-weight:600;">Partenaire</div><div style="font-size:9px;color:var(--mu);">Administrateur</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MAIN ═══════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-title" id="page-title">Dashboard</div>
+    <div class="sw"><input class="si" type="text" placeholder="Rechercher un chauffeur..." id="gsearch" oninput="searchDrivers(this.value)"/></div>
+    <div class="tba">
+      <span style="font-size:11px;color:var(--mu);" id="last-save-txt"></span>
+      <button class="btn btn-g" onclick="nav('import')">📥 Import</button>
+      <button class="btn btn-p" onclick="nav('messages')">📱 Envoyer messages</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="page active" id="page-dashboard">
+    <div id="alert-banners"></div>
+    <div class="g4 mb16">
+      <div class="kc ca" onclick="nav('chauffeurs')"><div class="kl">Total inscrits</div><div class="kv" style="color:var(--acc)" id="k-total">14 830</div><div class="ks">Parc complet</div></div>
+      <div class="kc cg" onclick="filterNav('Actif')"><div class="kl">Actifs ≤30j</div><div class="kv" style="color:var(--green)" id="k-actif">1 087</div><div class="ks">7.3% du parc</div></div>
+      <div class="kc co" onclick="filterNav('Dormant récent')"><div class="kl">Dormants récents</div><div class="kv" style="color:var(--orange)" id="k-dorm">1 012</div><div class="ks">31-90j inactifs</div></div>
+      <div class="kc cr" onclick="filterNav('Perdu')"><div class="kl">Perdus +6 mois</div><div class="kv" style="color:var(--red)" id="k-perdu">5 605</div><div class="ks">Récupération difficile</div></div>
+    </div>
+    <div class="g2">
+      <!-- Alertes précoces -->
+      <div class="card" id="early-alert-card" style="display:none;margin-bottom:14px;border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.04)">
+        <div class="ct" style="color:#fbbf24">⚠️ Détection précoce — Chauffeurs qui s'éloignent <small id="early-count"></small></div>
+        <div id="early-alert-list"></div>
+        <button class="btn btn-g" style="width:100%;margin-top:10px;justify-content:center;font-size:11px;" onclick="setFilter('Alerte 14j');nav('chauffeurs')">Voir tous les chauffeurs en alerte →</button>
+      </div>
+      <!-- Rappels aujourd'hui -->
+      <div class="card">
+        <div class="ct">🔔 Rappels — À appeler aujourd'hui <small><span id="today-count">0</span> chauffeur(s)</small></div>
+        <div id="dash-rappels">
+          <div class="empty-state"><div class="ico">✅</div><p>Aucun rappel pour aujourd'hui</p><small>Ajoutez des rappels depuis les fiches chauffeurs</small></div>
+        </div>
+        <button class="btn btn-g" style="width:100%;margin-top:10px;justify-content:center;" onclick="nav('rappels')">Voir tous les rappels →</button>
+      </div>
+      <!-- Derniers contacts -->
+      <div class="card">
+        <div class="ct">🕐 Derniers appels & contacts</div>
+        <div id="dash-recent-calls">
+          <div class="empty-state"><div class="ico">📋</div><p>Aucun contact enregistré</p><small>Ouvrez une fiche pour noter un appel</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="ct">💰 Finances du jour <small>4 mai 2026</small></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center;"><div class="kl">CA total</div><div id="fin-ca" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--acc)">14,2M FCFA</div></div>
+          <div style="background:rgba(34,211,160,.07);border:1px solid rgba(34,211,160,.2);border-radius:9px;padding:12px;text-align:center;"><div class="kl">Votre commission 3%</div><div id="fin-comm" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green)">426 138 FCFA</div></div>
+          <div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center;"><div class="kl">Taux complétion</div><div id="fin-comp" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--blue)">60.5%</div></div>
+          <div style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:9px;padding:12px;text-align:center;"><div class="kl">Taux annulation</div><div id="fin-ann" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--red)">39.4%</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct">📈 Objectif 3 000 actifs</div>
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:11px;color:var(--mu)">Progression</span><span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--acc)" id="k-actif2">— / —</span></div>
+          <div class="pbar-wrap" style="height:8px;"><div class="pbar" id="dash-pbar" style="width:0%"></div></div>
+          <div style="font-size:10px;color:var(--mu);margin-top:4px;" id="dash-pbar-txt">Importez vos données...</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--s2);border-radius:7px;font-size:11px;"><span>🔓</span><span style="flex:1">Activer jamais actifs</span><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--green)">+800</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--s2);border-radius:7px;font-size:11px;"><span>🔄</span><span style="flex:1">Réactiver dormants récents</span><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--orange)">+607</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--s2);border-radius:7px;font-size:11px;"><span>💛</span><span style="flex:1">Récupérer dormants 3-6 mois</span><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--orange)">+496</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RAPPELS ══ -->
+  <div class="page" id="page-rappels">
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-r btn-sm" onclick="filterRem('today')">🔴 Aujourd'hui (<span id="cnt-today">0</span>)</button>
+        <button class="btn btn-g btn-sm" onclick="filterRem('soon')" style="color:var(--orange)">🟠 Cette semaine (<span id="cnt-soon">0</span>)</button>
+        <button class="btn btn-g btn-sm" onclick="filterRem('all')">📋 Tous (<span id="cnt-all">0</span>)</button>
+        <button class="btn btn-g btn-sm" onclick="filterRem('done')" style="color:var(--green)">✅ Effectués (<span id="cnt-done">0</span>)</button>
+      </div>
+      <button class="btn btn-p btn-sm" style="margin-left:auto;" onclick="showAddReminder()">+ Ajouter rappel</button>
+    </div>
+    <!-- Formulaire ajout rapide -->
+    <div class="card mb16" id="add-rem-form" style="display:none;">
+      <div class="ct">➕ Nouveau rappel</div>
+      <div class="cf-grid">
+        <div><label class="form-label">Nom du chauffeur</label><input class="form-input" id="rem-name" placeholder="Ex: Gueye Alassane"/></div>
+        <div><label class="form-label">Téléphone</label><input class="form-input" id="rem-phone" placeholder="77 xxx xx xx"/></div>
+        <div><label class="form-label">Date du rappel</label><input class="form-input" type="date" id="rem-date"/></div>
+        <div><label class="form-label">Heure</label><input class="form-input" type="time" id="rem-time" value="17:00"/></div>
+        <div><label class="form-label">Type de contact</label>
+          <select class="form-select" id="rem-type"><option value="appel">📞 Appel téléphonique</option><option value="wapp">💬 WhatsApp</option><option value="sms">📱 SMS</option><option value="terrain">🗺️ Terrain</option></select>
+        </div>
+        <div><label class="form-label">Raison</label>
+          <select class="form-select" id="rem-reason"><option>Relance dormant</option><option>Fidélisation VIP</option><option>Activation jamais actif</option><option>Suivi appel précédent</option><option>Problème à régler</option><option>Annulation élevée</option><option>Autre</option></select>
+        </div>
+        <div class="cf-full"><label class="form-label">Note préparatoire</label><input class="form-input" id="rem-note" placeholder="Ce que vous voulez lui dire / rappeler..."/></div>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:10px;">
+        <button class="btn btn-p" onclick="saveReminder()">💾 Enregistrer le rappel</button>
+        <button class="btn btn-g" onclick="document.getElementById('add-rem-form').style.display='none'">Annuler</button>
+      </div>
+    </div>
+    <div id="rem-list">
+      <div class="empty-state"><div class="ico">🔔</div><p>Aucun rappel programmé</p><small>Cliquez sur "+ Ajouter rappel" ou ajoutez depuis une fiche chauffeur</small></div>
+    </div>
+  </div>
+
+  <!-- ══ CHAUFFEURS ══ -->
+  <div class="page" id="page-chauffeurs">
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-g btn-sm" id="f-tous" onclick="setFilter('tous')">Tous</button>
+      <button class="btn btn-g btn-sm" id="f-Actif 2j" onclick="setFilter('Actif 2j')" style="color:#00ff88">🟢 Actifs 2j</button>
+      <button class="btn btn-g btn-sm" id="f-Actif 7j" onclick="setFilter('Actif 7j')" style="color:var(--green)">🟢 Actifs 7j</button>
+      <button class="btn btn-g btn-sm" id="f-Alerte 14j" onclick="setFilter('Alerte 14j')" style="color:#fbbf24">⚠️ Alerte 14j</button>
+      <button class="btn btn-g btn-sm" id="f-Alerte 30j" onclick="setFilter('Alerte 30j')" style="color:var(--orange)">🔶 Alerte 30j</button>
+      <button class="btn btn-g btn-sm" id="f-Dormant récent" onclick="setFilter('Dormant récent')" style="color:var(--red)">🔴 Dormants 31-60j</button>
+      <button class="btn btn-g btn-sm" id="f-Dormant" onclick="setFilter('Dormant')" style="color:#ef4444">🔴 Dormants 3-6m</button>
+      <button class="btn btn-g btn-sm" id="f-Perdu" onclick="setFilter('Perdu')" style="color:var(--mu2)">⚫ Perdus</button>
+      <button class="btn btn-g btn-sm" id="f-Jamais actif" onclick="setFilter('Jamais actif')" style="color:var(--mu)">⬛ Jamais actifs</button>
+      <div style="margin-left:auto;display:flex;gap:6px;">
+        <button class="btn btn-wa btn-sm" onclick="exportForWA()">💬 Exporter pour WhatsApp</button>
+        <button class="btn btn-sms btn-sm" onclick="exportForSMS()">📱 Exporter pour SMS</button>
+        <button class="btn btn-g btn-sm" onclick="exportCSV()">📤 CSV</button>
+      </div>
+    </div>
+    <div class="card" style="padding:0;">
+      <div class="tw">
+        <table>
+          <thead><tr><th>Nom</th><th>Téléphone</th><th>Statut</th><th>Courses</th><th>Inactivité</th><th>Comm. est.</th><th>Dernier contact</th><th>Prochain rappel</th><th></th></tr></thead>
+          <tbody id="drivers-tbody"></tbody>
+        </table>
+      </div>
+      <div style="padding:10px 14px;border-top:1px solid var(--b1);font-size:11px;color:var(--mu);display:flex;justify-content:space-between;align-items:center;">
+        <span id="tbl-count">—</span>
+        <div style="display:flex;gap:5px;">
+          <button class="btn btn-g btn-sm" onclick="prevPage()">← Préc.</button>
+          <span style="padding:4px 8px;font-size:11px;" id="pg-ind">Page 1</span>
+          <button class="btn btn-g btn-sm" onclick="nextPage()">Suiv. →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MESSAGES ══ -->
+  <div class="page" id="page-messages">
+    <div class="g2 mb16">
+      <!-- Filtres -->
+      <div class="card">
+        <div class="ct">🎯 Choisir le groupe cible</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+          <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--s2);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="msg-target" value="Dormant récent" onchange="updateMsgTarget(this)" style="accent-color:var(--acc)"/>
+            <span style="font-size:12px;">🟡 <strong>Dormants récents</strong> — 1 012 chauffeurs (31-90j)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--s2);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="msg-target" value="Jamais actif" onchange="updateMsgTarget(this)" style="accent-color:var(--acc)"/>
+            <span style="font-size:12px;">⚫ <strong>Jamais actifs</strong> — 6 172 chauffeurs</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--s2);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="msg-target" value="Perdu" onchange="updateMsgTarget(this)" style="accent-color:var(--acc)"/>
+            <span style="font-size:12px;">🔴 <strong>Perdus +6 mois</strong> — 5 605 chauffeurs</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--s2);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="msg-target" value="Actif" onchange="updateMsgTarget(this)" style="accent-color:var(--acc)"/>
+            <span style="font-size:12px;">🟢 <strong>Actifs</strong> — 1 087 chauffeurs (fidélisation)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--s2);border-radius:8px;cursor:pointer;">
+            <input type="radio" name="msg-target" value="Tous" onchange="updateMsgTarget(this)" style="accent-color:var(--acc)"/>
+            <span style="font-size:12px;">📢 <strong>Tous les chauffeurs</strong> — 14 830 inscrits</span>
+          </label>
+        </div>
+        <div><label class="form-label">Type de message</label>
+          <select class="form-select" id="msg-type" onchange="updateMsgPreview()" style="margin-bottom:10px;">
+            <option value="relance">🔔 Relance — retour sur la plateforme</option>
+            <option value="activation">🔓 Activation — première course</option>
+            <option value="fidelite">⭐ Fidélisation — remerciement VIP</option>
+            <option value="annulation">⚠️ Annulation élevée — avertissement</option>
+            <option value="promo">🎁 Promotion — offre spéciale</option>
+            <option value="custom">✏️ Message personnalisé</option>
+          </select>
+        </div>
+        <div id="custom-msg-wrap" style="display:none;">
+          <label class="form-label">Votre message personnalisé</label>
+          <textarea class="form-input" id="custom-msg" rows="5" placeholder="Rédigez votre message ici..." oninput="updateMsgPreview()"></textarea>
+        </div>
+      </div>
+      <!-- Preview -->
+      <div class="card">
+        <div class="ct">👁️ Aperçu du message</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <button class="btn btn-wa btn-sm" id="preview-wa" onclick="setMsgChannel('wa')" style="font-weight:700;">💬 WhatsApp</button>
+          <button class="btn btn-sms btn-sm" id="preview-sms" onclick="setMsgChannel('sms')">📱 SMS</button>
+        </div>
+        <div class="msg-preview" id="msg-preview-text">Sélectionnez un groupe cible et un type de message...</div>
+        <div style="font-size:10px;color:var(--mu);margin-bottom:10px;" id="msg-char-count">0 caractères</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;">
+          <button class="btn btn-wa btn-sm" onclick="copyMsgText()">📋 Copier le message</button>
+          <button class="btn btn-g btn-sm" onclick="openWABusiness()">💬 Ouvrir WhatsApp Web</button>
+          <button class="btn btn-g btn-sm" onclick="downloadMsgFile()">📄 Télécharger .txt</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Numéros à contacter -->
+    <div class="card mb16">
+      <div class="ct">📱 Numéros à contacter <small id="contacts-count">Sélectionnez un groupe</small></div>
+      <div style="display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;">
+        <button class="btn btn-wa btn-sm" onclick="copyAllNumbers('wa')">💬 Copier tous les numéros (WhatsApp)</button>
+        <button class="btn btn-sms btn-sm" onclick="copyAllNumbers('sms')">📱 Copier format SMS</button>
+        <button class="btn btn-g btn-sm" onclick="copyAllNumbers('orange')">🟠 Format Orange SMS Pro</button>
+        <button class="btn btn-g btn-sm" onclick="downloadNumbers()">💾 Télécharger liste .csv</button>
+      </div>
+      <div class="contacts-list" id="contacts-preview">Sélectionnez un groupe pour voir les numéros...</div>
+      <div style="margin-top:10px;padding:10px;background:rgba(245,197,24,.07);border-radius:8px;font-size:11px;line-height:1.8;">
+        <strong>📋 Comment utiliser :</strong><br>
+        • <strong>WhatsApp Business</strong> : Copiez les numéros → Créez une liste de diffusion → Collez (max 256/liste)<br>
+        • <strong>Orange SMS Pro</strong> : Téléchargez le .csv → Importez dans votre espace Orange Entreprise<br>
+        • <strong>Phone Link Windows</strong> : Copiez le message → Collez dans l'app Phone Link sur votre PC<br>
+        • <strong>Twilio / AfricasTalking</strong> : Téléchargez le .csv et importez dans leur dashboard
+      </div>
+    </div>
+
+    <!-- Guide étapes -->
+    <div class="card">
+      <div class="ct">🪜 Guide étape par étape</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div style="padding:14px;background:rgba(37,211,102,.06);border:1px solid rgba(37,211,102,.15);border-radius:10px;">
+          <div style="font-size:24px;margin-bottom:8px;">💬</div>
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px;">WhatsApp Business (gratuit)</div>
+          <div style="font-size:11px;color:var(--mu2);line-height:1.7;">1. Installez WhatsApp Business<br>2. Créez une liste de diffusion<br>3. Ajoutez 250 numéros max<br>4. Collez le message préparé<br>5. Répétez pour les autres lots<br><strong style="color:#25d366">→ Gratuit, recommandé</strong></div>
+        </div>
+        <div style="padding:14px;background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.15);border-radius:10px;">
+          <div style="font-size:24px;margin-bottom:8px;">🟠</div>
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px;">Orange SMS Pro</div>
+          <div style="font-size:11px;color:var(--mu2);line-height:1.7;">1. orangebusiness.sn<br>2. Importez le fichier .csv<br>3. Tapez votre message<br>4. Lancez la campagne<br>5. Suivi livraison en temps réel<br><strong style="color:var(--orange)">→ ~35 FCFA/SMS</strong></div>
+        </div>
+        <div style="padding:14px;background:rgba(77,159,255,.06);border:1px solid rgba(77,159,255,.15);border-radius:10px;">
+          <div style="font-size:24px;margin-bottom:8px;">🖥️</div>
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px;">Phone Link (Windows)</div>
+          <div style="font-size:11px;color:var(--mu2);line-height:1.7;">1. Ouvrez Phone Link sur PC<br>2. Connectez votre Android<br>3. Copiez le message ici<br>4. Collez dans Phone Link<br>5. Sélectionnez le contact<br><strong style="color:var(--blue)">→ Gratuit, appels manuels</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ COACH ══ -->
+  <div class="page" id="page-coach">
+    <div style="background:linear-gradient(135deg,var(--s0),var(--s2));border:1px solid var(--b1);border-radius:var(--r3);padding:22px;margin-bottom:14px;display:flex;align-items:center;gap:16px;">
+      <div style="width:54px;height:54px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🤖</div>
+      <div><div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:4px;">Yango Coach IA</div><div style="font-size:12px;color:var(--mu2);line-height:1.6;">Parc de <strong style="color:var(--text)" id="coach-total">14 830 chauffeurs</strong> · <strong style="color:var(--green)" id="coach-actifs">1 087 actifs</strong> · Commission <strong style="color:var(--acc)" id="coach-comm">3%</strong> · Annulations <strong style="color:var(--red)" id="coach-ann">39.4%</strong></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:var(--s0);border:1px solid var(--b1);border-radius:var(--r);padding:12px;cursor:pointer;" onclick="askCoach('Comment réduire le taux d\\'annulation de 39.4% ?')"><div style="font-size:16px;margin-bottom:5px;">⚠️</div><div style="font-size:12px;font-weight:500;">Réduire les annulations</div><div style="font-size:10px;color:var(--mu);">39.4% · 1 467 par les chauffeurs</div></div>
+      <div style="background:var(--s0);border:1px solid var(--b1);border-radius:var(--r);padding:12px;cursor:pointer;" onclick="askCoach('Script de relance pour un chauffeur inactif depuis 60 jours')"><div style="font-size:16px;margin-bottom:5px;">🔔</div><div style="font-size:12px;font-weight:500;">Script relance dormant</div><div style="font-size:10px;color:var(--mu);">31-90 jours d'inactivité</div></div>
+      <div style="background:var(--s0);border:1px solid var(--b1);border-radius:var(--r);padding:12px;cursor:pointer;" onclick="askCoach('Programme fidélité avec paliers basé sur ma commission à 3%')"><div style="font-size:16px;margin-bottom:5px;">🎁</div><div style="font-size:12px;font-weight:500;">Programme fidélité</div><div style="font-size:10px;color:var(--mu);">Paliers et récompenses</div></div>
+      <div style="background:var(--s0);border:1px solid var(--b1);border-radius:var(--r);padding:12px;cursor:pointer;" onclick="askCoach('Comment activer les 6172 chauffeurs jamais actifs ?')"><div style="font-size:16px;margin-bottom:5px;">🔓</div><div style="font-size:12px;font-weight:500;">Activer les 6 172 jamais actifs</div><div style="font-size:10px;color:var(--mu);">Campagne d'activation</div></div>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="msg a"><div class="mb" id="coach-init-msg">Bonsoir ! Je suis votre <strong>Coach Yango IA</strong> 🤖<br><br>Données connues : <strong>14 830 inscrits</strong>, <strong>1 087 actifs</strong>, commission <strong>3%</strong> (426 138 FCFA/jour), taux d'annulation <strong>39.4%</strong>.<br><br>Posez vos questions — scripts, stratégies, calculs financiers. Je réponds avec des conseils adaptés à votre parc réel.</div><div class="mt">Coach IA</div></div>
+    </div>
+    <div class="ci-row">
+      <input class="ci" type="text" placeholder="Posez votre question..." id="chat-input" onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="btn btn-p" onclick="sendChat()">Envoyer ↑</button>
+    </div>
+  </div>
+
+  <!-- ══ IMPORT ══ -->
+  <div class="page" id="page-import">
+    <div class="g2 mb16">
+      <div>
+        <div class="card mb16">
+          <div class="ct">📥 Importer rapport chauffeurs</div>
+          <div class="dz" id="dz1" onclick="document.getElementById('f1').click()" ondragover="dzO(event,'dz1')" ondragleave="dzL('dz1')" ondrop="dzD(event,'dz1','chauffeurs')">
+            <input type="file" id="f1" accept=".csv" style="display:none" onchange="startImport(event,'chauffeurs')"/>
+            <div class="dz-ico">👥</div>
+            <div class="dz-title">contractor_profiles_*.csv</div>
+            <div class="dz-sub">Données chauffeurs · Segments auto-calculés</div>
+          </div>
+          <div style="display:none;" id="prog1">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12px;font-weight:500;" id="prog1-txt">Lecture...</span><span style="font-size:11px;color:var(--mu);" id="prog1-pct">0%</span></div>
+            <div class="pbar-wrap"><div class="pbar" id="pb1" style="width:0%"></div></div>
+          </div>
+          <div class="log" style="display:none;margin-top:10px;" id="log1"></div>
+        </div>
+        <div class="card">
+          <div class="ct">📦 Importer rapport commandes</div>
+          <div class="dz" id="dz2" onclick="document.getElementById('f2').click()" ondragover="dzO(event,'dz2')" ondragleave="dzL('dz2')" ondrop="dzD(event,'dz2','commandes')">
+            <input type="file" id="f2" accept=".csv" style="display:none" onchange="startImport(event,'commandes')"/>
+            <div class="dz-ico">📊</div>
+            <div class="dz-title">report_orders.csv</div>
+            <div class="dz-sub">Commandes terminées · Annulations · Commissions</div>
+          </div>
+          <div style="display:none;" id="prog2">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12px;font-weight:500;" id="prog2-txt">Lecture...</span><span style="font-size:11px;color:var(--mu);" id="prog2-pct">0%</span></div>
+            <div class="pbar-wrap"><div class="pbar" id="pb2" style="width:0%"></div></div>
+          </div>
+          <div class="log" style="display:none;margin-top:10px;" id="log2"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card mb16">
+          <div class="ct">💾 Sauvegarde locale</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+            <div style="padding:10px 12px;background:rgba(34,211,160,.06);border:1px solid rgba(34,211,160,.2);border-radius:8px;font-size:12px;">
+              ✅ <strong>Sauvegarde automatique</strong> — Toutes vos notes, rappels et contacts sont sauvegardés dans votre navigateur (localStorage). Ils persistent même si vous fermez la page.
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div style="padding:10px;background:var(--s2);border-radius:8px;text-align:center;">
+                <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green)" id="save-notes-count">0</div>
+                <div style="font-size:10px;color:var(--mu);">Notes sauvegardées</div>
+              </div>
+              <div style="padding:10px;background:var(--s2);border-radius:8px;text-align:center;">
+                <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--acc)" id="save-rem-count">0</div>
+                <div style="font-size:10px;color:var(--mu);">Rappels sauvegardés</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <button class="btn btn-g" style="justify-content:center;" onclick="exportAllData()">📤 Exporter toutes les données (.json)</button>
+            <button class="btn btn-g" style="justify-content:center;" onclick="document.getElementById('import-data').click()">📥 Restaurer une sauvegarde</button>
+            <input type="file" id="import-data" accept=".json" style="display:none" onchange="importAllData(event)"/>
+            <button class="btn btn-r" style="justify-content:center;" onclick="clearAllData()">🗑️ Effacer toutes les données</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct">📅 Historique imports</div>
+          <div id="imp-hist"><div class="empty-state" style="padding:16px;"><p>Aucun import effectué</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FINANCES ══ -->
+  <div class="page" id="page-finances">
+    <div class="g4 mb16">
+      <div class="kc ca"><div class="kl">CA du jour</div><div class="kv" style="color:var(--acc)">14,2M</div><div class="ks">FCFA · 7 012 courses</div></div>
+      <div class="kc cg"><div class="kl">Votre commission 3%</div><div class="kv" style="color:var(--green)">426 138</div><div class="ks">FCFA · 4 mai 2026</div></div>
+      <div class="kc cb"><div class="kl">Yango 12.5%</div><div class="kv" style="color:var(--blue)">1 775 863</div><div class="ks">FCFA plateforme</div></div>
+      <div class="kc cr"><div class="kl">Taux annulation</div><div class="kv" style="color:var(--red)">39.4%</div><div class="ks">4 559 annulées</div></div>
+    </div>
+    <div class="card mb16">
+      <div class="ct">📈 Simulation CA mensuel selon nb actifs</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;">
+        <div style="text-align:center;padding:12px;background:var(--s2);border-radius:8px;"><div style="font-size:10px;color:var(--mu);margin-bottom:4px;">500 actifs</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--mu2)">5,9M</div><div style="font-size:9px;color:var(--mu)">FCFA/mois</div></div>
+        <div style="text-align:center;padding:12px;background:rgba(34,211,160,.06);border:1px solid rgba(34,211,160,.2);border-radius:8px;"><div style="font-size:10px;color:var(--green);margin-bottom:4px;">1 087 ← actuel</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--green)">12,8M</div><div style="font-size:9px;color:var(--mu)">FCFA/mois</div></div>
+        <div style="text-align:center;padding:12px;background:var(--s2);border-radius:8px;"><div style="font-size:10px;color:var(--mu);margin-bottom:4px;">1 500 actifs</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--blue)">17,7M</div><div style="font-size:9px;color:var(--mu)">FCFA/mois</div></div>
+        <div style="text-align:center;padding:12px;background:var(--s2);border-radius:8px;"><div style="font-size:10px;color:var(--mu);margin-bottom:4px;">2 000 actifs</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--orange)">23,6M</div><div style="font-size:9px;color:var(--mu)">FCFA/mois</div></div>
+        <div style="text-align:center;padding:12px;background:var(--s2);border-radius:8px;"><div style="font-size:10px;color:var(--mu);margin-bottom:4px;">2 500 actifs</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--orange)">29,5M</div><div style="font-size:9px;color:var(--mu)">FCFA/mois</div></div>
+        <div style="text-align:center;padding:12px;background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.2);border-radius:8px;"><div style="font-size:10px;color:var(--acc);margin-bottom:4px;">3 000 🎯</div><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--acc)">35,4M</div><div style="font-size:9px;color:var(--acc)">FCFA/mois</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">🔢 Décomposition des 18% de commission</div>
+      <div style="display:flex;gap:0;border-radius:8px;overflow:hidden;height:32px;margin-bottom:14px;">
+        <div style="width:69.4%;background:#4d9fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">Yango 12.5%</div>
+        <div style="width:13.9%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">TVA 2.5%</div>
+        <div style="width:16.7%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;">Vous 3%</div>
+      </div>
+      <div style="padding:10px;background:rgba(245,197,24,.07);border-radius:8px;font-size:12px;text-align:center;">Sur 2 026 FCFA (tarif moyen) → <strong style="color:var(--acc)">60.8 FCFA</strong> pour vous par course terminée · <strong style="color:var(--acc)">1 826 FCFA/mois</strong> par actif</div>
+    </div>
+  </div>
+
+  <!-- ══ EQUIPE ══ -->
+  <div class="page" id="page-equipe">
+    <div style="background:linear-gradient(135deg,var(--s0),var(--s2));border:1px solid var(--b1);border-radius:var(--r3);padding:22px;margin-bottom:16px;">
+      <div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:5px;">Structure d'équipe — 8 membres</div>
+      <div style="font-size:12px;color:var(--mu2)">Basée sur 14 830 chauffeurs · 1 087 actifs · Commission 3% · Annulation 39.4% à corriger</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+      <div class="card" style="border-top:3px solid var(--acc)"><div style="font-size:22px;margin-bottom:6px;">👑</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Partenaire — Vous</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">Direction générale</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ Dashboard 10 min/matin<br>▸ Vérifier rappels du jour<br>▸ Appel top 5 VIP/semaine<br>▸ Validation offres fidélité<br>▸ Réunion équipe vendredi</div></div>
+      <div class="card" style="border-top:3px solid var(--blue)"><div style="font-size:22px;margin-bottom:6px;">📊</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Resp. Opérations</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">Données & import</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ Import CSV chaque lundi<br>▸ Rapport hebdo segments<br>▸ Suivi annulations<br>▸ Détection dormants J+15<br>▸ Mise à jour rappels</div></div>
+      <div class="card" style="border-top:3px solid var(--green)"><div style="font-size:22px;margin-bottom:6px;">💬</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Resp. Support</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">1 personne + 1 agent</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ WhatsApp Business &lt;2h<br>▸ Problèmes recharge/comptes<br>▸ Notes après chaque contact<br>▸ Rappels de suivi<br>▸ Satisfaction mensuelle</div></div>
+      <div class="card" style="border-top:3px solid var(--orange)"><div style="font-size:22px;margin-bottom:6px;">🎯</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Resp. Fidélisation</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">1 personne + 2 agents</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ Programme paliers<br>▸ Classement mensuel<br>▸ Campagnes WhatsApp/SMS<br>▸ Rappels fidélisation<br>▸ Analyse départs</div></div>
+      <div class="card" style="border-top:3px solid var(--purple)"><div style="font-size:22px;margin-bottom:6px;">🗺️</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Agents Terrain A & B</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">2 personnes · ~300 chacun</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ Animation groupes WA<br>▸ Visites terrain<br>▸ Aide recharges Wave/OM<br>▸ Notes contact terrain<br>▸ Rapport quotidien</div></div>
+      <div class="card" style="border-top:3px solid var(--red)"><div style="font-size:22px;margin-bottom:6px;">🔔</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Agent Relance</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">Dormants + annuleurs</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ 20 appels dormants/lundi<br>▸ Broadcasts WA/SMS<br>▸ Notes résultats appels<br>▸ Rappels de suivi auto<br>▸ Taux conversion</div></div>
+    </div>
+  </div>
+
+  <!-- ══ PARAMÈTRES ══ -->
+  <div class="page" id="page-settings">
+    <div style="background:linear-gradient(135deg,var(--s0),var(--s2));border:1px solid var(--b1);border-radius:var(--r3);padding:24px;margin-bottom:16px;">
+      <div style="font-family:Syne,sans-serif;font-size:19px;font-weight:800;margin-bottom:5px;">⚙️ Paramètres du CRM</div>
+      <div style="font-size:12px;color:var(--mu2)">Adaptez le CRM à votre type de parc — débutant, moyen ou grand parc</div>
+    </div>
+
+    <!-- OBJECTIF -->
+    <div class="g2 mb16">
+      <div class="card">
+        <div class="ct">🎯 Objectif d'actifs</div>
+        <div style="margin-bottom:14px;font-size:12px;color:var(--mu2);line-height:1.7">
+          Définissez votre objectif selon la taille de votre parc. Le tableau de bord et la barre de progression s'adaptent automatiquement.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div>
+            <label class="form-label">Votre objectif (nombre d'actifs)</label>
+            <input class="form-input" type="number" id="cfg-objectif" value="3000" min="10" max="100000"
+              style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;color:var(--acc)"/>
+          </div>
+          <div>
+            <label class="form-label">Nom de votre parc</label>
+            <input class="form-input" type="text" id="cfg-nom" value="Partenaire Dakar" placeholder="Ex: Parc Dakar Centre"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+          <button class="btn btn-p" onclick="applyConfig()">💾 Appliquer les paramètres</button>
+          <button class="btn btn-g" onclick="resetConfig()">↩️ Réinitialiser</button>
+        </div>
+        <!-- Recommandations selon taille -->
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Objectifs recommandés selon votre parc</div>
+        <div style="display:flex;flex-direction:column;gap:7px;" id="preset-list"></div>
+      </div>
+
+      <!-- APERÇU -->
+      <div class="card">
+        <div class="ct">👁️ Aperçu en temps réel</div>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:12px;color:var(--mu)">Progression vers l'objectif</span>
+            <span style="font-family:Syne,sans-serif;font-size:14px;font-weight:700;color:var(--acc)" id="cfg-progress-txt">— / —</span>
+          </div>
+          <div class="pbar-wrap" style="height:10px;"><div class="pbar" id="cfg-pbar" style="width:0%"></div></div>
+          <div style="font-size:11px;color:var(--mu);margin-top:5px;" id="cfg-progress-sub">Importez vos données pour voir la progression</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:4px;">Actifs actuels</div>
+            <div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800;color:var(--green)" id="cfg-actifs">—</div>
+          </div>
+          <div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:4px;">Objectif</div>
+            <div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800;color:var(--acc)" id="cfg-obj-display">—</div>
+          </div>
+          <div style="background:var(--s2);border-radius:9px;padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:4px;">Restants</div>
+            <div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800;color:var(--orange)" id="cfg-restants">—</div>
+          </div>
+          <div style="background:rgba(34,211,160,.07);border:1px solid rgba(34,211,160,.2);border-radius:9px;padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:4px;">CA/mois à l'objectif</div>
+            <div style="font-family:Syne,sans-serif;font-size:18px;font-weight:800;color:var(--green)" id="cfg-ca">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE DE PARC -->
+    <div class="card mb16">
+      <div class="ct">🚖 Type de parc — Configuration rapide</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" id="parc-types"></div>
+    </div>
+
+    <!-- COMMISSION -->
+    <div class="card">
+      <div class="ct">💰 Structure commission</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div>
+          <label class="form-label">Commission totale (%)</label>
+          <input class="form-input" type="number" id="cfg-comm-total" value="18" min="1" max="50"/>
+        </div>
+        <div>
+          <label class="form-label">Part Yango (%)</label>
+          <input class="form-input" type="number" id="cfg-comm-yango" value="12.5" step="0.1"/>
+        </div>
+        <div>
+          <label class="form-label">TVA (%)</label>
+          <input class="form-input" type="number" id="cfg-comm-tva" value="2.5" step="0.1"/>
+        </div>
+        <div>
+          <label class="form-label">Votre part (%)</label>
+          <input class="form-input" type="number" id="cfg-comm-part" value="3" step="0.1" style="color:var(--acc);font-weight:700"/>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding:10px;background:rgba(245,197,24,.07);border-radius:8px;font-size:12px;" id="cfg-comm-preview">
+        Sur 2 026 FCFA moyen → <strong style="color:var(--acc)">60.8 FCFA</strong> pour vous par course
+      </div>
+      <button class="btn btn-p" style="margin-top:10px;" onclick="applyConfig()">💾 Sauvegarder</button>
+    </div>
+  </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<!-- ═══ PANEL CHAUFFEUR ═══ -->
+<div class="overlay" id="overlay" onclick="closePanelClick(event)">
+  <div class="panel" id="panel">
+    <div class="ph">
+      <div class="pav" id="p-av" style="background:linear-gradient(135deg,#4d9fff,#a78bfa)">🚗</div>
+      <div style="flex:1"><div class="pname" id="p-name">—</div><div class="pmeta" id="p-meta">—</div></div>
+      <div class="pclose" onclick="closePanel()">✕</div>
+    </div>
+    <div class="pb">
+      <!-- STATS -->
+      <div class="psec">
+        <div class="psect">Statistiques</div>
+        <div class="sg">
+          <div class="si2"><div class="sv" id="p-ord">—</div><div class="sl">Courses</div></div>
+          <div class="si2"><div class="sv" id="p-days" style="color:var(--orange)">—</div><div class="sl">Jours inactif</div></div>
+          <div class="si2"><div class="sv" id="p-comm" style="color:var(--acc)">—</div><div class="sl">Comm./mois</div></div>
+          <div class="si2"><div class="sv" id="p-status-pill">—</div><div class="sl">Statut</div></div>
+        </div>
+      </div>
+
+      <!-- COACH -->
+      <div class="psec">
+        <div class="psect">🤖 Coach IA</div>
+        <div class="coach-box">
+          <div class="coach-hd"><div class="coach-av">🤖</div><div><div class="coach-nm">Coach Yango</div><div class="coach-sub">Analyse personnalisée...</div></div></div>
+          <div id="coach-adv"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        </div>
+      </div>
+
+      <!-- SCRIPT -->
+      <div class="psec">
+        <div class="psect">💬 Script recommandé</div>
+        <div class="stabs" id="stabs">
+          <div class="stab active" onclick="switchScript(this,'appel')">📞 Appel</div>
+          <div class="stab" onclick="switchScript(this,'wapp')">💬 WhatsApp</div>
+          <div class="stab" onclick="switchScript(this,'sms')">📱 SMS</div>
+        </div>
+        <div class="script-box" id="script-box"><button class="scopy" onclick="copyCurrentScript()">📋 Copier</button><div id="script-inner">—</div></div>
+      </div>
+
+      <!-- STATUT -->
+      <div class="psec">
+        <div class="psect">📍 Statut contact</div>
+        <div class="sr">
+          <button class="sb2" onclick="setCS(this,'À contacter')">📋 À contacter</button>
+          <button class="sb2" onclick="setCS(this,'En cours')">⏳ En cours</button>
+          <button class="sb2" onclick="setCS(this,'Contacté')">✅ Contacté</button>
+          <button class="sb2" onclick="setCS(this,'Converti')">🎉 Converti</button>
+          <button class="sb2" onclick="setCS(this,'Refus')">❌ Refus</button>
+        </div>
+      </div>
+
+      <!-- APPEL / NOTE POST-CONTACT -->
+      <div class="psec">
+        <div class="psect">📞 Enregistrer un contact / appel</div>
+        <div class="call-form">
+          <div class="call-form-title">📝 Que s'est-il passé lors de ce contact ?</div>
+          <div class="cf-grid">
+            <div>
+              <label class="form-label">Type de contact</label>
+              <select class="form-select" id="ct-type">
+                <option value="appel">📞 Appel téléphonique</option>
+                <option value="wapp">💬 WhatsApp</option>
+                <option value="sms">📱 SMS</option>
+                <option value="terrain">🗺️ Contact terrain</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Résultat</label>
+              <select class="form-select" id="ct-res">
+                <option value="positif">✅ Positif — va revenir</option>
+                <option value="negatif">❌ Négatif — refus définitif</option>
+                <option value="neutre">⏳ En attente — rappeler</option>
+                <option value="absent">📵 Absent — pas répondu</option>
+              </select>
+            </div>
+            <div class="cf-full">
+              <label class="form-label">Note détaillée (ce que le chauffeur a dit, problème signalé, etc.)</label>
+              <textarea class="form-input" id="ct-note" placeholder="Ex: Il dit qu'il avait un problème de recharge Wave depuis 3 semaines. Compte maintenant réglé. Promet de reprendre la semaine prochaine..."></textarea>
+            </div>
+            <div>
+              <label class="form-label">Agent qui a contacté</label>
+              <select class="form-select" id="ct-agent">
+                <option>Vous (Partenaire)</option>
+                <option>Agent Zone A</option>
+                <option>Agent Zone B</option>
+                <option>Agent Relance</option>
+                <option>Resp. Support</option>
+                <option>Resp. Fidélisation</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Durée de l'appel</label>
+              <select class="form-select" id="ct-dur">
+                <option value="">— Durée —</option>
+                <option>Moins de 1 min</option>
+                <option>1-3 minutes</option>
+                <option>3-5 minutes</option>
+                <option>+5 minutes</option>
+              </select>
+            </div>
+          </div>
+          <!-- RAPPEL AUTOMATIQUE -->
+          <div style="background:rgba(245,197,24,.06);border:1px solid rgba(245,197,24,.15);border-radius:8px;padding:10px;margin-top:10px;">
+            <div style="font-size:11px;font-weight:600;color:var(--acc);margin-bottom:8px;">🔔 Programmer un rappel de suivi</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+              <div>
+                <label class="form-label">Date du rappel</label>
+                <input class="form-input" type="date" id="ct-rem-date"/>
+              </div>
+              <div>
+                <label class="form-label">Heure</label>
+                <input class="form-input" type="time" id="ct-rem-time" value="17:00"/>
+              </div>
+              <div>
+                <label class="form-label">Raison du rappel</label>
+                <select class="form-select" id="ct-rem-reason">
+                  <option value="">— Pas de rappel —</option>
+                  <option>Suivi engagement retour</option>
+                  <option>Vérifier rechargement</option>
+                  <option>Relancer si toujours absent</option>
+                  <option>Confirmer résolution problème</option>
+                  <option>Appel de fidélisation</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:10px;" onclick="saveCallNote()">💾 Enregistrer ce contact + rappel</button>
+        </div>
+      </div>
+
+      <!-- HISTORIQUE APPELS -->
+      <div class="psec">
+        <div class="psect">📋 Historique des contacts</div>
+        <div id="call-hist">
+          <div class="empty-state" style="padding:12px;"><p>Aucun contact enregistré</p><small>Remplissez le formulaire ci-dessus</small></div>
+        </div>
+      </div>
+
+      <!-- ACTIONS RAPIDES -->
+      <div class="psec">
+        <div class="psect">⚡ Actions rapides</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;">
+          <button class="btn btn-g btn-sm" onclick="copyPhone()">📞 Copier tél.</button>
+          <button class="btn btn-wa btn-sm" onclick="openWA()">💬 WhatsApp</button>
+          <button class="btn btn-sms btn-sm" onclick="callPhone()">📞 Appeler</button>
+          <button class="btn btn-ok btn-sm" onclick="quickReminder()">🔔 Rappel rapide (demain)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIF POPUP -->
+<div class="notif-popup" id="notif-popup"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="t-icon">✅</span><span id="t-txt">OK</span></div>
+
+<script>
+// ═══════════════════════════════════════════
+// STORAGE — Serveur Node.js local + localStorage backup
+// ═══════════════════════════════════════════
+const API = '/api';
+
+let notes    = {};
+let reminders= [];
+let cstatus  = {};
+let callLogs = {};
+let importHist=[];
+
+async function loadFromServer(){
+  try {
+    const r = await fetch(API+'/data', {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const json = await r.json();
+    if(json.success && json.data){
+      notes      = json.data.notes      || {};
+      reminders  = json.data.reminders  || [];
+      cstatus    = json.data.cstatus    || {};
+      callLogs   = json.data.callLogs   || {};
+      importHist = json.data.importHist || [];
+      // Restore drivers if saved
+      if(json.data.drivers && json.data.drivers.length>0){
+        DRIVERS.length=0;
+        json.data.drivers.forEach(function(d){DRIVERS.push(d);});
+        var stats=calcStats();
+        updateKPIs(stats);
+        updateAllPageStats(stats);
+      }
+      // Backup dans localStorage
+      try{ localStorage.setItem('yango_bk', JSON.stringify({notes,reminders,cstatus,callLogs,importHist})); }catch(ex){}
+      console.log('✅ Données chargées du disque');
+    }
+  } catch(e){
+    console.warn('Serveur non dispo, localStorage utilisé:', e.message);
+    try{
+      const v=localStorage.getItem('yango_bk');
+      if(v){
+        const d=JSON.parse(v);
+        notes=d.notes||{}; reminders=d.reminders||[];
+        cstatus=d.cstatus||{}; callLogs=d.callLogs||{};
+        importHist=d.importHist||[];
+      }
+    }catch(ex){}
+  }
+}
+
+async function save(){
+  const payload={notes,reminders,cstatus,callLogs,importHist,updatedAt:new Date().toISOString()};
+  // Toujours sauvegarder en localStorage d'abord (immédiat)
+  try{ localStorage.setItem('yango_bk', JSON.stringify(payload)); }catch(ex){}
+  // Puis sur le serveur
+  try{
+    const r=await fetch(API+'/data',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(r.ok) updateSaveStatus();
+  }catch(e){
+    console.warn('Sauvegarde serveur échouée:', e.message);
+    updateSaveStatus(); // Quand même mettre à jour (localStorage ok)
+  }
+}
+
+function updateSaveStatus(){
+  const now=new Date();
+  const t=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('last-save-txt').textContent='Sauvegardé à '+t;
+  document.getElementById('save-status').textContent='Sauvegarde auto · '+t;
+  updateSaveCounts();
+}
+
+function updateSaveCounts(){
+  const nCount=Object.values(callLogs).reduce((a,b)=>a+b.length,0)+Object.values(notes).reduce((a,b)=>a+b.length,0);
+  const rCount=reminders.filter(r=>!r.done).length;
+  const el1=document.getElementById('save-notes-count');
+  const el2=document.getElementById('save-rem-count');
+  if(el1)el1.textContent=nCount;
+  if(el2)el2.textContent=rCount;
+}
+
+// ═══════════════════════════════════════════
+// DRIVERS DATA
+// ═══════════════════════════════════════════
+const DRIVERS = [
+  {name:'Gueye Alassane',phone:'771234567',orders:23025,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
+  {name:'Alioune Seck',phone:'762345678',orders:18895,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
+  {name:'DIOUF ABDOU',phone:'703456789',orders:15296,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
+  {name:'THIAW TALLA',phone:'774567890',orders:14332,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
+  {name:'MPAMY FRANCOIS',phone:'765678901',orders:14092,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
+  {name:'Sarr Cheikh',phone:'706789012',orders:13101,lastDate:'2026-03-08',segment:'Actif',city:'Dakar'},
+  {name:'Diop Mor',phone:'777890123',orders:12654,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
+  {name:'SENE MBAR',phone:'761112233',orders:10448,lastDate:'2026-01-11',segment:'Dormant récent',city:'Dakar'},
+  {name:'Thiam Cheikh Amadou Bamba',phone:'702223344',orders:9929,lastDate:'2026-02-23',segment:'Dormant récent',city:'Dakar'},
+  {name:'dieng papa mor',phone:'773334455',orders:9696,lastDate:'2026-03-04',segment:'Dormant récent',city:'Dakar'},
+  {name:'DIOP KHADIM',phone:'764445566',orders:9419,lastDate:'2026-02-01',segment:'Dormant récent',city:'Dakar'},
+  {name:'THIOUNE NDIAGA',phone:'776667788',orders:8153,lastDate:'2026-02-27',segment:'Dormant récent',city:'Dakar'},
+  {name:'SENE MODOU',phone:'767778899',orders:8075,lastDate:'2026-01-31',segment:'Dormant récent',city:'Dakar'},
+  {name:'NDIAYE BOUNA',phone:'708889900',orders:7685,lastDate:'2026-01-11',segment:'Dormant récent',city:'Dakar'},
+  {name:'Cisse Omar',phone:'779990011',orders:7153,lastDate:'2026-02-10',segment:'Dormant récent',city:'Dakar'},
+  {name:'Ba Mamadou',phone:'771002030',orders:5200,lastDate:'2025-09-01',segment:'Perdu',city:'Dakar'},
+  {name:'Ndiaye Fatou',phone:'762003040',orders:3100,lastDate:'2025-06-15',segment:'Perdu',city:'Mbour'},
+  {name:'Diallo Ibrahim',phone:'703004050',orders:0,lastDate:null,segment:'Jamais actif',city:'Dakar'},
+  {name:'Sy Oumar',phone:'774005060',orders:0,lastDate:null,segment:'Jamais actif',city:'Dakar'},
+  {name:'Fall Cheikh',phone:'765006070',orders:1200,lastDate:'2025-08-20',segment:'Dormant',city:'Dakar'},
+];
+const SEGS=['Actif','Dormant récent','Dormant','Perdu','Jamais actif'];
+const NMS=['Diop','Sall','Ndiaye','Fall','Gueye','Sarr','Mbaye','Cisse','Diouf','Ba','Thiaw','Sene','Ndour','Faye'];
+const FNS=['Moussa','Ibrahima','Cheikh','Abdou','Alioune','Omar','Modou','Pape','Mamadou','Fatou','Aminata','Rokhaya'];
+const PHONES=['771','762','703','774','765','706','777','768'];
+for(let i=0;i<80;i++){
+  const seg=SEGS[Math.floor(Math.random()*SEGS.length)];
+  const ord=seg==='Jamais actif'?0:Math.floor(Math.random()*8000)+100;
+  const name=FNS[Math.floor(Math.random()*FNS.length)]+' '+NMS[Math.floor(Math.random()*NMS.length)];
+  const days=seg==='Actif'?Math.floor(Math.random()*25)+1:seg==='Dormant récent'?Math.floor(Math.random()*55)+31:Math.floor(Math.random()*300)+91;
+  const d=new Date('2026-04-05');d.setDate(d.getDate()-days);
+  const ph=PHONES[Math.floor(Math.random()*PHONES.length)]+''+Math.floor(Math.random()*9000000+1000000);
+  DRIVERS.push({name,phone:ph,orders:ord,lastDate:seg==='Jamais actif'?null:d.toISOString().split('T')[0],segment:seg,city:'Dakar'});
+}
+
+let currentDriver=null,currentFilter='tous',currentPage=1,filteredDrivers=[];
+let msgTarget='',msgChannel='wa';
+const PER=50;
+const TODAY=new Date().toISOString().split('T')[0];
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+const TITLES={dashboard:'Dashboard',rappels:'Rappels & Alertes',chauffeurs:'Chauffeurs CRM',messages:'WhatsApp / SMS',coach:'Coach IA',import:'Import CSV',finances:'Finances',equipe:'Équipe'};
+// nav() défini dans paramètres
+function filterNav(seg){currentFilter=seg;nav('chauffeurs');renderTable();}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard(){
+  var stats=calcStats();
+  updateAllPageStats(stats);
+  renderAlertBanners();
+  renderEarlyAlerts();
+  renderDashRappels();
+  renderRecentCalls();
+  updateRemBadges();
+}
+
+function updateDashKPIs(){
+  var stats=calcStats();
+  updateKPIs(stats);
+}
+
+function renderEarlyAlerts(){
+  // Chauffeurs qui s'éloignent : inactifs depuis 3 à 14 jours
+  // Ce sont des actifs récents qui ralentissent — détecter AVANT qu'ils partent
+  var alerts=DRIVERS.filter(function(d){
+    var ds=getDaysInactive(d.lastDate);
+    return ds!==null && ds>=3 && ds<=14 && d.orders>100;
+  }).sort(function(a,b){ return b.orders-a.orders; });
+
+  var card=document.getElementById('early-alert-card');
+  var list=document.getElementById('early-alert-list');
+  var cnt=document.getElementById('early-count');
+  if(!card||!list) return;
+
+  if(alerts.length===0){ card.style.display='none'; return; }
+  card.style.display='block';
+  if(cnt) cnt.textContent=alerts.length+' chauffeur(s)';
+
+  list.innerHTML='';
+  alerts.slice(0,6).forEach(function(d){
+    var ds=getDaysInactive(d.lastDate);
+    var urgency=ds<=7?'#fbbf24':'var(--orange)';
+    var icon=ds<=7?'⚠️':'🔶';
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:6px;';
+    var ico=document.createElement('span');ico.style.fontSize='16px';ico.textContent=icon;row.appendChild(ico);
+    var info=document.createElement('div');info.style.flex='1';
+    var n=document.createElement('div');n.style.cssText='font-size:13px;font-weight:600';n.textContent=d.name;info.appendChild(n);
+    var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:var(--mu)';
+    sub.textContent=d.orders.toLocaleString()+' courses · inactif depuis ';
+    var bold=document.createElement('strong');bold.style.color=urgency;bold.textContent=ds+' jours';
+    sub.appendChild(bold);info.appendChild(sub);row.appendChild(info);
+    var btn=document.createElement('button');btn.className='btn btn-g btn-sm';btn.style.fontSize='10px';
+    btn.textContent='Voir fiche';
+    (function(seg){btn.onclick=function(){setFilter(seg);nav('chauffeurs');};})(d.segment);
+    row.appendChild(btn);
+    list.appendChild(row);
+  });
+  if(alerts.length>6){
+    var more=document.createElement('div');
+    more.style.cssText='font-size:11px;color:var(--mu);text-align:center;padding-top:4px';
+    more.textContent='+'+(alerts.length-6)+' autres chauffeurs en alerte';
+    list.appendChild(more);
+  }
+}
+
+function renderAlertBanners(){
+  const today=reminders.filter(r=>!r.done&&r.date===TODAY);
+  const el=document.getElementById('alert-banners');
+  document.getElementById('today-count').textContent=today.length;
+  document.getElementById('badge-alerts').textContent=today.length;
+  if(today.length>0){
+    el.innerHTML=`<div class="alert-banner">
+      <div class="icon">🔔</div>
+      <div class="info"><h3>📞 ${today.length} appel(s) à effectuer aujourd'hui !</h3>
+      <p>${today.slice(0,3).map(r=>r.name+' ('+r.reason+')').join(' · ')}${today.length>3?'...':''}</p></div>
+      <button class="btn btn-r" onclick="nav('rappels')">Voir les rappels →</button>
+    </div>`;
+  } else {
+    el.innerHTML='';
+  }
+}
+
+function renderDashRappels(){
+  const today=reminders.filter(r=>!r.done&&r.date===TODAY);
+  const el=document.getElementById('dash-rappels');
+  if(!today.length){el.innerHTML='<div class="empty-state" style="padding:14px"><div class="ico">✅</div><p>Aucun rappel pour aujourd\'hui</p></div>';return;}
+  el.innerHTML=today.slice(0,4).map(r=>`
+    <div class="rem-card today" style="margin-bottom:8px;">
+      <div class="rem-dot" style="background:var(--red)"></div>
+      <div class="rem-info">
+        <div class="rem-name">${r.name} <span class="highlight-today">AUJOURD&#39;HUI</span></div>
+        <div class="rem-sub">${r.type==='appel'?'📞':'💬'} ${r.reason} · ${r.time}</div>
+      </div>
+      <div class="rem-actions">
+        <button class="btn btn-g btn-sm" onclick="callFromReminder('${r.id}')">📞 Appeler</button>
+        <button class="btn btn-ok btn-sm" onclick="doneReminder('${r.id}')">✅</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderRecentCalls(){
+  const el=document.getElementById('dash-recent-calls');
+  const allLogs=[];
+  Object.entries(callLogs).forEach(([name,logs])=>{
+    logs.forEach(l=>allLogs.push({...l,driverName:name}));
+  });
+  allLogs.sort((a,b)=>b.ts-a.ts);
+  if(!allLogs.length){el.innerHTML='<div class="empty-state" style="padding:14px"><div class="ico">📋</div><p>Aucun contact enregistré</p></div>';return;}
+  const icons={appel:'📞',wapp:'💬',sms:'📱',terrain:'🗺️'};
+  const resC={positif:'var(--green)',negatif:'var(--red)',neutre:'var(--orange)',absent:'var(--mu)'};
+  el.innerHTML=allLogs.slice(0,5).map(l=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b1);">
+      <span style="font-size:16px;">${icons[l.type]||'📝'}</span>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:600;">${l.driverName}</div>
+        <div style="font-size:10px;color:var(--mu);">${l.note?l.note.slice(0,45)+'…':'—'}</div>
+      </div>
+      <div style="font-size:10px;color:${resC[l.res]||'var(--mu)'};font-weight:700;">${l.res==='positif'?'✅ Positif':l.res==='negatif'?'❌ Refus':l.res==='absent'?'📵 Absent':'⏳ Attente'}</div>
+      <div style="font-size:9px;color:var(--mu);white-space:nowrap;">${l.date}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// RAPPELS
+// ═══════════════════════════════════════════
+let remFilter='all';
+
+function updateRemBadges(){
+  const today=reminders.filter(r=>!r.done&&r.date===TODAY).length;
+  const soon=reminders.filter(r=>{
+    if(r.done||r.date===TODAY)return false;
+    const d=new Date(r.date),now=new Date();
+    return d>now&&(d-now)<7*864e5;
+  }).length;
+  const all=reminders.filter(r=>!r.done).length;
+  const done=reminders.filter(r=>r.done).length;
+  document.getElementById('badge-rappels').textContent=today+soon;
+  document.getElementById('badge-alerts').textContent=today;
+  const ct=document.getElementById('cnt-today');const cs=document.getElementById('cnt-soon');
+  const ca=document.getElementById('cnt-all');const cd=document.getElementById('cnt-done');
+  if(ct)ct.textContent=today;if(cs)cs.textContent=soon;if(ca)ca.textContent=all;if(cd)cd.textContent=done;
+}
+
+function filterRem(f){remFilter=f;renderReminders();}
+
+function renderReminders(){
+  updateRemBadges();
+  var el=document.getElementById('rem-list');
+  var list=reminders.slice();
+  if(remFilter==='today') list=list.filter(function(r){return !r.done&&r.date===TODAY;});
+  else if(remFilter==='soon') list=list.filter(function(r){
+    if(r.done||r.date===TODAY)return false;
+    var d=new Date(r.date),now=new Date();
+    return d>now&&(d-now)<7*864e5;
+  });
+  else if(remFilter==='all') list=list.filter(function(r){return !r.done;});
+  else if(remFilter==='done') list=list.filter(function(r){return r.done;});
+  list.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  if(!list.length){
+    el.innerHTML='<div class="empty-state"><div class="ico">🔔</div><p>Aucun rappel dans cette catégorie</p></div>';
+    return;
+  }
+  var icons={appel:'📞',wapp:'💬',sms:'📱',terrain:'🗺️'};
+  var frag=document.createDocumentFragment();
+  list.forEach(function(r){
+    var isToday=r.date===TODAY&&!r.done;
+    var isSoon=!r.done&&!isToday&&(new Date(r.date)-new Date())<7*864e5&&new Date(r.date)>new Date();
+    var dotCol=isToday?'var(--red)':isSoon?'var(--orange)':r.done?'var(--green)':'var(--mu)';
+    var dateStr=new Date(r.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+    var div=document.createElement('div');
+    div.className='rem-card '+(isToday?'today':isSoon?'soon':'');
+    // Dot
+    var dot=document.createElement('div');
+    dot.className='rem-dot';dot.style.background=dotCol;div.appendChild(dot);
+    // Info
+    var info=document.createElement('div');info.className='rem-info';
+    var nameDiv=document.createElement('div');nameDiv.className='rem-name';
+    nameDiv.textContent=r.name;
+    if(isToday){var b=document.createElement('span');b.className='highlight-today';b.textContent='AUJOURD HUI';nameDiv.appendChild(b);}
+    else if(isSoon){var b=document.createElement('span');b.className='highlight-soon';b.textContent='BIENTOT';nameDiv.appendChild(b);}
+    info.appendChild(nameDiv);
+    var sub=document.createElement('div');sub.className='rem-sub';
+    sub.textContent=(icons[r.type]||'📞')+' '+r.reason+' · '+(r.time||'17:00')+' · '+(r.agent||'Vous');
+    info.appendChild(sub);
+    if(r.note){var nd=document.createElement('div');nd.style.cssText='font-size:10px;color:var(--mu);margin-top:3px';nd.textContent='📝 '+r.note;info.appendChild(nd);}
+    div.appendChild(info);
+    // Date
+    var dateEl=document.createElement('div');dateEl.className='rem-date';dateEl.style.color=dotCol;dateEl.textContent=dateStr;div.appendChild(dateEl);
+    // Actions
+    var acts=document.createElement('div');acts.className='rem-actions';
+    if(!r.done){
+      var rid=r.id;
+      var b1=document.createElement('button');b1.className='btn btn-g btn-sm';b1.textContent='📞';b1.onclick=function(){callFromReminder(rid);};acts.appendChild(b1);
+      var b2=document.createElement('button');b2.className='btn btn-ok btn-sm';b2.textContent='✅ Fait';b2.onclick=function(){doneReminder(rid);};acts.appendChild(b2);
+      var b3=document.createElement('button');b3.className='btn btn-r btn-sm';b3.textContent='🗑️';b3.onclick=function(){deleteReminder(rid);};acts.appendChild(b3);
+    } else {
+      var done=document.createElement('span');done.className='pill g';done.textContent='Effectué';acts.appendChild(done);
+    }
+    div.appendChild(acts);
+    frag.appendChild(div);
+  });
+  el.innerHTML='';
+  el.appendChild(frag);
+}
+
+function showAddReminder(){
+  const f=document.getElementById('add-rem-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+  if(f.style.display==='block'){
+    const tom=new Date();tom.setDate(tom.getDate()+1);
+    document.getElementById('rem-date').value=tom.toISOString().split('T')[0];
+  }
+}
+
+function saveReminder(data){
+  if(!data){
+    const name=document.getElementById('rem-name').value.trim();
+    const phone=document.getElementById('rem-phone').value.trim();
+    const date=document.getElementById('rem-date').value;
+    const time=document.getElementById('rem-time').value;
+    const type=document.getElementById('rem-type').value;
+    const reason=document.getElementById('rem-reason').value;
+    const note=document.getElementById('rem-note').value.trim();
+    if(!name||!date){showToast('⚠️','Nom et date obligatoires','error');return;}
+    data={name,phone,date,time,type,reason,note,id:'rem_'+Date.now(),done:false,agent:'Vous',createdAt:new Date().toISOString()};
+    document.getElementById('add-rem-form').style.display='none';
+    document.getElementById('rem-name').value='';
+    document.getElementById('rem-note').value='';
+  }
+  reminders.push(data);
+  save();
+  renderReminders();
+  updateRemBadges();
+  renderDashboard();
+  showToast('🔔','Rappel enregistré : '+data.name,'success');
+  if(data.date===TODAY) showNotif('urgent','🔔 Rappel pour aujourd\'hui !',data.name+' · '+data.reason);
+}
+
+function doneReminder(id){
+  const r=reminders.find(x=>x.id===id);
+  if(r)r.done=true;
+  save();renderReminders();updateRemBadges();renderDashboard();
+  showToast('✅','Rappel marqué effectué !','success');
+}
+
+function deleteReminder(id){
+  reminders=reminders.filter(x=>x.id!==id);
+  save();renderReminders();updateRemBadges();
+}
+
+function callFromReminder(id){
+  const r=reminders.find(x=>x.id===id);
+  if(!r)return;
+  if(r.phone)window.open('tel:'+r.phone,'_self');
+  showToast('📞','Appel lancé vers '+r.name,'success');
+}
+
+// ═══════════════════════════════════════════
+// DRIVERS TABLE
+// ═══════════════════════════════════════════
+function setFilter(f){
+  currentFilter=f;currentPage=1;
+  document.querySelectorAll('[id^="f-"]').forEach(b=>b.style.fontWeight='400');
+  const btn=document.getElementById('f-'+f);if(btn)btn.style.fontWeight='700';
+  renderTable();
+}
+function getFiltered(q){
+  q=q||'';
+  var d=DRIVERS.slice();
+  if(currentFilter==='tous'){ /* tous */ }
+  else if(currentFilter==='Actif'){
+    d=d.filter(function(x){return x.segment==='Actif 2j'||x.segment==='Actif 7j'||x.segment==='Alerte 14j'||x.segment==='Alerte 30j';});
+  } else {
+    d=d.filter(function(x){return x.segment===currentFilter;});
+  }
+  if(q) d=d.filter(function(x){return x.name.toLowerCase().includes(q.toLowerCase())||(x.phone||'').includes(q);});
+  return d;
+}
+function renderTable(q=''){
+  filteredDrivers=getFiltered(q);
+  const tot=filteredDrivers.length,pages=Math.ceil(tot/PER);
+  const slice=filteredDrivers.slice((currentPage-1)*PER,currentPage*PER);
+  document.getElementById('tbl-count').textContent=tot.toLocaleString()+' chauffeurs';
+  document.getElementById('pg-ind').textContent='Page '+currentPage+'/'+pages;
+  const tb=document.getElementById('drivers-tbody');
+  tb.innerHTML='';
+  const sp={Actif:'g','Dormant récent':'o',Dormant:'o',Perdu:'r','Jamais actif':'m'};
+  slice.forEach(function(d){
+    var ds=d.lastDate?Math.round((new Date('2026-04-05')-new Date(d.lastDate))/864e5):null;
+    var estM=d.orders>0?Math.round(d.orders*2026*0.03/30).toLocaleString()+' FCFA':'—';
+    var logs=callLogs[d.name]||[];
+    var lastContact=logs[0]?logs[0].date:'—';
+    var nextRem=reminders.filter(function(r){return !r.done&&r.name===d.name;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);})[0];
+    var remTxt=nextRem?(nextRem.date===TODAY?'AUJOURD&#39;HUI':new Date(nextRem.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})):'—';
+    var dayColor=ds>60?'var(--red)':ds>30?'var(--orange)':'var(--green)';
+
+    var tr=document.createElement('tr');
+    tr.style.cursor='pointer';
+    tr.addEventListener('click',function(){openPanel(d);});
+
+    // Nom
+    var td1=document.createElement('td');
+    td1.style.fontWeight='500';
+    td1.textContent=d.name;
+    tr.appendChild(td1);
+
+    // Téléphone
+    var td2=document.createElement('td');
+    td2.style.cssText='color:var(--mu);font-size:11px;font-family:IBM Plex Mono,monospace';
+    td2.textContent=fmtPhone(d.phone);
+    tr.appendChild(td2);
+
+    // Statut
+    var td3=document.createElement('td');
+    var span=document.createElement('span');
+    span.className='pill '+(sp[d.segment]||'m');
+    span.textContent=d.segment;
+    td3.appendChild(span);
+    tr.appendChild(td3);
+
+    // Courses
+    var td4=document.createElement('td');
+    td4.style.cssText='font-family:Syne,sans-serif;font-weight:700';
+    td4.textContent=d.orders.toLocaleString();
+    tr.appendChild(td4);
+
+    // Inactivité avec badge d'alerte
+    var td5=document.createElement('td');
+    td5.style.cssText='font-size:11px';
+    if(ds===null){
+      td5.textContent='—';td5.style.color='var(--mu)';
+    } else if(ds<=2){
+      var sp5=document.createElement('span');
+      sp5.style.cssText='color:#00ff88;font-weight:700';sp5.textContent=ds+'j';td5.appendChild(sp5);
+    } else if(ds<=7){
+      var sp5=document.createElement('span');
+      sp5.style.cssText='color:var(--green);font-weight:600';sp5.textContent=ds+'j';td5.appendChild(sp5);
+    } else if(ds<=14){
+      var sp5=document.createElement('span');
+      sp5.style.cssText='background:rgba(251,191,36,.15);color:#fbbf24;font-weight:700;padding:2px 7px;border-radius:10px;';
+      sp5.textContent='⚠️ '+ds+'j';td5.appendChild(sp5);
+    } else if(ds<=30){
+      var sp5=document.createElement('span');
+      sp5.style.cssText='background:rgba(251,146,60,.15);color:var(--orange);font-weight:700;padding:2px 7px;border-radius:10px;';
+      sp5.textContent='🔶 '+ds+'j';td5.appendChild(sp5);
+    } else if(ds<=60){
+      var sp5=document.createElement('span');
+      sp5.style.cssText='background:rgba(248,113,113,.15);color:var(--red);font-weight:700;padding:2px 7px;border-radius:10px;';
+      sp5.textContent='🔴 '+ds+'j';td5.appendChild(sp5);
+    } else {
+      var sp5=document.createElement('span');
+      sp5.style.cssText='color:var(--mu2)';sp5.textContent=ds+'j';td5.appendChild(sp5);
+    }
+    tr.appendChild(td5);
+
+    // Commission
+    var td6=document.createElement('td');
+    td6.style.cssText='font-size:11px;color:var(--acc)';
+    td6.textContent=estM;
+    tr.appendChild(td6);
+
+    // Dernier contact
+    var td7=document.createElement('td');
+    td7.style.cssText='font-size:10px;color:var(--mu)';
+    td7.textContent=lastContact;
+    tr.appendChild(td7);
+
+    // Prochain rappel
+    var td8=document.createElement('td');
+    td8.style.fontSize='11px';
+    if(nextRem&&nextRem.date===TODAY){
+      var badge=document.createElement('span');
+      badge.className='highlight-today';
+      badge.textContent='AUJOURD&#39;HUI';
+      td8.appendChild(badge);
+    } else {
+      td8.textContent=remTxt;
+    }
+    tr.appendChild(td8);
+
+    // Bouton
+    var td9=document.createElement('td');
+    var btn=document.createElement('button');
+    btn.className='btn btn-g btn-sm';
+    btn.textContent='→';
+    btn.addEventListener('click',function(e){e.stopPropagation();openPanel(d);});
+    td9.appendChild(btn);
+    tr.appendChild(td9);
+
+    tb.appendChild(tr);
+  });
+}
+
+function fmtPhone(p){if(!p)return'—';const s=p.replace(/\D/g,'');return s.length>=9?s.slice(0,2)+' '+s.slice(2,5)+' '+s.slice(5,7)+' '+s.slice(7,9):p;}
+function prevPage(){if(currentPage>1){currentPage--;renderTable();}}
+function nextPage(){if(currentPage*PER<filteredDrivers.length){currentPage++;renderTable();}}
+function searchDrivers(q){currentPage=1;if(q.length>1){filterNav('tous');renderTable(q);}else renderTable();}
+
+// ═══════════════════════════════════════════
+// PANEL
+// ═══════════════════════════════════════════
+function openPanel(d){
+  if(typeof d==='string')d=JSON.parse(d);
+  currentDriver=d;
+  document.getElementById('overlay').classList.add('open');
+  const ds=d.lastDate?Math.round((new Date('2026-04-05')-new Date(d.lastDate))/864e5):null;
+  const estM=d.orders>0?Math.round(d.orders*2026*0.03/30).toLocaleString()+' FCFA':'0 FCFA';
+  document.getElementById('p-name').textContent=d.name;
+  document.getElementById('p-meta').textContent=d.segment+' · '+d.city+' · '+fmtPhone(d.phone);
+  document.getElementById('p-ord').textContent=d.orders.toLocaleString();
+  document.getElementById('p-days').textContent=ds!==null?ds+'j':'—';
+  document.getElementById('p-comm').textContent=estM;
+  document.getElementById('p-status-pill').innerHTML=`<span class="pill ${d.segment==='Actif'?'g':d.segment.includes('Dormant')?'o':'r'}" style="font-size:10px;">${d.segment}</span>`;
+  // Default rappel date = demain
+  const tom=new Date();tom.setDate(tom.getDate()+1);
+  document.getElementById('ct-rem-date').value=tom.toISOString().split('T')[0];
+  // Contact status
+  const cs=cstatus[d.name];
+  document.querySelectorAll('.sb2').forEach(b=>{b.classList.remove('sel');if(cs&&b.textContent.includes(cs))b.classList.add('sel');});
+  setTimeout(()=>showAdvice(d),500);
+  showScript(d,'appel');
+  renderCallHist(d.name);
+}
+function closePanel(){document.getElementById('overlay').classList.remove('open');currentDriver=null;}
+function closePanelClick(e){if(e.target===document.getElementById('overlay'))closePanel();}
+
+// ═══════════════════════════════════════════
+// COACH ADVICE
+// ═══════════════════════════════════════════
+function showAdvice(d){
+  const el=document.getElementById('coach-adv');
+  el.innerHTML='<div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  const ds=d.lastDate?Math.round((new Date('2026-04-05')-new Date(d.lastDate))/864e5):null;
+  const estM=d.orders>0?Math.round(d.orders*2026*0.03/30).toLocaleString():'0';
+  let msg='';
+  if(d.segment==='Actif'&&d.orders>10000)msg=`<strong>${d.name}</strong> est un <strong>super-VIP</strong> ⭐ — <strong>${d.orders.toLocaleString()} courses</strong> et environ <strong>${estM} FCFA/mois</strong> pour vous. Appelez-le uniquement pour le remercier, jamais pour vendre. Proposez-lui le statut Partenaire Privilégié.`;
+  else if(d.segment==='Actif')msg=`<strong>${d.name}</strong> est actif et régulier ✅ — ~<strong>${estM} FCFA/mois</strong>. Maintenez le lien avec un message mensuel et invitez-le dans votre groupe VIP WhatsApp.`;
+  else if(d.segment==='Dormant récent')msg=`🚨 <strong>URGENT !</strong> <strong>${d.name}</strong> n'a pas conduit depuis <strong>${ds} jours</strong>. Appelez <strong>aujourd'hui</strong> — commencez par "Tu nous manques" pas par une offre. Écoutez 80% du temps.`;
+  else if(d.segment==='Dormant')msg=`⏳ <strong>${d.name}</strong> dormant depuis <strong>${ds} jours</strong>. Il faut une <strong>offre limitée dans le temps</strong>. WhatsApp d'abord (48h), puis appel si pas de réponse. Programmez un rappel.`;
+  else if(d.segment==='Perdu')msg=`🔴 <strong>${d.name}</strong> perdu depuis +6 mois. Approche de reconquête : parlez des nouvelles opportunités sans mentionner l'absence. Bonus de retour attractif. Taux de retour : 10-15%.`;
+  else msg=`⚫ <strong>${d.name}</strong> n'a jamais conduit. Message simple : "Un problème pour démarrer ?" Proposez aide directe pour la première recharge. Idéal : agent terrain dans sa zone.`;
+  setTimeout(()=>{el.innerHTML=`<div class="coach-msg">${msg}</div>`;},700);
+}
+
+// ═══════════════════════════════════════════
+// SCRIPTS
+// ═══════════════════════════════════════════
+function showScript(d,type){
+  const fn=d.name.split(' ')[0];
+  const ds=d.lastDate?Math.round((new Date('2026-04-05')-new Date(d.lastDate))/864e5):null;
+  let s='';
+  if(type==='appel'){
+    if(d.segment==='Actif'&&d.orders>5000)s=`"Allo bonjour <span class="sn">${fn}</span> ! C'est [Votre prénom], ton partenaire Yango.<br><br>Je t'appelle personnellement pour te remercier — <span class="sd">${d.orders.toLocaleString()} courses</span>, c'est exceptionnel !<br><br>Est-ce que tout va bien ? Y a-t-il quelque chose que je peux améliorer pour toi ?"`;
+    else if(d.segment==='Dormant récent')s=`"Allo bonjour <span class="sn">${fn}</span> ! C'est [Votre prénom], ton partenaire Yango.<br><br>Tu nous manques ! Ça fait <span class="sd">${ds} jours</span> et avec tes <span class="sd">${d.orders.toLocaleString()} courses</span> tu fais partie de nos meilleurs.<br><br>Est-ce qu'il y a un problème ? <span class="so">Si tu reprends cette semaine, offre spéciale sur ta commission.</span> Qu'est-ce qui s'est passé ?"`;
+    else if(d.segment==='Jamais actif')s=`"Allo bonjour <span class="sn">${fn}</span> ! C'est ton partenaire Yango.<br><br>Tu es inscrit dans notre parc depuis un moment mais on ne t'a pas encore vu conduire. Y a-t-il un problème pour démarrer ?<br><br><span class="so">Je peux t'aider personnellement pour ta première recharge Wave ou Orange Money.</span>"`;
+    else s=`"Allo bonjour <span class="sn">${fn}</span> ! C'est ton partenaire Yango. Ça fait un moment — la plateforme a beaucoup évolué.<br><br><span class="so">On a une offre spéciale ce mois pour les chauffeurs qui reprennent.</span> Ça t'intéresse qu'on en parle ?"`;
+  } else if(type==='wapp'){
+    if(d.segment==='Jamais actif')s=`"Bonjour <span class="sn">${fn}</span> 👋<br>Tu es dans notre parc Yango mais n'as pas encore conduit.<br><br>Démarre en 3 étapes :<br>1️⃣ Recharge via Wave/Orange Money<br>2️⃣ Active l'app Yango<br>3️⃣ Reçois tes premières courses !<br><br><span class="so">💰 -10% commission sur ta 1ère semaine.</span><br>Des questions ? Je suis là 🙏"`;
+    else if(d.segment==='Dormant récent')s=`"Bonjour <span class="sn">${fn}</span> 👋<br>Ça fait <span class="sd">${ds} jours</span> et tu nous manques avec tes <span class="sd">${d.orders.toLocaleString()} courses</span> !<br><br><span class="so">🎁 Offre retour si tu conduis cette semaine.</span><br>Tu reviens quand ? 🚖"`;
+    else s=`"Bonjour <span class="sn">${fn}</span> ! Nouveau mois, nouvelles opportunités Yango Dakar.<br><span class="so">🎁 Offre exclusive ce mois pour les chauffeurs qui reprennent.</span><br>Intéressé ? Réponds ici 🙏"`;
+  } else {
+    s=`"Bonjour <span class="sn">${fn}</span>, partenaire Yango. <span class="so">Offre spéciale retour ce mois.</span> Rappele-moi au [Votre numéro] 🚖"`;
+  }
+  document.getElementById('script-inner').innerHTML=s;
+}
+function switchScript(el,type){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));el.classList.add('active');if(currentDriver)showScript(currentDriver,type);}
+function copyCurrentScript(){const t=document.getElementById('script-inner').innerText;navigator.clipboard.writeText(t).then(()=>showToast('📋','Script copié !','success'));}
+function setCS(el,s){if(!currentDriver)return;cstatus[currentDriver.name]=s;document.querySelectorAll('.sb2').forEach(b=>{b.classList.remove('sel');if(b.textContent.includes(s))b.classList.add('sel');});save();showToast('✅','Statut : '+s,'success');}
+
+// ═══════════════════════════════════════════
+// CALL NOTES (post-appel)
+// ═══════════════════════════════════════════
+function saveCallNote(){
+  if(!currentDriver){showToast('⚠️','Ouvrez une fiche chauffeur','error');return;}
+  const note=document.getElementById('ct-note').value.trim();
+  const type=document.getElementById('ct-type').value;
+  const res=document.getElementById('ct-res').value;
+  const agent=document.getElementById('ct-agent').value;
+  const dur=document.getElementById('ct-dur').value;
+  const remDate=document.getElementById('ct-rem-date').value;
+  const remTime=document.getElementById('ct-rem-time').value;
+  const remReason=document.getElementById('ct-rem-reason').value;
+  const key=currentDriver.name;
+  if(!callLogs[key])callLogs[key]=[];
+  const now=new Date();
+  const entry={
+    type,res,note,agent,dur,
+    date:now.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+    ts:now.getTime()
+  };
+  callLogs[key].unshift(entry);
+  // Rappel automatique si date choisie
+  if(remDate&&remReason){
+    saveReminder({
+      name:currentDriver.name,phone:currentDriver.phone,
+      date:remDate,time:remTime,type:'appel',reason:remReason,
+      note:'Suite contact du '+entry.date+(note?': '+note.slice(0,60):''),
+      id:'rem_'+Date.now(),done:false,agent,createdAt:now.toISOString()
+    });
+  }
+  // Mettre à jour statut contact auto
+  if(res==='positif')cstatus[key]='Converti';
+  else if(res==='negatif')cstatus[key]='Refus';
+  else cstatus[key]='Contacté';
+  document.querySelectorAll('.sb2').forEach(b=>{b.classList.remove('sel');if(b.textContent.includes(cstatus[key]))b.classList.add('sel');});
+  save();
+  document.getElementById('ct-note').value='';
+  document.getElementById('ct-rem-reason').value='';
+  renderCallHist(key);
+  renderDashboard();
+  showToast('✅','Contact enregistré !','success');
+}
+
+function renderCallHist(key){
+  var el=document.getElementById('call-hist');
+  var logs=callLogs[key]||[];
+  if(!logs.length){
+    el.innerHTML='<div class="empty-state" style="padding:12px"><p>Aucun contact enregistré</p><small>Remplissez le formulaire ci-dessus après chaque appel</small></div>';
+    return;
+  }
+  var icons={appel:'📞',wapp:'💬',sms:'📱',terrain:'🗺️'};
+  var rcls={positif:'pos',negatif:'neg',neutre:'neu',absent:'abs'};
+  var rtxt={positif:'✅ Positif',negatif:'❌ Refus',neutre:'⏳ En attente',absent:'📵 Absent'};
+  var html='';
+  logs.forEach(function(l){
+    var resClass=rcls[l.res]||'';
+    var resText=rtxt[l.res]||l.res||'';
+    var durHtml=l.dur?'<span style="font-size:9px;color:var(--mu);margin-left:4px;">⏱ '+l.dur+'</span>':'';
+    var noteHtml=l.note?'<div class="call-txt">'+l.note+'</div>':'';
+    html+='<div class="call-item '+(l.type||'')+'">'+
+      '<div class="call-hd">'+
+        '<span class="call-type">'+(icons[l.type]||'📝')+' '+(l.type||'')+'</span>'+
+        '<span class="call-res '+resClass+'">'+resText+'</span>'+
+        durHtml+
+        '<span class="call-date">'+(l.date||'')+'</span>'+
+      '</div>'+
+      '<div class="call-agent">👤 '+(l.agent||'')+'</div>'+
+      noteHtml+
+    '</div>';
+  });
+  el.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════
+// QUICK ACTIONS
+// ═══════════════════════════════════════════
+function copyPhone(){if(currentDriver)navigator.clipboard.writeText(currentDriver.phone||'').then(()=>showToast('📞','Numéro copié !','success'));}
+function openWA(){if(currentDriver&&currentDriver.phone)window.open('https://wa.me/221'+currentDriver.phone.replace(/\D/g,''),'_blank');}
+function callPhone(){if(currentDriver&&currentDriver.phone)window.location.href='tel:+221'+currentDriver.phone.replace(/\D/g,'');}
+function quickReminder(){
+  if(!currentDriver)return;
+  const tom=new Date();tom.setDate(tom.getDate()+1);
+  saveReminder({name:currentDriver.name,phone:currentDriver.phone||'',date:tom.toISOString().split('T')[0],time:'17:00',type:'appel',reason:'Rappel de suivi',note:'',id:'rem_'+Date.now(),done:false,agent:'Vous',createdAt:new Date().toISOString()});
+}
+
+// ═══════════════════════════════════════════
+// MESSAGES WHATSAPP / SMS
+// ═══════════════════════════════════════════
+const MSG_TEMPLATES={
+  relance:{
+    wa:`Bonjour [Prénom] 👋\n\nTu nous manques sur Yango Dakar ! Ça fait quelques temps qu'on ne t'a pas vu sur la plateforme.\n\n🎁 Offre spéciale retour ce mois-ci :\n✅ Remise sur ta commission pendant 7 jours\n✅ Priorité sur les courses de ta zone\n\nReviens conduire et reprends tes gains ! 🚖\n\nDes questions ? Réponds ici, je suis là 🙏\n\n— Votre Partenaire Yango`,
+    sms:`Bonjour, partenaire Yango Dakar ici. Tu nous manques ! Offre speciale retour ce mois: remise commission 7 jours. Reviens conduire. Questions? Rappelle-moi. Merci`
+  },
+  activation:{
+    wa:`Bonjour [Prénom] 👋\n\nTu es inscrit dans notre parc Yango mais tu n'as pas encore commencé à conduire.\n\nDémarre en 3 étapes simples :\n1️⃣ Recharge ton compte via Wave ou Orange Money\n2️⃣ Active ton application Yango\n3️⃣ Reçois tes premières courses dès ce soir !\n\n💰 Offre de bienvenue : -10% sur ta 1ère semaine de commission\n\nBesoin d'aide ? Je suis disponible pour t'accompagner personnellement 🙏\n\n— Votre Partenaire Yango`,
+    sms:`Bonjour, partenaire Yango ici. Tu es inscrit mais n'as pas encore commence. Recharge Wave/OM et recois tes courses ce soir! -10% commission 1ere semaine. Appelle-moi pour aide.`
+  },
+  fidelite:{
+    wa:`Bonjour [Prénom] ⭐\n\nJe t'écris personnellement pour te remercier !\n\nTu fais partie de nos meilleurs chauffeurs ce mois-ci. Ta régularité et ton sérieux font la fierté de notre parc Yango Dakar.\n\n🏆 Statut VIP activé ce mois :\n✅ Support prioritaire direct\n✅ Je gère personnellement tout problème\n✅ Accès aux meilleures opportunités\n\nContinue comme ça ! 🚖\n\n— Votre Partenaire Yango`,
+    sms:`Bonjour, partenaire Yango ici. Merci pour ton excellente regularite ce mois! Tu es dans notre TOP chauffeurs. Statut VIP active: support prioritaire garanti. Merci!`
+  },
+  annulation:{
+    wa:`Bonjour [Prénom] 👋\n\nJe t'écris parce que j'ai remarqué plusieurs annulations de ta part ces derniers jours.\n\nJe voulais m'assurer que tout va bien — y a-t-il un problème avec :\n❓ Les zones proposées ?\n❓ L'application Yango ?\n❓ Autre chose ?\n\nChaque annulation affecte ta note sur la plateforme et peut réduire tes courses.\n\n🤝 Je suis là pour t'aider à résoudre ça ensemble.\n\nRéponds ici ou appelle-moi directement 🙏`,
+    sms:`Bonjour, partenaire Yango. J'ai vu plusieurs annulations recentes. Probleme avec les zones ou l'appli? Contacte-moi, je t'aide a resoudre ca. Chaque annulation affecte ta note.`
+  },
+  promo:{
+    wa:`Bonjour [Prénom] 🎁\n\nOffre spéciale ce mois-ci pour notre parc Yango Dakar !\n\n🔥 Promotion valable jusqu'au fin du mois :\n✅ Bonus sur tes courses du weekend\n✅ Remise spéciale si tu parraine un nouveau chauffeur\n✅ Cadeau pour les 500 premières courses du mois\n\nProfites-en ! L'offre est limitée 🚖\n\nDes questions ? Je suis disponible 🙏`,
+    sms:`Bonjour! Offre speciale Yango ce mois: bonus weekend + remise si tu parraine un chauffeur + cadeau 500 courses. Offre limitee! Questions? Rappelle-moi.`
+  },
+  custom:{wa:'',sms:''}
+};
+
+function updateMsgTarget(el){
+  msgTarget=el.value;
+  updateMsgPreview();
+  updateContactsPreview();
+}
+
+function setMsgChannel(ch){
+  msgChannel=ch;
+  document.getElementById('preview-wa').style.fontWeight=ch==='wa'?'700':'400';
+  document.getElementById('preview-sms').style.fontWeight=ch==='sms'?'700':'400';
+  updateMsgPreview();
+}
+
+function updateMsgPreview(){
+  const type=document.getElementById('msg-type').value;
+  const customWrap=document.getElementById('custom-msg-wrap');
+  customWrap.style.display=type==='custom'?'block':'none';
+  let txt='';
+  if(type==='custom'){txt=document.getElementById('custom-msg').value;}
+  else{txt=MSG_TEMPLATES[type]?.[msgChannel==='wa'?'wa':'sms']||'';}
+  document.getElementById('msg-preview-text').textContent=txt||'Sélectionnez un groupe et un type de message...';
+  document.getElementById('msg-preview-text').className='msg-preview'+(msgChannel==='sms'?' sms-style':'');
+  document.getElementById('msg-char-count').textContent=txt.length+' caractères'+(msgChannel==='sms'?(' · '+Math.ceil(txt.length/160)+' SMS'):'');
+}
+
+function updateContactsPreview(){
+  const list=document.getElementById('contacts-preview');
+  const countEl=document.getElementById('contacts-count');
+  if(!msgTarget){list.textContent='Sélectionnez un groupe pour voir les numéros...';return;}
+  let drivers=DRIVERS;
+  if(msgTarget!=='Tous')drivers=drivers.filter(d=>d.segment===msgTarget);
+  const withPhone=drivers.filter(d=>d.phone);
+  countEl.textContent=withPhone.length+' numéros disponibles';
+  list.textContent=withPhone.slice(0,50).map(d=>'+221'+d.phone+' — '+d.name).join('\n')+(withPhone.length>50?'\n...('+( withPhone.length-50)+' autres)':'');
+}
+
+function copyMsgText(){
+  const txt=document.getElementById('msg-preview-text').textContent;
+  if(!txt||txt.includes('Sélectionnez')){showToast('⚠️','Choisissez un message d\'abord','error');return;}
+  navigator.clipboard.writeText(txt).then(()=>showToast('📋','Message copié !','success'));
+}
+
+function openWABusiness(){window.open('https://web.whatsapp.com','_blank');showToast('💬','WhatsApp Web ouvert — collez le message !','success');}
+
+function downloadMsgFile(){
+  const type=document.getElementById('msg-type').value;
+  const txt=type==='custom'?document.getElementById('custom-msg').value:MSG_TEMPLATES[type]?.[msgChannel==='wa'?'wa':'sms']||'';
+  if(!txt){showToast('⚠️','Choisissez un message d\'abord','error');return;}
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
+  a.download='message_yango_'+type+'_'+new Date().toISOString().split('T')[0]+'.txt';a.click();
+  showToast('📄','Fichier téléchargé !','success');
+}
+
+function copyAllNumbers(fmt){
+  if(!msgTarget){showToast('⚠️','Sélectionnez un groupe d\'abord','error');return;}
+  let drivers=DRIVERS;
+  if(msgTarget!=='Tous')drivers=drivers.filter(d=>d.segment===msgTarget);
+  const phones=drivers.filter(d=>d.phone).map(d=>d.phone.replace(/\D/g,''));
+  let txt='';
+  if(fmt==='wa')txt=phones.map(p=>'+221'+p).join('\n');
+  else if(fmt==='sms')txt=phones.map(p=>'221'+p).join(';');
+  else if(fmt==='orange')txt='Numéro;Nom\n'+drivers.filter(d=>d.phone).map(d=>'221'+d.phone.replace(/\D/g,'')+';'+d.name).join('\n');
+  navigator.clipboard.writeText(txt).then(()=>showToast('📋',phones.length+' numéros copiés !','success'));
+}
+
+function downloadNumbers(){
+  if(!msgTarget){showToast('⚠️','Sélectionnez un groupe d\'abord','error');return;}
+  let drivers=DRIVERS;
+  if(msgTarget!=='Tous')drivers=drivers.filter(d=>d.segment===msgTarget);
+  let csv='Numéro,Nom,Segment,Ville\n';
+  drivers.filter(d=>d.phone).forEach(d=>{csv+=`"221${d.phone.replace(/\D/g,'')}","${d.name}","${d.segment}","${d.city}"\n`;});
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\ufeff'+encodeURIComponent(csv);
+  a.download='contacts_yango_'+msgTarget.replace(/ /g,'_')+'_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  showToast('💾','Fichier contacts téléchargé !','success');
+}
+
+function exportForWA(){
+  const d=getFiltered();
+  const phones=d.filter(x=>x.phone).map(x=>'+221'+x.phone.replace(/\D/g,'')+' — '+x.name).join('\n');
+  navigator.clipboard.writeText(phones).then(()=>showToast('💬',d.filter(x=>x.phone).length+' numéros copiés pour WhatsApp !','success'));
+}
+
+function exportForSMS(){
+  const d=getFiltered();
+  const phones=d.filter(x=>x.phone).map(x=>'221'+x.phone.replace(/\D/g,'')).join(';');
+  navigator.clipboard.writeText(phones).then(()=>showToast('📱',d.filter(x=>x.phone).length+' numéros copiés format SMS !','success'));
+}
+
+function exportCSV(){
+  const d=getFiltered();
+  let csv='Nom,Téléphone,Segment,Courses,Ville\n';
+  d.forEach(x=>{csv+=`"${x.name}","221${(x.phone||'').replace(/\D/g,'')}","${x.segment}",${x.orders},"${x.city}"\n`;});
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\ufeff'+encodeURIComponent(csv);
+  a.download='yango_'+currentFilter+'_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  showToast('📤','CSV exporté !','success');
+}
+
+// ═══════════════════════════════════════════
+// IMPORT
+// ═══════════════════════════════════════════
+function dzO(e,id){e.preventDefault();document.getElementById(id).classList.add('drag');}
+function dzL(id){document.getElementById(id).classList.remove('drag');}
+function dzD(e,id,type){e.preventDefault();dzL(id);const f=e.dataTransfer.files[0];if(f)processImport(f,type);}
+function startImport(e,type){const f=e.target.files[0];if(f)processImport(f,type);}
+function processImport(file,type){
+  var pidx=type==='chauffeurs'?'1':'2';
+  var prog=document.getElementById('prog'+pidx);
+  var log=document.getElementById('log'+pidx);
+  prog.style.display='block';
+  log.style.display='none';
+  log.innerHTML='';
+  document.getElementById('pb'+pidx).style.width='0%';
+
+  // Animate progress bar
+  var p=0;
+  var iv=setInterval(function(){
+    p=Math.min(p+Math.random()*20,85);
+    document.getElementById('pb'+pidx).style.width=p+'%';
+    document.getElementById('prog'+pidx+'-pct').textContent=Math.round(p)+'%';
+    var steps=['Lecture du fichier...','Détection colonnes...','Analyse données...','Calcul segments...','Finalisation...'];
+    document.getElementById('prog'+pidx+'-txt').textContent=steps[Math.min(Math.floor(p/20),4)];
+  },150);
+
+  var rd=new FileReader();
+  rd.onload=function(ev){
+    try {
+      var text=ev.target.result;
+      var lines=text.split('\n').filter(function(l){return l.trim();});
+      var tot=Math.max(lines.length-1,0);
+
+      if(type==='chauffeurs'){
+        // Parse CSV headers
+        var sep=lines[0].includes(';')?';':',';
+        var headers=lines[0].split(sep).map(function(h){return h.trim().replace(/^\uFEFF/,'').replace(/"/g,'');});
+        
+        // Find column indices
+        var colNom=findCol(headers,['Nom complet','nom complet','Name','name']);
+        var colPhone=findCol(headers,['Numéro de téléphone','numero de telephone','Phone','phone','telephone']);
+        var colOrders=findCol(headers,['Commandes terminées','commandes terminees','Completed orders','orders']);
+        var colDate=findCol(headers,['Date de la dernière commande','derniere commande','Last order date']);
+        var colVille=findCol(headers,['Ville','ville','City','city']);
+        var colSolde=findCol(headers,['Solde','solde','Balance']);
+
+        var newDrivers=[];
+        var errors=0;
+        for(var i=1;i<lines.length;i++){
+          try{
+            var cols=parseCSVLine(lines[i],sep);
+            if(cols.length<3) continue;
+            var name=colNom>=0?clean(cols[colNom]):'';
+            if(!name) continue;
+            var phone=colPhone>=0?clean(cols[colPhone]).replace(/[^0-9]/g,''):'';
+            var orders=colOrders>=0?parseInt(clean(cols[colOrders]))||0:0;
+            var lastDate=colDate>=0?parseDate(clean(cols[colDate])):null;
+            var ville=colVille>=0?clean(cols[colVille]):'Dakar';
+            var solde=colSolde>=0?parseFloat(clean(cols[colSolde]).replace(',','.'))||0:0;
+            var seg=calcSegment(orders,lastDate);
+            newDrivers.push({name:name,phone:phone,orders:orders,lastDate:lastDate,segment:seg,city:ville||'Dakar',solde:solde});
+          }catch(e){errors++;}
+        }
+
+        // Update global DRIVERS
+        if(newDrivers.length>0){
+          // Merge: update existing + add new
+          var oldLen=DRIVERS.length;
+          var nameMap={};
+          DRIVERS.forEach(function(d,i){nameMap[d.name]=i;});
+          var added=0,updated=0;
+          newDrivers.forEach(function(d){
+            if(nameMap[d.name]!==undefined){
+              DRIVERS[nameMap[d.name]]=d;
+              updated++;
+            } else {
+              DRIVERS.push(d);
+              added++;
+            }
+          });
+
+          // Recalculate stats
+          var stats=calcStats();
+          updateKPIs(stats);
+          updateAllPageStats(stats);
+          
+          // Save drivers to server
+          saveDriversToServer();
+
+          // Update import history
+          var now=new Date().toLocaleString('fr-FR');
+          importHist.unshift({name:file.name,date:now,total:newDrivers.length,newCount:added,updated:updated,type:'chauffeurs'});
+          save();
+
+          clearInterval(iv);
+          document.getElementById('pb'+pidx).style.width='100%';
+          document.getElementById('prog'+pidx+'-pct').textContent='100%';
+          document.getElementById('prog'+pidx+'-txt').textContent='✅ Import terminé !';
+          log.style.display='block';
+          log.innerHTML=
+            '<div class="lok">✓ "'+file.name+'" importé ('+(file.size/1024).toFixed(1)+' KB)</div>'+
+            '<div class="linfo">→ '+newDrivers.length.toLocaleString()+' lignes · Colonnes détectées automatiquement</div>'+
+            '<div class="lok">✓ '+updated.toLocaleString()+' chauffeurs mis à jour</div>'+
+            '<div class="lok">✓ '+added.toLocaleString()+' nouveaux ajoutés</div>'+
+            '<div class="lok">✓ Segments recalculés automatiquement</div>'+
+            '<div class="lok">✓ Dashboard mis à jour en temps réel</div>'+
+            (errors?'<div class="lwarn">⚠ '+errors+' lignes ignorées</div>':'')+
+            '<div class="lok">✓ Import terminé le '+now+'</div>';
+
+          renderImportHist();
+          renderDashboard();
+          renderTable();
+          showToast('✅','Import réussi : '+newDrivers.length.toLocaleString()+' chauffeurs','success');
+        }
+      } else {
+        // Commandes import - parse financials
+        var sep=lines[0].includes(';')?';':',';
+        var headers=lines[0].split(sep).map(function(h){return h.trim().replace(/^\uFEFF/,'').replace(/"/g,'');});
+        var colStatut=findCol(headers,['Statut','statut','Status']);
+        var colConducteur=findCol(headers,['Conducteur','conducteur','Driver']);
+        var colTarif=findCol(headers,['Tarif dans Yango Pro','Tarif','tarif','Price']);
+        var colComm=findCol(headers,['Commission du partenaire','commission partenaire','Partner commission']);
+        var colRaison=findCol(headers,["Raison de l'annulation",'raison','Reason']);
+
+        var terminees=0,annulees=0,parClient=0,parChauffeur=0,totalCA=0,totalComm=0;
+        for(var i=1;i<lines.length;i++){
+          try{
+            var cols=parseCSVLine(lines[i],sep);
+            var statut=colStatut>=0?clean(cols[colStatut]):'';
+            var tarif=colTarif>=0?parseFloat(clean(cols[colTarif]).replace(',','.'))||0:0;
+            var comm=colComm>=0?Math.abs(parseFloat(clean(cols[colComm]).replace(',','.'))||0):0;
+            var raison=colRaison>=0?clean(cols[colRaison]):'';
+            if(statut==='Terminé'||statut.toLowerCase().includes('complet')){
+              terminees++;totalCA+=tarif;totalComm+=comm;
+            } else if(statut==='Annulé'||statut.toLowerCase().includes('annul')){
+              annulees++;
+              if(raison.toLowerCase().includes('client')) parClient++;
+              else if(raison.toLowerCase().includes('conducteur')||raison.toLowerCase().includes('refus')) parChauffeur++;
+            }
+          }catch(e){}
+        }
+        var tauxAnn=tot>0?Math.round(annulees/tot*1000)/10:0;
+        var tauxComp=tot>0?Math.round(terminees/tot*1000)/10:0;
+
+        // Update finance display
+        updateFinances(terminees,annulees,parClient,parChauffeur,totalCA,totalComm,tauxAnn,tauxComp,tot);
+
+        var now=new Date().toLocaleString('fr-FR');
+        importHist.unshift({name:file.name,date:now,total:tot,newCount:terminees,updated:annulees,type:'commandes'});
+        save();
+
+        clearInterval(iv);
+        document.getElementById('pb'+pidx).style.width='100%';
+        document.getElementById('prog'+pidx+'-pct').textContent='100%';
+        document.getElementById('prog'+pidx+'-txt').textContent='✅ Import terminé !';
+        log.style.display='block';
+        log.innerHTML=
+          '<div class="lok">✓ "'+file.name+'" importé ('+(file.size/1024).toFixed(1)+' KB)</div>'+
+          '<div class="linfo">→ '+tot.toLocaleString()+' commandes analysées</div>'+
+          '<div class="lok">✓ '+terminees.toLocaleString()+' courses terminées</div>'+
+          '<div class="lok">✓ '+annulees.toLocaleString()+' annulations détectées</div>'+
+          '<div class="lok">✓ CA total : '+Math.round(totalCA).toLocaleString()+' FCFA</div>'+
+          '<div class="lok">✓ Votre commission 3% : '+Math.round(totalComm).toLocaleString()+' FCFA</div>'+
+          '<div class="lok">✓ Taux d\'annulation : '+tauxAnn+'%</div>'+
+          '<div class="lok">✓ Import terminé le '+now+'</div>';
+
+        renderImportHist();
+        showToast('✅','Commandes importées : '+terminees.toLocaleString()+' terminées','success');
+      }
+    } catch(err){
+      clearInterval(iv);
+      console.error('Import error:', err);
+      showToast('❌','Erreur import : '+err.message,'error');
+    }
+  };
+  rd.readAsText(file,'UTF-8');
+}
+
+// ── CSV HELPERS ──
+function parseCSVLine(line,sep){
+  var result=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===sep&&!inQ){result.push(cur);cur='';}
+    else{cur+=c;}
+  }
+  result.push(cur);
+  return result;
+}
+function clean(s){return (s||'').trim().replace(/^"|"$/g,'');}
+function findCol(headers,names){
+  for(var i=0;i<names.length;i++){
+    var idx=headers.findIndex(function(h){return h.toLowerCase().includes(names[i].toLowerCase());});
+    if(idx>=0) return idx;
+  }
+  return -1;
+}
+function parseDate(s){
+  if(!s||s==='NULL'||s==='-') return null;
+  var d=new Date(s);
+  return isNaN(d.getTime())?null:d.toISOString().split('T')[0];
+}
+function calcSegment(orders,lastDate){
+  if(!lastDate&&orders===0) return 'Jamais actif';
+  if(!lastDate) return 'Perdu';
+  var days=Math.round((new Date()-new Date(lastDate))/864e5);
+  if(days<=2)  return 'Actif 2j';        // Très actif - vu dans les 2 derniers jours
+  if(days<=7)  return 'Actif 7j';        // Actif cette semaine
+  if(days<=14) return 'Alerte 14j';      // ⚠️ Commence à s'éloigner
+  if(days<=30) return 'Alerte 30j';      // 🔶 Risque de partir
+  if(days<=60) return 'Dormant récent';  // 🔴 Doit être relancé vite
+  if(days<=180)return 'Dormant';
+  return 'Perdu';
+}
+function getDaysInactive(lastDate){
+  if(!lastDate) return null;
+  return Math.round((new Date()-new Date(lastDate))/864e5);
+}
+function calcStats(){
+  var stats={total:DRIVERS.length,actif:0,dormant:0,perdu:0,jamais:0,alerte:0};
+  DRIVERS.forEach(function(d){
+    var s=d.segment;
+    if(s==='Actif 2j'||s==='Actif 7j') stats.actif++;
+    else if(s==='Alerte 14j'||s==='Alerte 30j'){ stats.actif++; stats.alerte++; }
+    else if(s==='Dormant récent'||s==='Dormant') stats.dormant++;
+    else if(s==='Perdu') stats.perdu++;
+    else stats.jamais++;
+  });
+  return stats;
+}
+function updateKPIs(stats){
+  var el;
+  el=document.getElementById('k-total'); if(el) el.textContent=stats.total.toLocaleString();
+  el=document.getElementById('k-actif'); if(el) el.textContent=stats.actif.toLocaleString();
+  el=document.getElementById('k-dorm');  if(el) el.textContent=stats.dormant.toLocaleString();
+  el=document.getElementById('k-perdu'); if(el) el.textContent=stats.perdu.toLocaleString();
+  el=document.getElementById('k-actif2');if(el) el.textContent=stats.actif.toLocaleString()+' / '+OBJECTIF.toLocaleString();
+  var pct=OBJECTIF>0?Math.round(stats.actif/OBJECTIF*100):0;
+  var pb=document.getElementById('dash-pbar');if(pb) pb.style.width=Math.min(pct,100)+'%';
+  var ptxt=document.getElementById('dash-pbar-txt');
+  if(ptxt) ptxt.textContent=pct+'% atteint · +'+Math.max(0,OBJECTIF-stats.actif).toLocaleString()+' chauffeurs restants';
+  // Update filter button counts
+  var segs={'Actif 2j':0,'Actif 7j':0,'Alerte 14j':0,'Alerte 30j':0,'Dormant récent':0,'Dormant':0,'Perdu':0,'Jamais actif':0};
+  DRIVERS.forEach(function(d){ if(segs[d.segment]!==undefined) segs[d.segment]++; });
+  var labels={
+    'f-Actif 2j':'🟢 Actifs 2j ('+segs['Actif 2j']+')',
+    'f-Actif 7j':'🟢 Actifs 7j ('+segs['Actif 7j']+')',
+    'f-Alerte 14j':'⚠️ Alerte 14j ('+segs['Alerte 14j']+')',
+    'f-Alerte 30j':'🔶 Alerte 30j ('+segs['Alerte 30j']+')',
+    'f-Dormant récent':'🔴 Dormants 31-60j ('+segs['Dormant récent']+')',
+    'f-Dormant':'🔴 Dormants 3-6m ('+segs['Dormant']+')',
+    'f-Perdu':'⚫ Perdus ('+segs['Perdu']+')',
+    'f-Jamais actif':'⬛ Jamais actifs ('+segs['Jamais actif']+')'
+  };
+  Object.keys(labels).forEach(function(id){
+    var btn=document.getElementById(id);
+    if(btn) btn.textContent=labels[id];
+  });
+}
+function updateFinances(term,ann,pCl,pCh,ca,comm,tauxAnn,tauxComp,tot){
+  // Store for display
+  window.financeData={term,ann,pCl,pCh,ca,comm,tauxAnn,tauxComp,tot};
+  // Update dashboard finance cards
+  var els={
+    'fin-ca': Math.round(ca/1000000*10)/10+'M FCFA',
+    'fin-comm': Math.round(comm).toLocaleString()+' FCFA',
+    'fin-comp': tauxComp+'%',
+    'fin-ann': tauxAnn+'%'
+  };
+  Object.keys(els).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.textContent=els[id];
+  });
+}
+async function saveDriversToServer(){
+  try{
+    await fetch('/api/drivers',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({drivers:DRIVERS.slice(0,5000),importHist:importHist})
+    });
+  }catch(e){console.warn('Drivers save:',e.message);}
+}
+function renderImportHist(){
+  var el=document.getElementById('imp-hist');
+  if(!el||!importHist.length) return;
+  var html='';
+  importHist.slice(0,5).forEach(function(h){
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);border-radius:7px;margin-bottom:7px;font-size:11px;">'+
+      '<span>'+(h.type==='chauffeurs'?'👥':'📊')+'</span>'+
+      '<div style="flex:1"><strong>'+h.name+'</strong><div style="color:var(--mu);font-size:10px;">'+h.date+'</div></div>'+
+      '<span style="color:var(--green)">+'+(h.newCount||0)+' · '+(h.total||0).toLocaleString()+'</span>'+
+    '</div>';
+  });
+  el.innerHTML=html;
+}
+
+
+// ═══════════════════════════════════════════
+// PARAMÈTRES — Objectif adaptable
+// ═══════════════════════════════════════════
+var CRM_CONFIG = JSON.parse(localStorage.getItem('yango_config')||'{}');
+var OBJECTIF = CRM_CONFIG.objectif || 3000;
+var PARC_NOM = CRM_CONFIG.parcNom || 'Partenaire Dakar';
+
+function saveConfig(){
+  localStorage.setItem('yango_config', JSON.stringify(CRM_CONFIG));
+}
+
+function updateObjectif(val){
+  val=parseInt(val)||3000;
+  OBJECTIF=val;
+  CRM_CONFIG.objectif=val;
+  saveConfig();
+  var stats=calcStats();
+  updateKPIs(stats);
+  showToast('✅','Objectif mis à jour : '+val.toLocaleString()+' actifs','success');
+}
+
+// ═══════════════════════════════════════════
+// TOAST & NOTIFICATIONS
+// ═══════════════════════════════════════════
+function showToast(icon,txt,type){
+  var t=document.getElementById('toast');
+  if(!t) return;
+  document.getElementById('t-icon').textContent=icon;
+  document.getElementById('t-txt').textContent=txt;
+  t.className='toast '+(type||'success')+' show';
+  setTimeout(function(){t.classList.remove('show');},3500);
+}
+
+function showNotif(type,title,body){
+  var pop=document.getElementById('notif-popup');
+  if(!pop) return;
+  var n=document.createElement('div');
+  n.className='notif '+(type||'ok');
+  var ico=type==='urgent'?'🔔':type==='warn'?'⚠️':'✅';
+  n.innerHTML='<div class="notif-icon">'+ico+'</div><div class="notif-body"><strong>'+title+'</strong><span>'+body+'</span></div><div class="notif-close" onclick="this.parentElement.remove()">✕</div>';
+  pop.appendChild(n);
+  setTimeout(function(){n.classList.add('show');},50);
+  setTimeout(function(){n.classList.remove('show');setTimeout(function(){if(n.parentElement)n.remove();},400);},7000);
+}
+
+// ═══════════════════════════════════════════
+// COACH IA — Chat
+// ═══════════════════════════════════════════
+function buildSystemPrompt(){
+  var stats=calcStats();
+  var cfg=JSON.parse(localStorage.getItem('yango_config')||'{}');
+  var commPart=cfg.commPart||3;
+  var fd=window.financeData||{};
+  var tauxAnn=fd.tauxAnn||39.4;
+  var ca=fd.ca?Math.round(fd.ca).toLocaleString():'14 206 900';
+  var comm=fd.comm?Math.round(fd.comm).toLocaleString():'426 138';
+
+  return "Tu es le Coach IA de "+( cfg.parcNom||'Partenaire Yango Dakar')+", un assistant expert en gestion de parc de chauffeurs VTC sur la plateforme Yango au Sénégal.\n\n"+
+    "CONTEXTE DE TON PARTENAIRE :\n"+
+    "- Parc total : "+stats.total.toLocaleString()+" chauffeurs inscrits\n"+
+    "- Actifs (30 derniers jours) : "+stats.actif.toLocaleString()+" chauffeurs\n"+
+    "- En alerte (8-14j inactifs) : "+stats.alerte.toLocaleString()+" chauffeurs\n"+
+    "- Dormants : "+stats.dormant.toLocaleString()+" chauffeurs\n"+
+    "- Jamais actifs : "+stats.jamais.toLocaleString()+" chauffeurs\n"+
+    "- Perdus (+6 mois) : "+stats.perdu.toLocaleString()+" chauffeurs\n"+
+    "- Commission structure : 18% total (Yango 12.5% + TVA 2.5% + Partenaire "+commPart+"%)\n"+
+    "- CA du dernier rapport : "+ca+" FCFA\n"+
+    "- Commission partenaire : "+comm+" FCFA\n"+
+    "- Taux d\'annulation : "+tauxAnn+"%\n"+
+    "- Ville principale : Dakar, Sénégal\n"+
+    "- Recharges via : Wave et Orange Money\n\n"+
+    "TES CAPACITÉS :\n"+
+    "- Tu connais parfaitement le fonctionnement de Yango au Sénégal\n"+
+    "- Tu donnes des scripts de dialogue concrets (appel, WhatsApp, SMS)\n"+
+    "- Tu calcules les impacts financiers avec les vrais chiffres du parc\n"+
+    "- Tu proposes des stratégies adaptées à la réalité sénégalaise\n"+
+    "- Tu connais les problèmes courants : selfie bloqué, recharge Wave/OM, annulations\n"+
+    "- Tu parles en FCFA, tu comprends la culture locale\n\n"+
+    "STYLE DE RÉPONSE :\n"+
+    "- Sois humain, chaleureux et direct comme un vrai conseiller\n"+
+    "- Réponds EXACTEMENT à ce qui est demandé, pas à autre chose\n"+
+    "- Si on te demande comment débloquer un selfie Yango, explique la procédure exacte\n"+
+    "- Si on te demande un script, donne un vrai script avec les mots exacts à dire\n"+
+    "- Utilise des emojis avec modération pour rendre les réponses lisibles\n"+
+    "- Formats tes réponses avec des sauts de ligne pour la lisibilité\n"+
+    "- Maximum 300 mots par réponse sauf si plus est nécessaire\n"+
+    "- Ne répète pas les informations du contexte sauf si pertinent\n"+
+    "- IMPORTANT : Réponds toujours en français";
+}
+
+// Historique de conversation pour le contexte
+var chatHistory = [];
+
+async function sendChat(){
+  var inp=document.getElementById('chat-input');
+  if(!inp) return;
+  var q=inp.value.trim();
+  if(!q) return;
+  inp.value='';
+  inp.disabled=true;
+
+  var msgs=document.getElementById('chat-msgs');
+  if(!msgs) return;
+
+  // Ajouter message utilisateur
+  var u=document.createElement('div');
+  u.className='msg u';
+  u.innerHTML='<div class="mb">'+q+'</div><div class="mt">Vous</div>';
+  msgs.appendChild(u);
+  msgs.scrollTop=msgs.scrollHeight;
+
+  // Ajouter à l'historique
+  chatHistory.push({role:"user", content: q});
+  // Garder max 10 messages d'historique
+  if(chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
+
+  // Message thinking
+  var a=document.createElement('div');
+  a.className='msg a';
+  a.innerHTML='<div class="mb"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
+  msgs.appendChild(a);
+  msgs.scrollTop=msgs.scrollHeight;
+
+  try {
+    var response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: buildSystemPrompt(),
+        messages: chatHistory
+      })
+    });
+
+    var data = await response.json();
+    var reply = data.content && data.content[0] ? data.content[0].text : "Désolé, je n\'ai pas pu répondre. Réessayez.";
+
+    // Ajouter réponse à l'historique
+    chatHistory.push({role:"assistant", content: reply});
+
+    // Formater la réponse
+    var formatted = reply
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+
+    a.innerHTML='<div class="mb" style="line-height:1.8">'+formatted+'</div><div class="mt">Coach IA</div>';
+
+  } catch(err) {
+    console.error('Coach IA error:', err);
+    // Fallback avec réponse locale
+    var fallback = getFallbackResp(q);
+    a.innerHTML='<div class="mb" style="line-height:1.8">'+fallback+'</div><div class="mt">Coach IA (mode local)</div>';
+  }
+
+  inp.disabled=false;
+  inp.focus();
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function getFallbackResp(q){
+  var l=q.toLowerCase();
+  var stats=calcStats();
+  if(l.includes('selfie')||l.includes('bloqu')||l.includes('verif')){
+    return "<strong>Chauffeur bloqué par selfie Yango :</strong><br><br>"+
+      "1️⃣ Demandez au chauffeur d'ouvrir l'app Yango Driver<br>"+
+      "2️⃣ Aller dans <strong>Profil → Vérification</strong><br>"+
+      "3️⃣ Prendre un selfie en pleine lumière, visage bien visible, sans lunettes<br>"+
+      "4️⃣ Si refusé plusieurs fois → contacter support Yango : <strong>support.yango.com</strong><br>"+
+      "5️⃣ En tant que partenaire, vous pouvez aussi escalader via votre compte partenaire<br><br>"+
+      "⚠️ Les selfies sont refusés souvent à cause de : mauvaise lumière, visage coupé, photo floue.";
+  }
+  if(l.includes('recharge')||l.includes('wave')||l.includes('orange money')){
+    return "<strong>Problème de recharge :</strong><br><br>"+
+      "📱 <strong>Via Wave :</strong> Envoyer au numéro Yango Wave → Le solde s'ajoute en 5 min<br>"+
+      "🟠 <strong>Via Orange Money :</strong> Même procédure avec le numéro OM Yango<br><br>"+
+      "Si la recharge ne s'affiche pas après 15 min :<br>"+
+      "1. Vérifier que le numéro destinataire est correct<br>"+
+      "2. Prendre une capture du reçu Wave/OM<br>"+
+      "3. Envoyer au support avec : montant + numéro + heure";
+  }
+  if(l.includes('annul')){
+    return "<strong>Réduire les annulations (actuellement "+( window.financeData?window.financeData.tauxAnn:39.4)+"%) :</strong><br><br>"+
+      "🎯 Appelez les chauffeurs à +50% d'annulation<br>"+
+      "📋 Règle : >30% = avertissement, >50% = perte du bonus<br>"+
+      "🎁 Récompensez ceux à <15% avec -5% commission<br><br>"+
+      "Objectif : descendre à 20% → +40% de revenus";
+  }
+  return "Question reçue : " + q.substring(0,50) + ". Coach IA hors ligne - vérifiez connexion internet.";
+}
+
+function askCoach(q){
+  nav('coach');
+  var inp=document.getElementById('chat-input');
+  if(inp){inp.value=q;}
+  setTimeout(sendChat,200);
+}
+
+
+// ═══════════════════════════════════════════
+// SAVE STATUS
+// ═══════════════════════════════════════════
+function updateSaveStatus(){
+  var now=new Date();
+  var t=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  var el=document.getElementById('last-save-txt');
+  if(el) el.textContent='Sauvegardé à '+t;
+  var el2=document.getElementById('save-status');
+  if(el2) el2.textContent='Sauvegarde auto · '+t;
+  updateSaveCounts();
+}
+
+function updateSaveCounts(){
+  var nCount=Object.values(callLogs).reduce(function(a,b){return a+b.length;},0);
+  var rCount=reminders.filter(function(r){return !r.done;}).length;
+  var el1=document.getElementById('save-notes-count');
+  var el2=document.getElementById('save-rem-count');
+  if(el1) el1.textContent=nCount;
+  if(el2) el2.textContent=rCount;
+}
+
+
+// ═══════════════════════════════════════════
+// PARAMÈTRES — Fonctions
+// ═══════════════════════════════════════════
+// TITLES défini plus haut
+
+function nav(id){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('active');});
+  var pg=document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
+  document.querySelectorAll('.ni').forEach(function(n){
+    if((n.getAttribute('onclick')||'').includes("'"+id+"'")) n.classList.add('active');
+  });
+  var ttl=document.getElementById('page-title');
+  if(ttl) ttl.textContent=TITLES[id]||id;
+  // Synchroniser les données à chaque changement de page
+  var stats=calcStats();
+  updateAllPageStats(stats);
+  if(id==='chauffeurs') renderTable();
+  if(id==='rappels'){renderReminders();updateRemBadges();}
+  if(id==='dashboard') renderDashboard();
+  if(id==='settings') renderSettings();
+  if(id==='coach') updateAllPageStats(stats);
+}
+
+function filterNav(seg){currentFilter=seg;nav('chauffeurs');}
+
+function renderSettings(){
+  // Load saved config
+  var cfg=JSON.parse(localStorage.getItem('yango_config')||'{}');
+  var obj=cfg.objectif||OBJECTIF;
+  var nom=cfg.parcNom||PARC_NOM;
+  var inp=document.getElementById('cfg-objectif');if(inp)inp.value=obj;
+  var inp2=document.getElementById('cfg-nom');if(inp2)inp2.value=nom;
+  var cp=cfg.commPart||3;
+  var inp3=document.getElementById('cfg-comm-part');if(inp3)inp3.value=cp;
+
+  // Stats preview
+  var stats=calcStats();
+  var pct=Math.round(stats.actif/obj*100);
+  var el;
+  el=document.getElementById('cfg-actifs');if(el)el.textContent=stats.actif.toLocaleString();
+  el=document.getElementById('cfg-obj-display');if(el)el.textContent=obj.toLocaleString();
+  el=document.getElementById('cfg-restants');if(el)el.textContent=Math.max(0,obj-stats.actif).toLocaleString();
+  el=document.getElementById('cfg-ca');if(el)el.textContent=Math.round(obj*1826/1000)+'k FCFA';
+  el=document.getElementById('cfg-progress-txt');if(el)el.textContent=stats.actif.toLocaleString()+' / '+obj.toLocaleString();
+  el=document.getElementById('cfg-pbar');if(el)el.style.width=Math.min(pct,100)+'%';
+  el=document.getElementById('cfg-progress-sub');if(el)el.textContent=pct+'% atteint · +'+ Math.max(0,obj-stats.actif).toLocaleString()+' restants';
+
+  // Presets
+  renderPresets(stats.total);
+  renderParcTypes();
+}
+
+function renderPresets(total){
+  var el=document.getElementById('preset-list');if(!el)return;
+  var presets=[
+    {label:'Très petit parc',inscrits:'< 200',obj:Math.max(30,Math.round(total*0.20)),desc:'20% du parc'},
+    {label:'Petit parc',inscrits:'200-1000',obj:Math.max(50,Math.round(total*0.18)),desc:'18% du parc'},
+    {label:'Parc moyen',inscrits:'1000-5000',obj:Math.max(100,Math.round(total*0.15)),desc:'15% du parc (recommandé)'},
+    {label:'Grand parc (votre cas)',inscrits:'5000-20000',obj:Math.max(500,Math.round(total*0.12)),desc:'12% du parc'},
+    {label:'Très grand parc',inscrits:'20000+',obj:Math.max(1000,Math.round(total*0.10)),desc:'10% du parc'}
+  ];
+  el.innerHTML='';
+  presets.forEach(function(p){
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--s2);border-radius:8px;cursor:pointer;';
+    row.onclick=function(){
+      var inp=document.getElementById('cfg-objectif');if(inp)inp.value=p.obj;
+      renderSettings();
+    };
+    row.innerHTML='<div style="flex:1"><div style="font-size:12px;font-weight:600">'+p.label+'</div>'+
+      '<div style="font-size:10px;color:var(--mu)">'+p.inscrits+' inscrits · '+p.desc+'</div></div>'+
+      '<div style="font-family:Syne,sans-serif;font-size:14px;font-weight:700;color:var(--acc)">'+p.obj.toLocaleString()+' actifs</div>'+
+      '<button class="btn btn-g btn-sm" style="font-size:10px">Choisir</button>';
+    el.appendChild(row);
+  });
+}
+
+function renderParcTypes(){
+  var el=document.getElementById('parc-types');if(!el)return;
+  var types=[
+    {ico:'🚀',nom:'Démarrage',desc:'Nouveau parc, moins de 6 mois',obj:50,comm:3},
+    {ico:'📈',nom:'Croissance',desc:'En développement actif',obj:200,comm:3},
+    {ico:'🏆',nom:'Établi',desc:'Parc mature et stable',obj:1000,comm:3},
+    {ico:'👑',nom:'Premium',desc:'Grand parc multi-zones',obj:3000,comm:3.5}
+  ];
+  el.innerHTML='';
+  types.forEach(function(t){
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:16px;text-align:center;cursor:pointer;transition:all .2s;';
+    card.onmouseover=function(){this.style.borderColor='var(--acc)';};
+    card.onmouseout=function(){this.style.borderColor='var(--b1)';};
+    card.onclick=function(){
+      var inp=document.getElementById('cfg-objectif');if(inp)inp.value=t.obj;
+      var cp=document.getElementById('cfg-comm-part');if(cp)cp.value=t.comm;
+      applyConfig();
+      showToast('✅','Configuration "'+t.nom+'" appliquée !','success');
+    };
+    card.innerHTML='<div style="font-size:28px;margin-bottom:8px">'+t.ico+'</div>'+
+      '<div style="font-family:Syne,sans-serif;font-size:13px;font-weight:700;margin-bottom:4px">'+t.nom+'</div>'+
+      '<div style="font-size:11px;color:var(--mu);margin-bottom:10px">'+t.desc+'</div>'+
+      '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:800;color:var(--acc)">'+t.obj+' actifs</div>';
+    el.appendChild(card);
+  });
+}
+
+function applyConfig(){
+  var obj=parseInt(document.getElementById('cfg-objectif')&&document.getElementById('cfg-objectif').value)||3000;
+  var nom=(document.getElementById('cfg-nom')&&document.getElementById('cfg-nom').value)||'Partenaire';
+  var cp=parseFloat(document.getElementById('cfg-comm-part')&&document.getElementById('cfg-comm-part').value)||3;
+  OBJECTIF=obj; PARC_NOM=nom;
+  CRM_CONFIG={objectif:obj,parcNom:nom,commPart:cp};
+  saveConfig();
+  var stats=calcStats();
+  updateKPIs(stats);
+  renderSettings();
+  // Update sidebar name
+  var sbsub=document.querySelector('.sb-sub');
+  if(sbsub) sbsub.textContent=nom+' · v3';
+  showToast('✅','Paramètres sauvegardés ! Objectif : '+obj.toLocaleString()+' actifs','success');
+}
+
+function resetConfig(){
+  OBJECTIF=3000; PARC_NOM='Partenaire Dakar';
+  CRM_CONFIG={objectif:3000,parcNom:'Partenaire Dakar',commPart:3};
+  saveConfig();
+  renderSettings();
+  showToast('↩️','Paramètres réinitialisés','success');
+}
+
+
+// ═══════════════════════════════════════════
+// SYNCHRONISATION GLOBALE — Une seule source de vérité
+// ═══════════════════════════════════════════
+function updateAllPageStats(stats){
+  if(!stats) stats=calcStats();
+  
+  var cfg=JSON.parse(localStorage.getItem('yango_config')||'{}');
+  var commPart=cfg.commPart||3;
+  var tauxAnn=window.financeData?window.financeData.tauxAnn:39.4;
+  var commJour=window.financeData?Math.round(window.financeData.comm):426138;
+
+  // ── Dashboard KPIs ──
+  var el;
+  el=document.getElementById('k-total');  if(el) el.textContent=stats.total.toLocaleString();
+  el=document.getElementById('k-actif');  if(el) el.textContent=stats.actif.toLocaleString();
+  el=document.getElementById('k-dorm');   if(el) el.textContent=stats.dormant.toLocaleString();
+  el=document.getElementById('k-perdu');  if(el) el.textContent=stats.perdu.toLocaleString();
+
+  // ── Coach IA header ──
+  el=document.getElementById('coach-total');  if(el) el.textContent=stats.total.toLocaleString()+' chauffeurs';
+  el=document.getElementById('coach-actifs'); if(el) el.textContent=stats.actif.toLocaleString()+' actifs';
+  el=document.getElementById('coach-comm');   if(el) el.textContent=commPart+'%';
+  el=document.getElementById('coach-ann');    if(el) el.textContent=tauxAnn+'%';
+
+  // ── Coach IA message initial ──
+  var initMsg=document.getElementById('coach-init-msg');
+  if(initMsg){
+        initMsg.innerHTML="Bonsoir ! Je suis votre <strong>Coach Yango IA</strong> 🤖<br><br>"+
+      "Donn\u00e9es connues : <strong>"+stats.total.toLocaleString()+" inscrits</strong>, "+
+      "<strong style='color:var(--green)'>"+stats.actif.toLocaleString()+" actifs</strong>, "+
+      "commission <strong style='color:var(--acc)'>"+commPart+"%</strong> "+
+      "("+commJour.toLocaleString()+" FCFA/jour), "+
+      "taux ann. <strong style='color:var(--red)'>"+tauxAnn+"%</strong>.<br><br>"+
+      "Posez vos questions — scripts, stratégies. Je réponds avec des conseils adaptés.";
+  }
+
+  // ── Coach IA questions cards ──
+  document.querySelectorAll('.coach-jamais-count').forEach(function(el){
+    el.textContent=stats.jamais.toLocaleString();
+  });
+
+  // ── Finances page ──
+  if(window.financeData){
+    var fd=window.financeData;
+    el=document.getElementById('fin-ca');   if(el) el.textContent=Math.round(fd.ca/1000000*10)/10+'M FCFA';
+    el=document.getElementById('fin-comm'); if(el) el.textContent=Math.round(fd.comm).toLocaleString()+' FCFA';
+    el=document.getElementById('fin-comp'); if(el) el.textContent=fd.tauxComp+'%';
+    el=document.getElementById('fin-ann');  if(el) el.textContent=fd.tauxAnn+'%';
+  }
+
+  // ── Chauffeurs CRM — filtres ──
+  var segs={'Actif 2j':0,'Actif 7j':0,'Alerte 14j':0,'Alerte 30j':0,'Dormant récent':0,'Dormant':0,'Perdu':0,'Jamais actif':0};
+  DRIVERS.forEach(function(d){ if(segs[d.segment]!==undefined) segs[d.segment]++; });
+  
+  var actifTotal=segs['Actif 2j']+segs['Actif 7j']+segs['Alerte 14j']+segs['Alerte 30j'];
+  var dormTotal=segs['Dormant récent']+segs['Dormant'];
+  
+  var btnLabels={
+    'f-tous':          'Tous ('+stats.total.toLocaleString()+')',
+    'f-Actif 2j':      '🟢 ≤2j ('+segs['Actif 2j']+')',
+    'f-Actif 7j':      '🟢 ≤7j ('+segs['Actif 7j']+')',
+    'f-Alerte 14j':    '⚠️ 8-14j ('+segs['Alerte 14j']+')',
+    'f-Alerte 30j':    '🔶 15-30j ('+segs['Alerte 30j']+')',
+    'f-Dormant récent':'🔴 31-60j ('+segs['Dormant récent']+')',
+    'f-Dormant':       '🔴 3-6m ('+segs['Dormant']+')',
+    'f-Perdu':         '⚫ Perdus ('+segs['Perdu']+')',
+    'f-Jamais actif':  '⬛ Jamais ('+segs['Jamais actif']+')'
+  };
+  Object.keys(btnLabels).forEach(function(id){
+    var btn=document.getElementById(id);
+    if(btn) btn.textContent=btnLabels[id];
+  });
+
+  // ── Objectif barre de progression ──
+  var pct=OBJECTIF>0?Math.round(stats.actif/OBJECTIF*100):0;
+  el=document.getElementById('k-actif2');    if(el) el.textContent=stats.actif.toLocaleString()+' / '+OBJECTIF.toLocaleString();
+  el=document.getElementById('dash-pbar');   if(el) el.style.width=Math.min(pct,100)+'%';
+  el=document.getElementById('dash-pbar-txt');if(el) el.textContent=pct+'% atteint · +'+Math.max(0,OBJECTIF-stats.actif).toLocaleString()+' chauffeurs restants';
+
+  // ── WhatsApp/SMS — cible ──
+  updateContactsPreview();
+
+  // ── Sidebar badge alertes ──
+  var alertCount=segs['Alerte 14j']+segs['Alerte 30j'];
+  var badge=document.getElementById('badge-alerts');
+  if(badge) badge.textContent=alertCount>0?alertCount:'0';
+
+  // ── Détection précoce dashboard ──
+  renderEarlyAlerts();
+}
+
+
+async function init(){
+  try{ await loadFromServer(); }catch(e){ console.warn('Load error:',e); }
+  try{ nav('dashboard'); }catch(e){}
+  try{ renderTable(); }catch(e){}
+  try{ renderDashboard(); }catch(e){}
+  try{ updateRemBadges(); }catch(e){}
+  try{ updateSaveCounts(); }catch(e){}
+  try{ updateMsgPreview(); }catch(e){}
+  try{ document.getElementById('f-tous').style.fontWeight='700'; }catch(e){}
+  setInterval(async function(){ try{ await save(); }catch(e){} }, 30000);
+  try{
+    var todayRems=reminders.filter(function(r){return !r.done&&r.date===TODAY;});
+    if(todayRems.length>0){
+      setTimeout(function(){
+        try{ showNotif('urgent','🔔 '+todayRems.length+' appel(s) aujourd hui !',todayRems.slice(0,2).map(function(r){return r.name;}).join(', ')); }catch(e){}
+      },2000);
+    }
+  }catch(e){}
+}
+
+init();
+</script>
+</body>
+</html>
