@@ -170,41 +170,67 @@ app.get('/api/health', (req, res) => {
   res.json(stats);
 });
 
-// ─── PROXY COACH IA ────────────────────────
-// Proxifie l'API Anthropic pour éviter les erreurs CORS
+// ─── PROXY COACH IA (GEMINI) ────────────────
+// Utilise Google Gemini — gratuit avec clé Google AI Studio
 app.post('/api/chat', async (req, res) => {
+  const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
+  if (!GEMINI_KEY) {
+    return res.status(200).json({
+      candidates: [{content:{parts:[{text:'⚠️ Clé API Gemini manquante. Allez dans Render → Environment → ajoutez GEMINI_API_KEY avec votre clé Google AI Studio.'}]}}]
+    });
+  }
   try {
     const https = require('https');
-    const body = JSON.stringify(req.body);
-    
+    // Convertir format messages en format Gemini
+    const messages = req.body.messages || [];
+    const systemPrompt = req.body.system || '';
+    // Construire l'historique Gemini
+    const contents = [];
+    if(systemPrompt) {
+      contents.push({role:'user', parts:[{text: systemPrompt}]});
+      contents.push({role:'model', parts:[{text: 'Compris, je suis votre Coach Yango IA. Comment puis-je vous aider ?'}]});
+    }
+    messages.forEach(function(m) {
+      contents.push({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{text: m.content}]
+      });
+    });
+    const geminiBody = JSON.stringify({
+      contents: contents,
+      generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+    });
+    const path = '/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_KEY;
     const options = {
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
+      hostname: 'generativelanguage.googleapis.com',
+      path: path,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body),
-        'anthropic-version': '2023-06-01',
-        'x-api-key': req.headers['x-api-key'] || ''
+        'Content-Length': Buffer.byteLength(geminiBody)
       }
     };
-
     const apiReq = https.request(options, (apiRes) => {
       let data = '';
       apiRes.on('data', chunk => data += chunk);
       apiRes.on('end', () => {
-        res.status(apiRes.statusCode).json(JSON.parse(data));
+        try {
+          const parsed = JSON.parse(data);
+          // Convertir réponse Gemini → format attendu par le CRM
+          const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text || 'Pas de réponse';
+          res.json({ content: [{type:'text', text: text}] });
+        } catch(e) {
+          res.status(500).json({content:[{type:'text',text:'Erreur de réponse: '+data.substring(0,100)}]});
+        }
       });
     });
-
     apiReq.on('error', (e) => {
-      res.status(500).json({ error: e.message });
+      res.status(500).json({content:[{type:'text',text:'Erreur réseau: '+e.message}]});
     });
-
-    apiReq.write(body);
+    apiReq.write(geminiBody);
     apiReq.end();
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({content:[{type:'text',text:'Erreur: '+err.message}]});
   }
 });
 
