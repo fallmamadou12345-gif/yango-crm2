@@ -808,6 +808,33 @@ textarea.form-input{resize:vertical;min-height:70px;}
         </div>
       </div>
 
+      <!-- INFOS CHAUFFEUR -->
+      <div class="psec">
+        <div class="psect">📋 Informations chauffeur</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div>
+            <div class="form-label">📞 Téléphone</div>
+            <div id="p-phone-disp" style="font-size:13px;font-weight:600;color:var(--text)">—</div>
+          </div>
+          <div>
+            <div class="form-label">🏙️ Ville</div>
+            <div id="p-city-disp" style="font-size:13px;font-weight:600;color:var(--text)">—</div>
+          </div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:12px;">
+          <div class="form-label" style="margin-bottom:8px;">🪪 Numéro de permis de conduire</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="form-input" id="p-permis" type="text" placeholder="Ex: SN-2021-123456"
+              style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:1px;"
+              oninput="savePermis(this.value)"/>
+            <div id="p-permis-status" style="font-size:10px;color:var(--mu);white-space:nowrap"></div>
+          </div>
+          <div style="font-size:10px;color:var(--mu);margin-top:5px;">
+            Tapez le numéro de permis — sauvegardé automatiquement
+          </div>
+        </div>
+      </div>
+
       <!-- COACH -->
       <div class="psec">
         <div class="psect">🤖 Coach IA</div>
@@ -1409,8 +1436,14 @@ function renderTable(q=''){
 
     // Téléphone
     var td2=document.createElement('td');
-    td2.style.cssText='color:var(--mu);font-size:11px;font-family:IBM Plex Mono,monospace';
-    td2.textContent=fmtPhone(d.phone);
+    td2.style.cssText='font-size:11px;font-family:IBM Plex Mono,monospace';
+    var perm=getPermis(d.name);
+    if(perm!=='—'){
+      var phoneDiv=document.createElement('div');phoneDiv.textContent=fmtPhone(d.phone);phoneDiv.style.color='var(--mu)';td2.appendChild(phoneDiv);
+      var permDiv=document.createElement('div');permDiv.textContent='🪪 '+perm;permDiv.style.cssText='font-size:9px;color:var(--acc);margin-top:2px;';td2.appendChild(permDiv);
+    } else {
+      td2.textContent=fmtPhone(d.phone);td2.style.color='var(--mu)';
+    }
     tr.appendChild(td2);
 
     // Statut
@@ -1530,7 +1563,20 @@ function openPanel(d){
   const ds=d.lastDate?Math.round((new Date('2026-04-05')-new Date(d.lastDate))/864e5):null;
   const estM=d.orders>0?Math.round(d.orders*2026*0.03/30).toLocaleString()+' FCFA':'0 FCFA';
   document.getElementById('p-name').textContent=d.name;
-  document.getElementById('p-meta').textContent=d.segment+' · '+d.city+' · '+fmtPhone(d.phone);
+  document.getElementById('p-meta').textContent=d.segment+' · '+(d.city||'Dakar');
+  // Infos détaillées
+  var phEl=document.getElementById('p-phone-disp');
+  if(phEl) phEl.textContent=fmtPhone(d.phone);
+  var cityEl=document.getElementById('p-city-disp');
+  if(cityEl) cityEl.textContent=d.city||'Dakar';
+  // Charger le permis depuis les notes
+  var permisEl=document.getElementById('p-permis');
+  var permisStatus=document.getElementById('p-permis-status');
+  if(permisEl){
+    var savedPermis=(notes[d.name]||[]).find(function(n){return n.type==='permis';});
+    permisEl.value=savedPermis?savedPermis.text:'';
+    if(permisStatus) permisStatus.textContent=savedPermis?'✅ Enregistré':'';
+  }
   document.getElementById('p-ord').textContent=d.orders.toLocaleString();
   document.getElementById('p-days').textContent=ds!==null?ds+'j':'—';
   document.getElementById('p-comm').textContent=estM;
@@ -2607,6 +2653,38 @@ function getSortValue(d, col){
     case 'comm':    return d.orders>0?d.orders*2026*0.03/30:0;
     default:        return 0;
   }
+}
+
+
+// ─── PERMIS ──────────────────────────────────
+var permisTimer=null;
+function savePermis(val){
+  if(!currentDriver) return;
+  var statusEl=document.getElementById('p-permis-status');
+  if(statusEl) statusEl.textContent='⏳ Sauvegarde...';
+  clearTimeout(permisTimer);
+  permisTimer=setTimeout(function(){
+    if(!notes[currentDriver.name]) notes[currentDriver.name]=[];
+    // Supprimer ancien permis
+    notes[currentDriver.name]=notes[currentDriver.name].filter(function(n){return n.type!=='permis';});
+    if(val.trim()){
+      // Ajouter nouveau permis
+      notes[currentDriver.name].unshift({
+        text:val.trim(),
+        type:'permis',
+        date:new Date().toLocaleDateString('fr-FR'),
+        ts:Date.now()
+      });
+    }
+    save();
+    if(statusEl) statusEl.textContent=val.trim()?'✅ Enregistré':'';
+    showToast('🪪','Permis sauvegardé : '+val.trim(),'success');
+  }, 800);
+}
+
+function getPermis(driverName){
+  var n=(notes[driverName]||[]).find(function(n){return n.type==='permis';});
+  return n?n.text:'—';
 }
 
 
