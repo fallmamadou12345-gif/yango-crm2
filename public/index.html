@@ -1494,7 +1494,28 @@ function renderTable(q=''){
   });
 }
 
-function fmtPhone(p){if(!p)return'—';const s=p.replace(/\D/g,'');return s.length>=9?s.slice(0,2)+' '+s.slice(2,5)+' '+s.slice(5,7)+' '+s.slice(7,9):p;}
+function fmtPhone(p){
+  if(!p) return '—';
+  var s=p.replace(/\D/g,'');
+  if(!s) return '—';
+  // Enlever indicatif 221 si présent
+  if(s.length===12 && s.startsWith('221')) s=s.slice(3);
+  else if(s.length===14 && s.startsWith('00221')) s=s.slice(5);
+  // Format final sur 9 chiffres
+  if(s.length===9){
+    var n=s.slice(0,2)+' '+s.slice(2,5)+' '+s.slice(5,7)+' '+s.slice(7,9);
+    // Ajouter +221 devant les mobiles (7x) et fixes (33)
+    if(s[0]==='7'||s.startsWith('33')) return '+221 '+n;
+    return n;
+  }
+  if(s.length>9){
+    var l=s.slice(-9);
+    var n2=l.slice(0,2)+' '+l.slice(2,5)+' '+l.slice(5,7)+' '+l.slice(7,9);
+    if(l[0]==='7'||l.startsWith('33')) return '+221 '+n2;
+    return n2;
+  }
+  return s;
+}
 function prevPage(){if(currentPage>1){currentPage--;renderTable();}}
 function nextPage(){if(currentPage*PER<filteredDrivers.length){currentPage++;renderTable();}}
 function searchDrivers(q){currentPage=1;if(q.length>1){filterNav('tous');renderTable(q);}else renderTable();}
