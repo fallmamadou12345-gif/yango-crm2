@@ -10,9 +10,17 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || (process.platform === 'win32' ? 'C:\\YangoCRM_Data' : '/data');
 const DB_FILE  = path.join(DATA_DIR, 'yango_crm_data.json');
 
-// S'assurer que le dossier /data existe
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// S'assurer que le dossier de données existe
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch(e) {
+  console.warn('Impossible de créer DATA_DIR:', e.message, '— utilisation du dossier courant');
+  // Fallback au dossier courant si /data inaccessible
+  const fallbackDir = path.join(__dirname, 'data');
+  if (!fs.existsSync(fallbackDir)) fs.mkdirSync(fallbackDir, { recursive: true });
+  process.env.DATA_DIR = fallbackDir;
 }
 
 // Initialiser le fichier de données s'il n'existe pas
@@ -239,3 +247,10 @@ app.post('/api/chat', async (req, res) => {
 });
 
 
+
+// ─── DÉMARRAGE ──────────────────────────────
+app.listen(PORT, () => {
+  console.log(`🚖 Yango CRM démarré sur le port ${PORT}`);
+  console.log(`💾 Données sauvegardées dans : ${DB_FILE}`);
+  console.log(`🌐 URL : http://localhost:${PORT}`);
+});
