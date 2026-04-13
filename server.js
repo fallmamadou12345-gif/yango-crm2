@@ -170,92 +170,72 @@ app.get('/api/health', (req, res) => {
   res.json(stats);
 });
 
-// ─── PROXY COACH IA (GEMINI) ────────────────
-// Utilise Google Gemini — gratuit avec clé Google AI Studio
+// ─── PROXY COACH IA (GROQ) ────────────────
+// Utilise Groq — gratuit, rapide, fiable
 app.post('/api/chat', async (req, res) => {
-  const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
-  if (!GEMINI_KEY) {
-    return res.status(200).json({
-      candidates: [{content:{parts:[{text:'⚠️ Clé API Gemini manquante. Allez dans Render → Environment → ajoutez GEMINI_API_KEY avec votre clé Google AI Studio.'}]}}]
+  const GROQ_KEY = process.env.GROQ_API_KEY || '';
+  if (!GROQ_KEY) {
+    return res.json({
+      content: [{type:'text', text:'⚠️ Clé API Groq manquante. Allez dans Render → Environment → ajoutez GROQ_API_KEY avec votre clé console.groq.com'}]
     });
   }
   try {
     const https = require('https');
-    // Convertir format messages en format Gemini
+    // Construire messages pour Groq (format OpenAI compatible)
     const messages = req.body.messages || [];
     const systemPrompt = req.body.system || '';
-    // Construire l'historique Gemini
-    const contents = [];
+    const groqMessages = [];
     if(systemPrompt) {
-      contents.push({role:'user', parts:[{text: systemPrompt}]});
-      contents.push({role:'model', parts:[{text: 'Compris, je suis votre Coach Yango IA. Comment puis-je vous aider ?'}]});
+      groqMessages.push({role: 'system', content: systemPrompt});
     }
     messages.forEach(function(m) {
-      contents.push({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{text: m.content}]
-      });
+      groqMessages.push({role: m.role, content: m.content});
     });
-    const geminiBody = JSON.stringify({
-      contents: contents,
-      generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+    const groqBody = JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: groqMessages,
+      max_tokens: 1000,
+      temperature: 0.7
     });
-    const path = '/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_KEY;
     const options = {
-      hostname: 'generativelanguage.googleapis.com',
-      path: path,
+      hostname: 'api.groq.com',
+      path: '/openai/v1/chat/completions',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(geminiBody)
+        'Content-Length': Buffer.byteLength(groqBody),
+        'Authorization': 'Bearer ' + GROQ_KEY
       }
     };
     const apiReq = https.request(options, (apiRes) => {
       let data = '';
       apiRes.on('data', chunk => data += chunk);
       apiRes.on('end', () => {
-        console.log('Gemini status:', apiRes.statusCode);
-        console.log('Gemini response:', data.substring(0, 300));
+        console.log('Groq status:', apiRes.statusCode);
         try {
           const parsed = JSON.parse(data);
-          // Vérifier erreur Gemini
           if(parsed.error) {
             const errMsg = parsed.error.message || JSON.stringify(parsed.error);
-            console.error('Gemini error:', errMsg);
-            return res.json({ content: [{type:'text', text: '❌ Erreur Gemini: ' + errMsg}] });
+            console.error('Groq error:', errMsg);
+            return res.json({ content: [{type:'text', text: '❌ Erreur Groq: ' + errMsg}] });
           }
-          // Extraire le texte
-          const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-          if(text) {
-            res.json({ content: [{type:'text', text: text}] });
-          } else {
-            console.error('Gemini réponse inattendue:', JSON.stringify(parsed).substring(0,200));
-            res.json({ content: [{type:'text', text: '⚠️ Réponse inattendue de Gemini. Données: ' + JSON.stringify(parsed).substring(0,100)}] });
-          }
+          const text = parsed.choices?.[0]?.message?.content || 'Pas de réponse';
+          res.json({ content: [{type:'text', text: text}] });
         } catch(e) {
-          console.error('Parse error:', e.message, 'Data:', data.substring(0,100));
-          res.json({content:[{type:'text',text:'Erreur parsing: '+e.message+' | Raw: '+data.substring(0,80)}]});
+          console.error('Parse error:', e.message);
+          res.json({content:[{type:'text', text:'Erreur: '+e.message+' | '+data.substring(0,80)}]});
         }
       });
     });
     apiReq.on('error', (e) => {
-      console.error('Request error:', e.message);
-      res.json({content:[{type:'text',text:'Erreur connexion Gemini: '+e.message}]});
+      console.error('Groq request error:', e.message);
+      res.json({content:[{type:'text', text:'Erreur connexion Groq: '+e.message}]});
     });
-    apiReq.write(geminiBody);
+    apiReq.write(groqBody);
     apiReq.end();
   } catch (err) {
-    res.status(500).json({content:[{type:'text',text:'Erreur: '+err.message}]});
+    res.json({content:[{type:'text', text:'Erreur serveur: '+err.message}]});
   }
 });
 
-// Servir le CRM (toutes les routes → index.html)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
-app.listen(PORT, () => {
-  console.log(`🚖 Yango CRM démarré sur le port ${PORT}`);
-  console.log(`💾 Données sauvegardées dans : ${DB_FILE}`);
-  console.log(`🌐 URL : http://localhost:${PORT}`);
-});
