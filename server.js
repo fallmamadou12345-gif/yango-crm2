@@ -214,18 +214,33 @@ app.post('/api/chat', async (req, res) => {
       let data = '';
       apiRes.on('data', chunk => data += chunk);
       apiRes.on('end', () => {
+        console.log('Gemini status:', apiRes.statusCode);
+        console.log('Gemini response:', data.substring(0, 300));
         try {
           const parsed = JSON.parse(data);
-          // Convertir réponse Gemini → format attendu par le CRM
-          const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text || 'Pas de réponse';
-          res.json({ content: [{type:'text', text: text}] });
+          // Vérifier erreur Gemini
+          if(parsed.error) {
+            const errMsg = parsed.error.message || JSON.stringify(parsed.error);
+            console.error('Gemini error:', errMsg);
+            return res.json({ content: [{type:'text', text: '❌ Erreur Gemini: ' + errMsg}] });
+          }
+          // Extraire le texte
+          const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+          if(text) {
+            res.json({ content: [{type:'text', text: text}] });
+          } else {
+            console.error('Gemini réponse inattendue:', JSON.stringify(parsed).substring(0,200));
+            res.json({ content: [{type:'text', text: '⚠️ Réponse inattendue de Gemini. Données: ' + JSON.stringify(parsed).substring(0,100)}] });
+          }
         } catch(e) {
-          res.status(500).json({content:[{type:'text',text:'Erreur de réponse: '+data.substring(0,100)}]});
+          console.error('Parse error:', e.message, 'Data:', data.substring(0,100));
+          res.json({content:[{type:'text',text:'Erreur parsing: '+e.message+' | Raw: '+data.substring(0,80)}]});
         }
       });
     });
     apiReq.on('error', (e) => {
-      res.status(500).json({content:[{type:'text',text:'Erreur réseau: '+e.message}]});
+      console.error('Request error:', e.message);
+      res.json({content:[{type:'text',text:'Erreur connexion Gemini: '+e.message}]});
     });
     apiReq.write(geminiBody);
     apiReq.end();
