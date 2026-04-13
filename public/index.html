@@ -825,6 +825,8 @@ textarea.form-input{resize:vertical;min-height:70px;}
         </div>
         <div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:12px;">
           <div class="form-label" style="margin-bottom:8px;">🪪 Numéro de permis de conduire</div>
+          <!-- Grand affichage permis comme le téléphone -->
+          <div id="p-permis-big" style="font-size:22px;font-weight:800;color:var(--text);font-family:'IBM Plex Mono',monospace;letter-spacing:3px;padding:10px 4px 4px 4px;">—</div>
           <div style="display:flex;gap:8px;align-items:center;">
             <input class="form-input" id="p-permis" type="text" placeholder="Ex: SN-2021-123456"
               style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:1px;"
@@ -832,17 +834,17 @@ textarea.form-input{resize:vertical;min-height:70px;}
             <div id="p-permis-status" style="font-size:10px;color:var(--mu);white-space:nowrap"></div>
           </div>
           <div style="font-size:10px;color:var(--mu);margin-top:5px;">
-            Tapez le numéro de permis — sauvegardé automatiquement
+            Numéro de permis — modifiable et sauvegardé automatiquement
           </div>
           <!-- Véhicule et plaque depuis CSV -->
-          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div style="background:var(--s2);border-radius:8px;padding:9px 12px;">
-              <div style="font-size:10px;color:var(--mu);margin-bottom:3px;">🚗 Véhicule</div>
-              <div id="p-vehicule-disp" style="font-size:12px;font-weight:600;color:var(--text)">—</div>
+          <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;">
+              <div style="font-size:10px;color:var(--mu);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">🚗 Véhicule</div>
+              <div id="p-vehicule-disp" style="font-size:14px;font-weight:700;color:var(--text)">—</div>
             </div>
-            <div style="background:var(--s2);border-radius:8px;padding:9px 12px;">
-              <div style="font-size:10px;color:var(--mu);margin-bottom:3px;">🔢 Plaque</div>
-              <div id="p-plaque-disp" style="font-size:12px;font-weight:600;color:var(--acc);font-family:'IBM Plex Mono',monospace">—</div>
+            <div style="background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;">
+              <div style="font-size:10px;color:var(--mu);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">🔢 Plaque</div>
+              <div id="p-plaque-disp" style="font-size:16px;font-weight:800;color:var(--acc);font-family:'IBM Plex Mono',monospace;letter-spacing:2px">—</div>
             </div>
           </div>
         </div>
@@ -1618,9 +1620,30 @@ function openPanel(d){
   var permisEl=document.getElementById('p-permis');
   var permisStatus=document.getElementById('p-permis-status');
   if(permisEl){
+    // Priorité: données CSV importées > notes manuelles
     var savedPermis=(notes[d.name]||[]).find(function(n){return n.type==='permis';});
-    permisEl.value=savedPermis?savedPermis.text:'';
-    if(permisStatus) permisStatus.textContent=savedPermis?'✅ Enregistré':'';
+    var permisFromCSV = d.permis||'';
+    permisEl.value = permisFromCSV || (savedPermis?savedPermis.text:'');
+    if(permisStatus){
+      if(permisFromCSV) permisStatus.textContent='✅ Importé du CSV';
+      else if(savedPermis) permisStatus.textContent='✅ Enregistré';
+      else permisStatus.textContent='';
+    }
+  }
+  // Remplir véhicule et plaque depuis CSV
+  var vehEl=document.getElementById('p-vehicule-disp');
+  var plaqueEl=document.getElementById('p-plaque-disp');
+  if(vehEl) vehEl.textContent=d.vehicule||'—';
+  if(plaqueEl) plaqueEl.textContent=d.plaque||'—';
+  // Grand affichage permis
+  var permisBig=document.getElementById('p-permis-big');
+  if(permisBig){
+    var pVal=d.permis||'';
+    if(pVal && /^[0-9]+$/.test(pVal) && pVal.length>=6){
+      pVal=pVal.slice(0,2)+' '+pVal.slice(2,5)+' '+pVal.slice(5,7)+(pVal.length>7?' '+pVal.slice(7):'');
+    }
+    permisBig.textContent=pVal||'—';
+    permisBig.style.color=pVal?'var(--text)':'var(--mu)';
   }
   document.getElementById('p-ord').textContent=d.orders.toLocaleString();
   document.getElementById('p-days').textContent=ds!==null?ds+'j':'—';
