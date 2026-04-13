@@ -430,8 +430,8 @@ textarea.form-input{resize:vertical;min-height:70px;}
   <th>Téléphone</th>
   <th onclick="sortTable('segment')" style="cursor:pointer;user-select:none;" id="th-segment">Statut <span id="si-segment">↕</span></th>
   <th onclick="sortTable('orders')" style="cursor:pointer;user-select:none;" id="th-orders">Courses <span id="si-orders">↕</span></th>
-  <th>Permis</th>
-  <th>Véhicule</th>
+  <th onclick="sortTable('permis')" style="cursor:pointer;user-select:none;" id="th-permis">N° Permis <span id="si-permis">↕</span></th>
+  <th>Véhicule / Plaque</th>
   <th onclick="sortTable('days')" style="cursor:pointer;user-select:none;" id="th-days">Inactivité <span id="si-days">↕</span></th>
   <th onclick="sortTable('comm')" style="cursor:pointer;user-select:none;" id="th-comm">Comm. est. <span id="si-comm">↕</span></th>
   <th>Dernier contact</th>
@@ -1473,16 +1473,36 @@ function renderTable(q=''){
     td4.textContent=d.orders.toLocaleString();
     tr.appendChild(td4);
 
-    // Permis
+    // Permis — affiché comme le téléphone
     var tdPermis=document.createElement('td');
-    tdPermis.style.cssText='font-size:11px;color:var(--mu);font-family:IBM Plex Mono,monospace';
-    tdPermis.textContent=d.permis||'—';
+    tdPermis.style.cssText='color:var(--mu);font-size:11px;font-family:IBM Plex Mono,monospace;letter-spacing:0.5px;font-weight:500';
+    var permisVal=d.permis||'—';
+    // Formater le permis par groupes de 2 si numérique
+    if(d.permis && /^[0-9]+$/.test(d.permis) && d.permis.length>=6){
+      var p=d.permis;
+      permisVal=p.slice(0,2)+' '+p.slice(2,5)+' '+p.slice(5,7)+(p.length>7?' '+p.slice(7):'');
+    }
+    tdPermis.textContent=permisVal;
     tr.appendChild(tdPermis);
 
-    // Véhicule
+    // Véhicule + Plaque
     var tdVeh=document.createElement('td');
-    tdVeh.style.cssText='font-size:11px;color:var(--mu2)';
-    tdVeh.textContent=d.vehicule||(d.plaque?d.plaque:'—');
+    tdVeh.style.cssText='font-size:11px';
+    if(d.vehicule||d.plaque){
+      var vDiv=document.createElement('div');
+      vDiv.style.cssText='color:var(--text);font-size:11px';
+      vDiv.textContent=d.vehicule||'';
+      tdVeh.appendChild(vDiv);
+      if(d.plaque){
+        var pDiv=document.createElement('div');
+        pDiv.style.cssText='color:var(--acc);font-size:10px;font-family:IBM Plex Mono,monospace;font-weight:600';
+        pDiv.textContent=d.plaque;
+        tdVeh.appendChild(pDiv);
+      }
+    } else {
+      tdVeh.textContent='—';
+      tdVeh.style.color='var(--mu)';
+    }
     tr.appendChild(tdVeh);
 
     // Inactivité avec badge d'alerte
@@ -1916,8 +1936,8 @@ function processImport(file,type){
         // Find column indices
         var colNom=findCol(headers,['Nom complet','nom complet','Name','name']);
         var colPhone=findCol(headers,['Numéro de téléphone','numero de telephone','Phone','phone','telephone']);
-        var colOrders=findCol(headers,['Commandes terminées','commandes terminees','Completed orders','orders']);
-        var colDate=findCol(headers,['Date de la dernière commande','derniere commande','Last order date']);
+        var colOrders=findCol(headers,['Commandes terminées','commandes terminees','Completed orders','orders','Commandes']);
+        var colDate=findCol(headers,['Date de la dernière commande','derniere commande','Last order date','dernière commande']);
         var colVille=findCol(headers,['Ville','ville','City','city']);
         var colSolde=findCol(headers,['Solde','solde','Balance']);
 
@@ -1936,8 +1956,10 @@ function processImport(file,type){
             var solde=colSolde>=0?parseFloat(clean(cols[colSolde]).replace(',','.'))||0:0;
             var seg=calcSegment(orders,lastDate);
             var permis=findCol(headers,['Permis de conduire','permis','license'])>=0?clean(cols[findCol(headers,['Permis de conduire','permis','license'])]):'' ;
-            var plaque=findCol(headers,['plaque','immatriculation','Numéro de la plaque'])>=0?clean(cols[findCol(headers,['plaque','immatriculation','Numéro de la plaque'])]):'' ;
-            var vehicule=findCol(headers,['Véhicule','vehicule','vehicle'])>=0?clean(cols[findCol(headers,['Véhicule','vehicule','vehicle'])]):'' ;
+            var colPlaque=findCol(headers,['immatriculation','plaque','Plaque']);
+            var plaque=colPlaque>=0?clean(cols[colPlaque]):'' ;
+            var colVeh=findCol(headers,['Véhicule','vehicule','vehicle','Voiture']);
+            var vehicule=colVeh>=0?clean(cols[colVeh]):'' ;
             newDrivers.push({name:name,phone:phone,orders:orders,lastDate:lastDate,segment:seg,city:ville||'Dakar',solde:solde,permis:permis,plaque:plaque,vehicule:vehicule});
           }catch(e){errors++;}
         }
@@ -2679,6 +2701,7 @@ function getSortValue(d, col){
       if(!d.lastDate) return 9999;
       return Math.round((new Date()-new Date(d.lastDate))/864e5);
     case 'comm':    return d.orders>0?d.orders*2026*0.03/30:0;
+    case 'permis':  return (d.permis||'').toLowerCase();
     default:        return 0;
   }
 }
