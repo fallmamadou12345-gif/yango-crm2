@@ -836,6 +836,10 @@ textarea.form-input{resize:vertical;min-height:70px;}
           <div style="font-size:10px;color:var(--mu);margin-top:5px;">
             Numéro de permis — modifiable et sauvegardé automatiquement
           </div>
+          <!-- Notice réimport -->
+          <div id="p-reimport-notice" style="display:none;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:8px 12px;margin-top:8px;font-size:11px;color:#fbbf24;">
+            ⚠️ Permis/Véhicule/Plaque non disponibles — <strong>Réimportez votre CSV</strong> dans Import CSV pour voir ces données.
+          </div>
           <!-- Véhicule et plaque depuis CSV -->
           <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <div style="background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;">
@@ -1644,6 +1648,12 @@ function openPanel(d){
     }
     permisBig.textContent=pVal||'—';
     permisBig.style.color=pVal?'var(--text)':'var(--mu)';
+    permisBig.style.fontSize=pVal?'22px':'14px';
+    // Afficher notice si données manquantes
+    var reimportNotice=document.getElementById('p-reimport-notice');
+    if(reimportNotice){
+      reimportNotice.style.display=(!d.permis&&!d.vehicule&&!d.plaque)?'block':'none';
+    }
   }
   document.getElementById('p-ord').textContent=d.orders.toLocaleString();
   document.getElementById('p-days').textContent=ds!==null?ds+'j':'—';
