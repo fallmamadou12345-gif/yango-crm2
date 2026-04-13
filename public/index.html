@@ -430,6 +430,8 @@ textarea.form-input{resize:vertical;min-height:70px;}
   <th>Téléphone</th>
   <th onclick="sortTable('segment')" style="cursor:pointer;user-select:none;" id="th-segment">Statut <span id="si-segment">↕</span></th>
   <th onclick="sortTable('orders')" style="cursor:pointer;user-select:none;" id="th-orders">Courses <span id="si-orders">↕</span></th>
+  <th>Permis</th>
+  <th>Véhicule</th>
   <th onclick="sortTable('days')" style="cursor:pointer;user-select:none;" id="th-days">Inactivité <span id="si-days">↕</span></th>
   <th onclick="sortTable('comm')" style="cursor:pointer;user-select:none;" id="th-comm">Comm. est. <span id="si-comm">↕</span></th>
   <th>Dernier contact</th>
@@ -831,6 +833,17 @@ textarea.form-input{resize:vertical;min-height:70px;}
           </div>
           <div style="font-size:10px;color:var(--mu);margin-top:5px;">
             Tapez le numéro de permis — sauvegardé automatiquement
+          </div>
+          <!-- Véhicule et plaque depuis CSV -->
+          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:var(--s2);border-radius:8px;padding:9px 12px;">
+              <div style="font-size:10px;color:var(--mu);margin-bottom:3px;">🚗 Véhicule</div>
+              <div id="p-vehicule-disp" style="font-size:12px;font-weight:600;color:var(--text)">—</div>
+            </div>
+            <div style="background:var(--s2);border-radius:8px;padding:9px 12px;">
+              <div style="font-size:10px;color:var(--mu);margin-bottom:3px;">🔢 Plaque</div>
+              <div id="p-plaque-disp" style="font-size:12px;font-weight:600;color:var(--acc);font-family:'IBM Plex Mono',monospace">—</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1460,6 +1473,18 @@ function renderTable(q=''){
     td4.textContent=d.orders.toLocaleString();
     tr.appendChild(td4);
 
+    // Permis
+    var tdPermis=document.createElement('td');
+    tdPermis.style.cssText='font-size:11px;color:var(--mu);font-family:IBM Plex Mono,monospace';
+    tdPermis.textContent=d.permis||'—';
+    tr.appendChild(tdPermis);
+
+    // Véhicule
+    var tdVeh=document.createElement('td');
+    tdVeh.style.cssText='font-size:11px;color:var(--mu2)';
+    tdVeh.textContent=d.vehicule||(d.plaque?d.plaque:'—');
+    tr.appendChild(tdVeh);
+
     // Inactivité avec badge d'alerte
     var td5=document.createElement('td');
     td5.style.cssText='font-size:11px';
@@ -1910,7 +1935,10 @@ function processImport(file,type){
             var ville=colVille>=0?clean(cols[colVille]):'Dakar';
             var solde=colSolde>=0?parseFloat(clean(cols[colSolde]).replace(',','.'))||0:0;
             var seg=calcSegment(orders,lastDate);
-            newDrivers.push({name:name,phone:phone,orders:orders,lastDate:lastDate,segment:seg,city:ville||'Dakar',solde:solde});
+            var permis=findCol(headers,['Permis de conduire','permis','license'])>=0?clean(cols[findCol(headers,['Permis de conduire','permis','license'])]):'' ;
+            var plaque=findCol(headers,['plaque','immatriculation','Numéro de la plaque'])>=0?clean(cols[findCol(headers,['plaque','immatriculation','Numéro de la plaque'])]):'' ;
+            var vehicule=findCol(headers,['Véhicule','vehicule','vehicle'])>=0?clean(cols[findCol(headers,['Véhicule','vehicule','vehicle'])]):'' ;
+            newDrivers.push({name:name,phone:phone,orders:orders,lastDate:lastDate,segment:seg,city:ville||'Dakar',solde:solde,permis:permis,plaque:plaque,vehicule:vehicule});
           }catch(e){errors++;}
         }
 
