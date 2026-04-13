@@ -280,7 +280,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
     <div class="ni" onclick="nav('rappels')"><span class="ni-ic">🔔</span>Rappels & Alertes<span class="ni-badge orange" id="badge-rappels">0</span></div>
     <div class="ni" onclick="nav('chauffeurs')"><span class="ni-ic">🚗</span>Chauffeurs CRM</div>
     <div class="ni" onclick="nav('messages')"><span class="ni-ic">📱</span>WhatsApp / SMS</div>
-    <div class="ni" onclick="nav('coach')"><span class="ni-ic">🤖</span>Coach IA</div>
+    <div class="ni" onclick="nav('coach')"><span class="ni-ic">🤖</span>FATHY</div>
     <div class="ni" onclick="nav('import')"><span class="ni-ic">📥</span>Import CSV</div>
     <div class="ni" onclick="nav('finances')"><span class="ni-ic">💰</span>Finances</div>
     <div class="ni" onclick="nav('equipe')"><span class="ni-ic">👥</span>Équipe</div>
@@ -558,7 +558,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
   <div class="page" id="page-coach">
     <div style="background:linear-gradient(135deg,var(--s0),var(--s2));border:1px solid var(--b1);border-radius:var(--r3);padding:22px;margin-bottom:14px;display:flex;align-items:center;gap:16px;">
       <div style="width:54px;height:54px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🤖</div>
-      <div><div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:4px;">Yango Coach IA</div><div style="font-size:12px;color:var(--mu2);line-height:1.6;">Parc de <strong style="color:var(--text)" id="coach-total">14 830 chauffeurs</strong> · <strong style="color:var(--green)" id="coach-actifs">1 087 actifs</strong> · Commission <strong style="color:var(--acc)" id="coach-comm">3%</strong> · Annulations <strong style="color:var(--red)" id="coach-ann">39.4%</strong></div></div>
+      <div><div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:4px;">FATHY</div><div style="font-size:12px;color:var(--mu2);line-height:1.6;">Parc de <strong style="color:var(--text)" id="coach-total">14 830 chauffeurs</strong> · <strong style="color:var(--green)" id="coach-actifs">1 087 actifs</strong> · Commission <strong style="color:var(--acc)" id="coach-comm">3%</strong> · Annulations <strong style="color:var(--red)" id="coach-ann">39.4%</strong></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
       <div style="background:var(--s0);border:1px solid var(--b1);border-radius:var(--r);padding:12px;cursor:pointer;" onclick="askCoach('Comment réduire le taux d\\'annulation de 39.4% ?')"><div style="font-size:16px;margin-bottom:5px;">⚠️</div><div style="font-size:12px;font-weight:500;">Réduire les annulations</div><div style="font-size:10px;color:var(--mu);">39.4% · 1 467 par les chauffeurs</div></div>
@@ -567,7 +567,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
       <div style="background:var(--s0);border:1px solid var(--b1);border-radius:var(--r);padding:12px;cursor:pointer;" onclick="askCoach('Comment activer les 6172 chauffeurs jamais actifs ?')"><div style="font-size:16px;margin-bottom:5px;">🔓</div><div style="font-size:12px;font-weight:500;">Activer les 6 172 jamais actifs</div><div style="font-size:10px;color:var(--mu);">Campagne d'activation</div></div>
     </div>
     <div class="chat-msgs" id="chat-msgs">
-      <div class="msg a"><div class="mb" id="coach-init-msg">Bonsoir ! Je suis votre <strong>Coach Yango IA</strong> 🤖<br><br>Données connues : <strong>14 830 inscrits</strong>, <strong>1 087 actifs</strong>, commission <strong>3%</strong> (426 138 FCFA/jour), taux d'annulation <strong>39.4%</strong>.<br><br>Posez vos questions — scripts, stratégies, calculs financiers. Je réponds avec des conseils adaptés à votre parc réel.</div><div class="mt">Coach IA</div></div>
+      <div class="msg a"><div class="mb" id="coach-init-msg">Bonsoir ! Je suis votre <strong>FATHY</strong> 🤖<br><br>Données connues : <strong>14 830 inscrits</strong>, <strong>1 087 actifs</strong>, commission <strong>3%</strong> (426 138 FCFA/jour), taux d'annulation <strong>39.4%</strong>.<br><br>Posez vos questions — scripts, stratégies, calculs financiers. Je réponds avec des conseils adaptés à votre parc réel.</div><div class="mt">FATHY</div></div>
     </div>
     <div class="ci-row">
       <input class="ci" type="text" placeholder="Posez votre question..." id="chat-input" onkeydown="if(event.key==='Enter')sendChat()"/>
@@ -856,7 +856,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
 
       <!-- COACH -->
       <div class="psec">
-        <div class="psect">🤖 Coach IA</div>
+        <div class="psect">🤖 FATHY</div>
         <div class="coach-box">
           <div class="coach-hd"><div class="coach-av">🤖</div><div><div class="coach-nm">Coach Yango</div><div class="coach-sub">Analyse personnalisée...</div></div></div>
           <div id="coach-adv"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
@@ -1138,7 +1138,7 @@ const TODAY=new Date().toISOString().split('T')[0];
 // ═══════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════
-const TITLES={dashboard:'Dashboard',rappels:'Rappels & Alertes',chauffeurs:'Chauffeurs CRM',messages:'WhatsApp / SMS',coach:'Coach IA',import:'Import CSV',finances:'Finances',equipe:'Équipe'};
+const TITLES={dashboard:'Dashboard',rappels:'Rappels & Alertes',chauffeurs:'Chauffeurs CRM',messages:'WhatsApp / SMS',coach:'FATHY',import:'Import CSV',finances:'Finances',equipe:'Équipe'};
 // nav() défini dans paramètres
 function filterNav(seg){currentFilter=seg;nav('chauffeurs');renderTable();}
 
@@ -2290,40 +2290,55 @@ function buildSystemPrompt(){
   var commPart=cfg.commPart||3;
   var fd=window.financeData||{};
   var tauxAnn=fd.tauxAnn||39.4;
-  var ca=fd.ca?Math.round(fd.ca).toLocaleString():'14 206 900';
-  var comm=fd.comm?Math.round(fd.comm).toLocaleString():'426 138';
+  var commJour=fd.comm?Math.round(fd.comm).toLocaleString():'426 138';
 
-  return "Tu es le Coach IA de "+( cfg.parcNom||'Partenaire Yango Dakar')+", un assistant expert en gestion de parc de chauffeurs VTC sur la plateforme Yango au Sénégal.\n\n"+
-    "CONTEXTE DE TON PARTENAIRE :\n"+
-    "- Parc total : "+stats.total.toLocaleString()+" chauffeurs inscrits\n"+
-    "- Actifs (30 derniers jours) : "+stats.actif.toLocaleString()+" chauffeurs\n"+
-    "- En alerte (8-14j inactifs) : "+stats.alerte.toLocaleString()+" chauffeurs\n"+
-    "- Dormants : "+stats.dormant.toLocaleString()+" chauffeurs\n"+
-    "- Jamais actifs : "+stats.jamais.toLocaleString()+" chauffeurs\n"+
-    "- Perdus (+6 mois) : "+stats.perdu.toLocaleString()+" chauffeurs\n"+
-    "- Commission structure : 18% total (Yango 12.5% + TVA 2.5% + Partenaire "+commPart+"%)\n"+
-    "- CA du dernier rapport : "+ca+" FCFA\n"+
-    "- Commission partenaire : "+comm+" FCFA\n"+
-    "- Taux d\'annulation : "+tauxAnn+"%\n"+
-    "- Ville principale : Dakar, Sénégal\n"+
-    "- Recharges via : Wave et Orange Money\n\n"+
-    "TES CAPACITÉS :\n"+
-    "- Tu connais parfaitement le fonctionnement de Yango au Sénégal\n"+
-    "- Tu donnes des scripts de dialogue concrets (appel, WhatsApp, SMS)\n"+
-    "- Tu calcules les impacts financiers avec les vrais chiffres du parc\n"+
-    "- Tu proposes des stratégies adaptées à la réalité sénégalaise\n"+
-    "- Tu connais les problèmes courants : selfie bloqué, recharge Wave/OM, annulations\n"+
-    "- Tu parles en FCFA, tu comprends la culture locale\n\n"+
-    "STYLE DE RÉPONSE :\n"+
-    "- Sois humain, chaleureux et direct comme un vrai conseiller\n"+
-    "- Réponds EXACTEMENT à ce qui est demandé, pas à autre chose\n"+
-    "- Si on te demande comment débloquer un selfie Yango, explique la procédure exacte\n"+
-    "- Si on te demande un script, donne un vrai script avec les mots exacts à dire\n"+
-    "- Utilise des emojis avec modération pour rendre les réponses lisibles\n"+
-    "- Formats tes réponses avec des sauts de ligne pour la lisibilité\n"+
-    "- Maximum 300 mots par réponse sauf si plus est nécessaire\n"+
-    "- Ne répète pas les informations du contexte sauf si pertinent\n"+
-    "- IMPORTANT : Réponds toujours en français";
+  return "Tu es FATHY, le compagnon de travail intelligent du Parc Transport Ndongo Fall — partenaire Yango Dakar.\n\n"+
+
+    "🎯 TA MISSION: Aider l\'équipe à MAXIMISER les courses et fidéliser les chauffeurs.\n"+
+    "Plus de courses = Plus de commission partenaire = Plus de revenus pour tout le monde.\n\n"+
+
+    "💰 PROGRAMME DE BONUS CHAUFFEURS (NE JAMAIS proposer de réduction de commission):\n"+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"+
+    "Le parc prend 3% de commission. JAMAIS on ne réduit ce taux.\n"+
+    "Par contre on RÉCOMPENSE les meilleurs avec des BONUS CASH mensuels:\n\n"+
+    "📊 PALIERS BONUS (basés sur commission partenaire générée/mois):\n"+
+    "  🥉 0 - 24 999 FCFA générés → Pas de bonus (encourager à progresser)\n"+
+    "  🥈 25 000 - 49 999 FCFA générés → Bonus 2 500 FCFA + Badge Silver\n"+
+    "  🥇 50 000 - 99 999 FCFA générés → Bonus 7 500 FCFA + Badge Gold\n"+
+    "  💎 100 000 - 199 999 FCFA générés → Bonus 20 000 FCFA + Badge Platinum\n"+
+    "  👑 200 000+ FCFA générés → Bonus 50 000 FCFA + VIP + appel perso du patron\n\n"+
+    "🧮 CALCUL BONUS:\n"+
+    "  Commission chauffeur/mois = (Courses × tarif moyen 2026 FCFA × 3%) / 30 × jours actifs\n"+
+    "  Ex: 500 courses/mois × 2026 × 3% = 30 390 FCFA → Palier Silver → Bonus 2 500 FCFA\n"+
+    "  Ex: Gueye Alassane (23 649 courses) → ~47 913 FCFA/mois → Palier Gold → Bonus 7 500 FCFA\n\n"+
+    "🎁 AUTRES RÉCOMPENSES (sans réduire la commission):\n"+
+    "  • Chauffeur du mois: nom affiché sur l\'appli + certificat\n"+
+    "  • Parrainage: 5 000 FCFA si un chauffeur recruté fait 50+ courses\n"+
+    "  • Fidélité 1 an actif: cadeau surprise (sac, casquette Yango)\n"+
+    "  • Anniversaire: message WhatsApp personnalisé du partenaire\n\n"+
+    "🚨 RÈGLE ABSOLUE: Ne JAMAIS suggérer de baisser la commission 3%.\n"+
+    "  La commission finance les bonus, le salaire des agents, et le développement du parc.\n\n"+
+
+    "🧠 TES CAPACITÉS:\n"+
+    "1. Rechercher un chauffeur par NOM, TÉLÉPHONE ou PERMIS et donner tous ses détails\n"+
+    "2. Calculer son palier bonus actuel et ce qu\'il doit faire pour monter\n"+
+    "3. Donner les tâches PRIORITAIRES du jour avec noms et numéros exacts\n"+
+    "4. Écrire des SCRIPTS de dialogue concrets pour appels et WhatsApp\n"+
+    "5. MOTIVER les agents avec des conseils de management bienveillants\n"+
+    "6. Donner l\'IMPACT FINANCIER précis de chaque action\n\n"+
+
+    "📋 FORMAT DE RÉPONSE:\n"+
+    "• Commencer par l\'action la plus URGENTE et RENTABLE\n"+
+    "• Donner les NOMS EXACTS avec TÉLÉPHONES des chauffeurs à contacter\n"+
+    "• Toujours calculer le GAIN EN FCFA\n"+
+    "• Être chaleureux, positif, encourageant comme un vrai chef d\'équipe\n"+
+    "• Max 4 actions concrètes par réponse\n"+
+    "• Répondre TOUJOURS en français\n\n"+
+
+    "💼 DONNÉES DU PARC:\n"+
+    "Commission partenaire: "+commPart+"% | CA jour: "+commJour+" FCFA\n"+
+    "Taux annulation: "+tauxAnn+"% (objectif: descendre à 20%)\n"+
+    "Chaque actif supplémentaire = +1 826 FCFA/mois pour le parc";
 }
 
 // Historique de conversation pour le contexte
@@ -2395,11 +2410,11 @@ async function sendChat(){
     var formatted = reply
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>');
-    a.innerHTML='<div class="mb" style="line-height:1.8">'+formatted+'</div><div class="mt">Coach IA 🤖</div>';
+    a.innerHTML='<div class="mb" style="line-height:1.8">'+formatted+'</div><div class="mt">FATHY 🤖</div>';
 
   } catch(err) {
-    console.error('Coach IA error:', err);
-    a.innerHTML='<div class="mb" style="color:var(--orange)">⚠️ Erreur: '+err.message+'<br><small>Vérifiez la console (F12) pour plus de détails</small></div><div class="mt">Coach IA</div>';
+    console.error('FATHY error:', err);
+    a.innerHTML='<div class="mb" style="color:var(--orange)">⚠️ Erreur: '+err.message+'<br><small>Vérifiez la console (F12) pour plus de détails</small></div><div class="mt">FATHY</div>';
   }
 
   inp.disabled=false;
@@ -2435,7 +2450,7 @@ function getFallbackResp(q){
       "🎁 Récompensez ceux à <15% avec -5% commission<br><br>"+
       "Objectif : descendre à 20% → +40% de revenus";
   }
-  return "Question reçue : " + q.substring(0,50) + ". Coach IA hors ligne - vérifiez connexion internet.";
+  return "Question reçue : " + q.substring(0,50) + ". FATHY hors ligne - vérifiez connexion internet.";
 }
 
 function askCoach(q){
@@ -2619,16 +2634,16 @@ function updateAllPageStats(stats){
   el=document.getElementById('k-dorm');   if(el) el.textContent=stats.dormant.toLocaleString();
   el=document.getElementById('k-perdu');  if(el) el.textContent=stats.perdu.toLocaleString();
 
-  // ── Coach IA header ──
+  // ── FATHY header ──
   el=document.getElementById('coach-total');  if(el) el.textContent=stats.total.toLocaleString()+' chauffeurs';
   el=document.getElementById('coach-actifs'); if(el) el.textContent=stats.actif.toLocaleString()+' actifs';
   el=document.getElementById('coach-comm');   if(el) el.textContent=commPart+'%';
   el=document.getElementById('coach-ann');    if(el) el.textContent=tauxAnn+'%';
 
-  // ── Coach IA message initial ──
+  // ── FATHY message initial ──
   var initMsg=document.getElementById('coach-init-msg');
   if(initMsg){
-        initMsg.innerHTML="Bonsoir ! Je suis votre <strong>Coach Yango IA</strong> 🤖<br><br>"+
+        initMsg.innerHTML="Bonsoir ! Je suis votre <strong>FATHY</strong> 🤖<br><br>"+
       "Donn\u00e9es connues : <strong>"+stats.total.toLocaleString()+" inscrits</strong>, "+
       "<strong style='color:var(--green)'>"+stats.actif.toLocaleString()+" actifs</strong>, "+
       "commission <strong style='color:var(--acc)'>"+commPart+"%</strong> "+
@@ -2637,7 +2652,7 @@ function updateAllPageStats(stats){
       "Posez vos questions — scripts, stratégies. Je réponds avec des conseils adaptés.";
   }
 
-  // ── Coach IA questions cards ──
+  // ── FATHY questions cards ──
   document.querySelectorAll('.coach-jamais-count').forEach(function(el){
     el.textContent=stats.jamais.toLocaleString();
   });

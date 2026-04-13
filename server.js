@@ -178,33 +178,125 @@ app.get('/api/health', (req, res) => {
   res.json(stats);
 });
 
-// ─── PROXY COACH IA (GROQ) ────────────────
-// Utilise Groq — gratuit, rapide, fiable
+// ─── PROXY COACH IA INTELLIGENT (GROQ) ─────────────
 app.post('/api/chat', async (req, res) => {
   const GROQ_KEY = process.env.GROQ_API_KEY || '';
   if (!GROQ_KEY) {
-    return res.json({
-      content: [{type:'text', text:'⚠️ Clé API Groq manquante. Allez dans Render → Environment → ajoutez GROQ_API_KEY avec votre clé console.groq.com'}]
-    });
+    return res.json({content:[{type:'text',text:'⚠️ Clé GROQ_API_KEY manquante dans Render → Environment.'}]});
   }
   try {
     const https = require('https');
-    // Construire messages pour Groq (format OpenAI compatible)
     const messages = req.body.messages || [];
     const systemPrompt = req.body.system || '';
-    const groqMessages = [];
-    if(systemPrompt) {
-      groqMessages.push({role: 'system', content: systemPrompt});
+
+    // ── Recherche de chauffeur dans la base de données ──
+    const db = readDB();
+    const drivers = db.drivers || [];
+    const lastUserMsg = messages.length > 0 ? messages[messages.length-1].content : '';
+
+    // Détection: nom, téléphone ou permis dans le message
+    let driverContext = '';
+    if (drivers.length > 0 && lastUserMsg.length > 2) {
+      const query = lastUserMsg.toLowerCase().trim();
+      // Recherche par nom, téléphone ou permis
+      const found = drivers.filter(d => {
+        const name = (d.name||'').toLowerCase();
+        const phone = (d.phone||'').replace(/\s/g,'');
+        const permis = (d.permis||'').toLowerCase();
+        return name.includes(query) ||
+               phone.includes(query.replace(/\s/g,'')) ||
+               permis.includes(query) ||
+               query.includes(name.split(' ')[0].toLowerCase()) ||
+               query.includes(name.split(' ').pop().toLowerCase());
+      }).slice(0, 3);
+
+      if (found.length > 0) {
+        const now = new Date();
+        driverContext = '\n\n🔍 CHAUFFEURS TROUVÉS DANS LA BASE DE DONNÉES:\n';
+        found.forEach(d => {
+          const days = d.lastDate ? Math.round((now - new Date(d.lastDate)) / 864e5) : null;
+          const commMois = d.orders > 0 ? Math.round(d.orders * 2026 * 0.03 / 30) : 0;
+          driverContext += `\n👤 ${d.name}
+  📱 Téléphone: ${d.phone||'—'}
+  🪪 Permis: ${d.permis||'—'}
+  🚗 Véhicule: ${d.vehicule||'—'} | Plaque: ${d.plaque||'—'}
+  📊 Statut: ${d.segment||'—'} | Courses: ${(d.orders||0).toLocaleString()}
+  ⏰ Inactivité: ${days !== null ? days+'j' : '—'}
+  💰 Commission estimée/mois: ${commMois.toLocaleString()} FCFA
+  🏅 Palier bonus: ${commMois>=200000?'👑 VIP → Bonus 50 000 FCFA':commMois>=100000?'💎 Platinum → Bonus 20 000 FCFA':commMois>=50000?'🥇 Gold → Bonus 7 500 FCFA':commMois>=25000?'🥈 Silver → Bonus 2 500 FCFA':'🥉 Pas encore (manque '+(25000-commMois).toLocaleString()+' FCFA/mois pour Silver)'}
+  🏙️ Ville: ${d.city||'Dakar'}`;
+        });
+        driverContext += '\n';
+      }
     }
-    messages.forEach(function(m) {
-      groqMessages.push({role: m.role, content: m.content});
-    });
+
+    // ── Statistiques temps réel pour le système ──
+    const stats = {
+      total: drivers.length,
+      actif2j: drivers.filter(d=>d.segment==='Actif 2j').length,
+      actif7j: drivers.filter(d=>d.segment==='Actif 7j').length,
+      alerte14j: drivers.filter(d=>d.segment==='Alerte 14j').length,
+      alerte30j: drivers.filter(d=>d.segment==='Alerte 30j').length,
+      dormant: drivers.filter(d=>d.segment==='Dormant récent'||d.segment==='Dormant').length,
+      perdu: drivers.filter(d=>d.segment==='Perdu').length,
+      jamais: drivers.filter(d=>d.segment==='Jamais actif').length
+    };
+
+    // Top 5 VIP (plus de courses)
+    const top5 = drivers.slice().sort((a,b)=>(b.orders||0)-(a.orders||0)).slice(0,5);
+    const top5txt = top5.map(d=>`${d.name} (${(d.orders||0).toLocaleString()} courses)`).join(', ');
+
+    // Alertes urgentes (inactifs depuis 8-14j)
+    const now2 = new Date();
+    const urgents = drivers.filter(d=>{
+      if(!d.lastDate) return false;
+      const days = Math.round((now2-new Date(d.lastDate))/864e5);
+      return days>=8 && days<=14 && (d.orders||0)>100;
+    }).sort((a,b)=>(b.orders||0)-(a.orders||0)).slice(0,5);
+    const urgentsTxt = urgents.map(d=>{
+      const days=Math.round((now2-new Date(d.lastDate))/864e5);
+      return `${d.name} (${days}j inactif, ${(d.orders||0).toLocaleString()} courses, ${d.phone||''})`;
+    }).join('\n  ');
+
+    const enrichedSystem = systemPrompt + driverContext + `
+
+══════════════════════════════════════
+📊 DONNÉES EN TEMPS RÉEL DU PARC NDONGO FALL
+══════════════════════════════════════
+🚖 Total inscrits: ${stats.total.toLocaleString()}
+🟢 Actifs ≤2j: ${stats.actif2j} | ≤7j: ${stats.actif7j}
+⚠️ Alerte 8-14j: ${stats.alerte14j} | 15-30j: ${stats.alerte30j}
+🔴 Dormants: ${stats.dormant} | Perdus: ${stats.perdu}
+⬛ Jamais actifs: ${stats.jamais}
+
+🏆 TOP 5 VIP (plus de courses):
+  ${top5txt}
+
+🚨 CHAUFFEURS URGENTS À APPELER (8-14j inactifs, +100 courses):
+  ${urgentsTxt||'Aucun urgent actuellement'}
+
+💡 RAPPEL: Chaque actif = ~1 826 FCFA/mois pour le parc.
+   Objectif 3000 actifs = ~5,5M FCFA/mois de commission.
+
+💰 PROGRAMME BONUS (NE JAMAIS réduire la commission 3%):
+   🥈 25 000-49 999 FCFA/mois générés → Bonus 2 500 FCFA
+   🥇 50 000-99 999 FCFA/mois générés → Bonus 7 500 FCFA
+   💎 100 000-199 999 FCFA/mois générés → Bonus 20 000 FCFA
+   👑 200 000+ FCFA/mois générés → Bonus 50 000 FCFA + VIP
+══════════════════════════════════════`;
+
+    const groqMessages = [
+      {role:'system', content: enrichedSystem},
+      ...messages
+    ];
+
     const groqBody = JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages: groqMessages,
-      max_tokens: 1000,
+      max_tokens: 1200,
       temperature: 0.7
     });
+
     const options = {
       hostname: 'api.groq.com',
       path: '/openai/v1/chat/completions',
@@ -215,38 +307,32 @@ app.post('/api/chat', async (req, res) => {
         'Authorization': 'Bearer ' + GROQ_KEY
       }
     };
+
     const apiReq = https.request(options, (apiRes) => {
       let data = '';
       apiRes.on('data', chunk => data += chunk);
       apiRes.on('end', () => {
-        console.log('Groq status:', apiRes.statusCode);
         try {
           const parsed = JSON.parse(data);
-          if(parsed.error) {
-            const errMsg = parsed.error.message || JSON.stringify(parsed.error);
-            console.error('Groq error:', errMsg);
-            return res.json({ content: [{type:'text', text: '❌ Erreur Groq: ' + errMsg}] });
+          if (parsed.error) {
+            return res.json({content:[{type:'text',text:'❌ Erreur Groq: '+parsed.error.message}]});
           }
           const text = parsed.choices?.[0]?.message?.content || 'Pas de réponse';
-          res.json({ content: [{type:'text', text: text}] });
+          res.json({content:[{type:'text', text}]});
         } catch(e) {
-          console.error('Parse error:', e.message);
-          res.json({content:[{type:'text', text:'Erreur: '+e.message+' | '+data.substring(0,80)}]});
+          res.json({content:[{type:'text',text:'Erreur parsing: '+e.message}]});
         }
       });
     });
-    apiReq.on('error', (e) => {
-      console.error('Groq request error:', e.message);
-      res.json({content:[{type:'text', text:'Erreur connexion Groq: '+e.message}]});
+    apiReq.on('error', e => {
+      res.json({content:[{type:'text',text:'Erreur réseau: '+e.message}]});
     });
     apiReq.write(groqBody);
     apiReq.end();
-  } catch (err) {
-    res.json({content:[{type:'text', text:'Erreur serveur: '+err.message}]});
+  } catch(err) {
+    res.json({content:[{type:'text',text:'Erreur serveur: '+err.message}]});
   }
 });
-
-
 
 // ─── DÉMARRAGE ──────────────────────────────
 app.listen(PORT, () => {
