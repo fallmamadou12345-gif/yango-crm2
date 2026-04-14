@@ -327,6 +327,8 @@ textarea.form-input{resize:vertical;min-height:70px;}
       <div style="text-align:center;margin-top:16px;font-size:11px;color:rgba(255,255,255,.3);">
         🤖 FATHY surveille les accès
       </div>
+      <div id="login-debug-info" style="display:none;margin-top:10px;background:rgba(245,197,24,.1);border-radius:8px;padding:10px;font-size:11px;color:#f5c518;text-align:left;">
+      </div>
     </div>
   </div>
 </div>
@@ -3585,41 +3587,24 @@ function genererTaches(){
 
 // Configuration des utilisateurs (stockée localement + serveur)
 // Le directeur peut modifier ces accès depuis Paramètres
-// AUTH_USERS chargé depuis le serveur au démarrage
+// AUTH_USERS - liste des utilisateurs (avec mdp pour le directeur)
 var AUTH_USERS = JSON.parse(localStorage.getItem('yango_auth_users') || JSON.stringify([
-  {
-    id: 'dir_001',
-    username: 'directeur',
-    password: 'ndongo2024',
-    nom: 'Ndongo Fall',
-    role: 'directeur',
-    acces: ['all'],
-    actif: true
-  }
+  { id:'dir_001', username:'directeur', password:'ndongo2024', nom:'Ndongo Fall', role:'directeur', actif:true }
 ]));
 
-// Charger TOUS les utilisateurs (avec mdp) depuis serveur au démarrage
+// Charger les users depuis serveur
 async function loadUsersFromServer(){
   try {
     var r = await fetch('/api/users-admin');
-    if(r.ok){
-      var data = await r.json();
-      if(data.users && data.users.length > 0){
-        // Fusionner: garder mdp locaux si serveur n'en a pas
-        data.users.forEach(function(su){
-          var localIdx = AUTH_USERS.findIndex(function(u){ return u.id === su.id; });
-          if(localIdx >= 0){
-            // Garder mdp local si serveur n'en a pas
-            if(!su.password && AUTH_USERS[localIdx].password){
-              su.password = AUTH_USERS[localIdx].password;
-            }
-            AUTH_USERS[localIdx] = su;
-          } else {
-            AUTH_USERS.push(su);
-          }
-        });
-        localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
+    if(!r.ok) return;
+    var data = await r.json();
+    if(data.users && data.users.length > 0){
+      AUTH_USERS = data.users;
+      // Toujours garder le directeur par défaut
+      if(!AUTH_USERS.find(function(u){ return u.username==='directeur'; })){
+        AUTH_USERS.unshift({id:'dir_001',username:'directeur',password:'ndongo2024',nom:'Ndongo Fall',role:'directeur',actif:true});
       }
+      localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
     }
   } catch(e){ console.warn('loadUsers:', e.message); }
 }
@@ -3659,23 +3644,16 @@ var ROLE_PERMISSIONS = {
 
 function saveAuthUsers(){
   localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
-  // Sync vers serveur avec tous les utilisateurs et leurs mdp
   fetch('/api/users-admin', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({users: AUTH_USERS})
   }).then(function(r){ return r.json(); })
   .then(function(d){ 
-    if(d.success){
-      showToast('✅','Accès synchronisé sur le serveur !','success');
-    } else {
-      showToast('⚠️','Erreur sauvegarde serveur - réessayez','error');
-    }
+    if(d.success) showToast('✅','Accès sauvegardé sur le serveur !','success');
+    else showToast('⚠️','Erreur serveur — réessayez','error');
   })
-  .catch(function(e){ 
-    showToast('⚠️','Serveur inaccessible: '+e.message,'error');
-    console.warn('Sync users failed:', e.message); 
-  });
+  .catch(function(e){ showToast('⚠️','Serveur inaccessible','error'); });
 }
 
 async function doLogin(){
@@ -3709,7 +3687,8 @@ async function doLogin(){
     }
     
     // Serveur dit non - vérifier message
-    errEl.textContent = '❌ ' + (data.message || 'Identifiant ou mot de passe incorrect');
+    errEl.innerHTML = '❌ ' + (data.message || 'Identifiant ou mot de passe incorrect') + 
+      '<br><small style="opacity:.7">Demandez au directeur de recréer votre accès dans Paramètres</small>';
     errEl.style.display = 'block';
     
   } catch(e) {
@@ -3733,6 +3712,15 @@ async function doLogin(){
   
   document.getElementById('login-pass').value = '';
   if(btn){ btn.textContent = 'Se connecter →'; btn.disabled = false; }
+  // Charger diagnostic
+  fetch('/api/debug-users').then(function(r){return r.json();}).then(function(d){
+    var dbg = document.getElementById('login-debug-info');
+    if(dbg && d.users){
+      var names = d.users.map(function(u){return '@'+u.username+' ('+u.nom+')'}).join(', ');
+      dbg.innerHTML = '📋 Comptes actifs sur le serveur: ' + (names || 'Aucun — Le directeur doit créer les accès dans Paramètres');
+      dbg.style.display = 'block';
+    }
+  }).catch(function(){});
   setTimeout(function(){ errEl.style.display='none'; }, 5000);
 }
 

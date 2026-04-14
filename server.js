@@ -189,31 +189,43 @@ app.post('/api/users-admin', (req, res) => {
 
 // Connexion
 app.post('/api/login', (req, res) => {
-  const db = readDB();
-  const users = db.users || [];
   const { username, password } = req.body;
   
-  // Vérifier directeur par défaut (fonctionne toujours)
-  const defaultDir = users.find(u => u.id === 'dir_001');
-  if(!defaultDir && username.toLowerCase() === 'directeur' && password === 'ndongo2024'){
+  if(!username || !password) {
+    return res.status(400).json({ success: false, message: 'Identifiant et mot de passe requis' });
+  }
+
+  // DIRECTEUR: toujours valide (priorité absolue)
+  const dirUsers = ['directeur','Directeur','DIRECTEUR'];
+  if(dirUsers.includes(username) && password === 'ndongo2024'){
     return res.json({ success: true, user: {
       id: 'dir_001', username: 'directeur', nom: 'Ndongo Fall',
       role: 'directeur', actif: true
     }});
   }
+
+  // Chercher dans la DB (agents créés par le directeur)
+  const db = readDB();
+  const users = db.users || [];
   
+  console.log('Login attempt:', username, '| Users in DB:', users.length);
+  users.forEach(u => console.log(' -', u.username, 'pwd:', u.password ? 'yes' : 'no', 'actif:', u.actif));
+
   const found = users.find(u => 
-    u.username.toLowerCase() === username.toLowerCase() && 
+    u.username && 
+    u.username.toLowerCase().trim() === username.toLowerCase().trim() && 
     u.password === password && 
     u.actif !== false
   );
   
   if(found){
-    const { password: _, ...safeUser } = found;
-    res.json({ success: true, user: safeUser });
-  } else {
-    res.status(401).json({ success: false, message: 'Identifiant ou mot de passe incorrect' });
+    const safeUser = { id: found.id, username: found.username, nom: found.nom, role: found.role, actif: found.actif };
+    console.log('Login success:', safeUser.username);
+    return res.json({ success: true, user: safeUser });
   }
+  
+  console.log('Login failed for:', username);
+  res.status(401).json({ success: false, message: 'Identifiant ou mot de passe incorrect. Vérifiez avec le directeur.' });
 });
 
 // Sauvegarder les utilisateurs (directeur seulement)
@@ -222,6 +234,20 @@ app.post('/api/users', (req, res) => {
   db.users = req.body.users || [];
   const ok = writeDB(db);
   res.json({ success: ok });
+});
+
+// Diagnostic utilisateurs
+app.get('/api/debug-users', (req, res) => {
+  const db = readDB();
+  const users = (db.users || []).map(u => ({
+    id: u.id,
+    username: u.username,
+    nom: u.nom,
+    role: u.role,
+    actif: u.actif,
+    hasPassword: !!u.password
+  }));
+  res.json({ count: users.length, users });
 });
 
 // Santé du serveur
