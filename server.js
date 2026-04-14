@@ -235,7 +235,7 @@ app.post('/api/chat', async (req, res) => {
     const scoresData = req.body.scores || {};
     let agentsContext = '';
     if(agentsData.length > 0){
-      agentsContext = '\n\n👥 ÉQUIPE D'AGENTS DU PARC:\n';
+      agentsContext = '\n\n👥 EQUIPE AGENTS DU PARC:\n';
       agentsData.forEach(function(a){
         const sc = scoresData[a.id] || {points:0,rappels:0,reactives:0,actives:0,rapports:0};
         const pts = sc.points || 0;
