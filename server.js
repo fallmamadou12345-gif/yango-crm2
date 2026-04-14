@@ -161,6 +161,50 @@ app.post('/api/data-sync', (req, res) => {
   });
 });
 
+// ─── GESTION DES UTILISATEURS ──────────────
+// Lire les utilisateurs
+app.get('/api/users', (req, res) => {
+  const db = readDB();
+  const users = (db.users || []).map(u => ({...u, password: undefined})); // ne pas envoyer mdp
+  res.json({ success: true, users });
+});
+
+// Connexion
+app.post('/api/login', (req, res) => {
+  const db = readDB();
+  const users = db.users || [];
+  const { username, password } = req.body;
+  
+  // Directeur par défaut si aucun utilisateur créé
+  if(users.length === 0 && username === 'directeur' && password === 'ndongo2024'){
+    return res.json({ success: true, user: {
+      id: 'dir_001', username: 'directeur', nom: 'Ndongo Fall',
+      role: 'directeur', actif: true
+    }});
+  }
+  
+  const found = users.find(u => 
+    u.username.toLowerCase() === username.toLowerCase() && 
+    u.password === password && 
+    u.actif !== false
+  );
+  
+  if(found){
+    const { password: _, ...safeUser } = found;
+    res.json({ success: true, user: safeUser });
+  } else {
+    res.status(401).json({ success: false, message: 'Identifiant ou mot de passe incorrect' });
+  }
+});
+
+// Sauvegarder les utilisateurs (directeur seulement)
+app.post('/api/users', (req, res) => {
+  const db = readDB();
+  db.users = req.body.users || [];
+  const ok = writeDB(db);
+  res.json({ success: ok });
+});
+
 // Santé du serveur
 app.get('/api/health', (req, res) => {
   const db = readDB();

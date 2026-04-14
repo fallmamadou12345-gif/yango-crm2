@@ -3632,12 +3632,19 @@ var ROLE_PERMISSIONS = {
 
 function saveAuthUsers(){
   localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
+  // Sync vers le serveur pour que tous les appareils y aient accès
+  fetch('/api/users', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({users: AUTH_USERS})
+  }).catch(function(e){ console.warn('Sync users:', e.message); });
 }
 
-function doLogin(){
+async function doLogin(){
   var user = document.getElementById('login-user').value.trim();
   var pass = document.getElementById('login-pass').value.trim();
   var errEl = document.getElementById('login-error');
+  var btn = document.getElementById('login-btn');
 
   if(!user || !pass){
     errEl.textContent = '⚠️ Entrez votre identifiant et mot de passe';
@@ -3645,38 +3652,66 @@ function doLogin(){
     return;
   }
 
-  // Chercher l'utilisateur
+  // Afficher chargement
+  if(btn){ btn.textContent = 'Connexion...'; btn.disabled = true; }
+
+  try {
+    // 1. Essayer via le serveur (utilisateurs créés par le directeur)
+    var resp = await fetch('/api/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: user, password: pass})
+    });
+    var data = await resp.json();
+
+    if(data.success && data.user){
+      // Connexion réussie via serveur
+      loginSuccess(data.user);
+      return;
+    }
+  } catch(e) {
+    console.warn('Server login failed, trying local:', e.message);
+  }
+
+  // 2. Fallback: vérifier localStorage (accès créés localement)
   var found = AUTH_USERS.find(function(u){
-    return u.username.toLowerCase() === user.toLowerCase() && u.password === pass && u.actif;
+    return u.username.toLowerCase() === user.toLowerCase() && u.password === pass && u.actif !== false;
   });
 
-  if(!found){
-    errEl.textContent = '❌ Identifiant ou mot de passe incorrect';
-    errEl.style.display = 'block';
-    document.getElementById('login-pass').value = '';
-    setTimeout(function(){ errEl.style.display='none'; }, 3000);
+  if(found){
+    loginSuccess(found);
     return;
   }
 
-  // Connexion réussie
+  // Échec connexion
+  errEl.textContent = '❌ Identifiant ou mot de passe incorrect';
+  errEl.style.display = 'block';
+  document.getElementById('login-pass').value = '';
+  if(btn){ btn.textContent = 'Se connecter →'; btn.disabled = false; }
+  setTimeout(function(){ errEl.style.display='none'; }, 4000);
+}
+
+function loginSuccess(found){
   CURRENT_USER = found;
   sessionStorage.setItem('yango_user', JSON.stringify(found));
   document.getElementById('login-screen').style.display = 'none';
-  applyUserPermissions(found);
 
-  // Log de connexion
-  var logEl = document.getElementById('p-user-name');
-  if(logEl) logEl.textContent = found.nom;
-  var roleEl = document.getElementById('p-user-role');
-  if(roleEl) roleEl.textContent = ROLE_PERMISSIONS[found.role]?.label || found.role;
-
-  // Mettre à jour le nom dans sidebar
   var sbUser = document.querySelector('.sb-user-name');
-  if(sbUser) sbUser.textContent = found.nom;
+  if(sbUser) sbUser.textContent = found.nom || found.username;
   var sbRole = document.querySelector('.sb-user-role');
-  if(sbRole) sbRole.textContent = ROLE_PERMISSIONS[found.role]?.label || found.role;
+  var roleLabel = (ROLE_PERMISSIONS[found.role] || {}).label || found.role || '';
+  if(sbRole) sbRole.textContent = roleLabel;
 
-  showToast('👋', 'Bienvenue ' + found.nom + ' !', 'success');
+  var logEl = document.getElementById('p-user-name');
+  if(logEl) logEl.textContent = found.nom || found.username;
+  var roleEl = document.getElementById('p-user-role');
+  if(roleEl) roleEl.textContent = roleLabel;
+
+  var btn = document.getElementById('login-btn');
+  if(btn){ btn.textContent = 'Se connecter →'; btn.disabled = false; }
+
+  applyUserPermissions(found);
+  showToast('👋', 'Bienvenue ' + (found.nom||found.username) + ' !', 'success');
 }
 
 function doLogout(){
@@ -3730,12 +3765,22 @@ function applyUserPermissions(user){
 }
 
 function checkAuth(){
-  // Vérifier si déjà connecté
+  // Vérifier si déjà connecté en session
   if(CURRENT_USER){
     document.getElementById('login-screen').style.display = 'none';
     applyUserPermissions(CURRENT_USER);
     return true;
   }
+  // Charger les utilisateurs depuis le serveur en arrière-plan
+  fetch('/api/users').then(function(r){ return r.json(); }).then(function(data){
+    if(data.users && data.users.length > 0){
+      // Merger avec les locaux (les serveur n'a pas les mdp, garder locaux)
+      data.users.forEach(function(su){
+        var local = AUTH_USERS.find(function(u){ return u.id === su.id; });
+        if(!local) AUTH_USERS.push(su);
+      });
+    }
+  }).catch(function(e){});
   return false;
 }
 
