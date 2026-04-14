@@ -230,6 +230,30 @@ app.post('/api/chat', async (req, res) => {
       }
     }
 
+    // ── Données agents depuis la requête ──
+    const agentsData = req.body.agents || [];
+    const scoresData = req.body.scores || {};
+    let agentsContext = '';
+    if(agentsData.length > 0){
+      agentsContext = '\n\n👥 ÉQUIPE D'AGENTS DU PARC:\n';
+      agentsData.forEach(function(a){
+        const sc = scoresData[a.id] || {points:0,rappels:0,reactives:0,actives:0,rapports:0};
+        const pts = sc.points || 0;
+        const prime = Math.floor(pts/10)*1000;
+        const badge = pts>=200?'👑 Agent du mois':pts>=100?'💎 VIP':pts>=50?'🥇 Gold':pts>=25?'🥈 Silver':pts>=10?'🥉 Bronze':'⭐ Débutant';
+        agentsContext += `\n🧑 ${a.nom} (@${a.username||a.id})
+  Rôle: ${a.role} | Zone: ${a.zone||'—'}
+  📊 Points: ${pts} | Badge: ${badge}
+  📞 Rappels effectués: ${sc.rappels||0}
+  🔄 Dormants réactivés: ${sc.reactives||0}
+  🆕 Jamais actifs activés: ${sc.actives||0}
+  💰 Prime accumulée: ${prime.toLocaleString()} FCFA`;
+      });
+      // Classement
+      const sorted = agentsData.slice().sort((a,b)=>((scoresData[b.id]||{}).points||0)-((scoresData[a.id]||{}).points||0));
+      agentsContext += `\n\n🏆 CLASSEMENT: ${sorted.map((a,i)=>(i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1))+' '+a.nom+' ('+((scoresData[a.id]||{}).points||0)+' pts)').join(' | ')}`;
+    }
+
     // ── Statistiques temps réel pour le système ──
     const stats = {
       total: drivers.length,
@@ -258,7 +282,7 @@ app.post('/api/chat', async (req, res) => {
       return `${d.name} (${days}j inactif, ${(d.orders||0).toLocaleString()} courses, ${d.phone||''})`;
     }).join('\n  ');
 
-    const enrichedSystem = systemPrompt + driverContext + `
+    const enrichedSystem = systemPrompt + driverContext + agentsContext + `
 
 ══════════════════════════════════════
 📊 DONNÉES EN TEMPS RÉEL DU PARC NDONGO FALL

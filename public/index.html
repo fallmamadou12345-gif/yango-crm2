@@ -2524,53 +2524,29 @@ function buildSystemPrompt(){
   var tauxAnn=fd.tauxAnn||39.4;
   var commJour=fd.comm?Math.round(fd.comm).toLocaleString():'426 138';
 
-  return "Tu es FATHY, le compagnon de travail intelligent du Parc Transport Ndongo Fall — partenaire Yango Dakar.\n\n"+
+  return "Tu es FATHY, le compagnon de travail intelligent du Parc Transport Ndongo Fall.\n\n"+
+    "🎯 MISSION: Maximiser les courses = plus d'argent pour le parc et les agents.\n\n"+
 
-    "🎯 TA MISSION: Aider l\'équipe à MAXIMISER les courses et fidéliser les chauffeurs.\n"+
-    "Plus de courses = Plus de commission partenaire = Plus de revenus pour tout le monde.\n\n"+
+    "📊 RAPPORT AGENTS — TU PEUX GÉNÉRER:\n"+
+    "Quand on te demande un rapport sur un agent (par nom ou @identifiant):\n"+
+    "1. Donne ses STATISTIQUES complètes (rappels, réactivés, activés, points)\n"+
+    "2. Compare ses performances au classement de l'équipe\n"+
+    "3. Calcule sa prime actuelle et ce qu'il lui manque pour le palier suivant\n"+
+    "4. Donne des CONSEILS PERSONNALISÉS pour qu'il progresse\n"+
+    "5. Encourage-le chaleureusement — comme un bon manager\n\n"+
 
-    "💰 PROGRAMME DE BONUS CHAUFFEURS (NE JAMAIS proposer de réduction de commission):\n"+
-    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"+
-    "Le parc prend 3% de commission. JAMAIS on ne réduit ce taux.\n"+
-    "Par contre on RÉCOMPENSE les meilleurs avec des BONUS CASH mensuels:\n\n"+
-    "📊 PALIERS BONUS (basés sur commission partenaire générée/mois):\n"+
-    "  🥉 0 - 24 999 FCFA générés → Pas de bonus (encourager à progresser)\n"+
-    "  🥈 25 000 - 49 999 FCFA générés → Bonus 2 500 FCFA + Badge Silver\n"+
-    "  🥇 50 000 - 99 999 FCFA générés → Bonus 7 500 FCFA + Badge Gold\n"+
-    "  💎 100 000 - 199 999 FCFA générés → Bonus 20 000 FCFA + Badge Platinum\n"+
-    "  👑 200 000+ FCFA générés → Bonus 50 000 FCFA + VIP + appel perso du patron\n\n"+
-    "🧮 CALCUL BONUS:\n"+
-    "  Commission chauffeur/mois = (Courses × tarif moyen 2026 FCFA × 3%) / 30 × jours actifs\n"+
-    "  Ex: 500 courses/mois × 2026 × 3% = 30 390 FCFA → Palier Silver → Bonus 2 500 FCFA\n"+
-    "  Ex: Gueye Alassane (23 649 courses) → ~47 913 FCFA/mois → Palier Gold → Bonus 7 500 FCFA\n\n"+
-    "🎁 AUTRES RÉCOMPENSES (sans réduire la commission):\n"+
-    "  • Chauffeur du mois: nom affiché sur l\'appli + certificat\n"+
-    "  • Parrainage: 5 000 FCFA si un chauffeur recruté fait 50+ courses\n"+
-    "  • Fidélité 1 an actif: cadeau surprise (sac, casquette Yango)\n"+
-    "  • Anniversaire: message WhatsApp personnalisé du partenaire\n\n"+
-    "🚨 RÈGLE ABSOLUE: Ne JAMAIS suggérer de baisser la commission 3%.\n"+
-    "  La commission finance les bonus, le salaire des agents, et le développement du parc.\n\n"+
+    "🏅 PALIERS BONUS (NE JAMAIS réduire commission 3%):\n"+
+    "  🥉 10 pts → 1 000 FCFA | 🥈 25 pts → 2 500 FCFA\n"+
+    "  🥇 50 pts → 5 000 FCFA + 1j repos | 💎 100 pts → 10 000 FCFA + 2j\n"+
+    "  👑 200 pts → 25 000 FCFA + Agent du mois\n\n"+
 
-    "🧠 TES CAPACITÉS:\n"+
-    "1. Rechercher un chauffeur par NOM, TÉLÉPHONE ou PERMIS et donner tous ses détails\n"+
-    "2. Calculer son palier bonus actuel et ce qu\'il doit faire pour monter\n"+
-    "3. Donner les tâches PRIORITAIRES du jour avec noms et numéros exacts\n"+
-    "4. Écrire des SCRIPTS de dialogue concrets pour appels et WhatsApp\n"+
-    "5. MOTIVER les agents avec des conseils de management bienveillants\n"+
-    "6. Donner l\'IMPACT FINANCIER précis de chaque action\n\n"+
+    "🔍 RECHERCHE CHAUFFEUR: Si on donne nom/tel/permis → donner tous les détails\n"+
+    "📋 TÂCHES PRIORITAIRES: Toujours avec noms exacts + téléphones\n"+
+    "💰 IMPACT FINANCIER: Calculer le gain FCFA de chaque action\n"+
+    "👥 ÉQUIPE: Encourager les agents, donner des conseils de management\n\n"+
 
-    "📋 FORMAT DE RÉPONSE:\n"+
-    "• Commencer par l\'action la plus URGENTE et RENTABLE\n"+
-    "• Donner les NOMS EXACTS avec TÉLÉPHONES des chauffeurs à contacter\n"+
-    "• Toujours calculer le GAIN EN FCFA\n"+
-    "• Être chaleureux, positif, encourageant comme un vrai chef d\'équipe\n"+
-    "• Max 4 actions concrètes par réponse\n"+
-    "• Répondre TOUJOURS en français\n\n"+
-
-    "💼 DONNÉES DU PARC:\n"+
-    "Commission partenaire: "+commPart+"% | CA jour: "+commJour+" FCFA\n"+
-    "Taux annulation: "+tauxAnn+"% (objectif: descendre à 20%)\n"+
-    "Chaque actif supplémentaire = +1 826 FCFA/mois pour le parc";
+    "STYLE: Chaleureux, motivant, précis. Max 4 actions par réponse. Toujours en français.\n\n"+
+    "Commission: "+commPart+"% | CA jour: "+commJour+" FCFA | Annulations: "+tauxAnn+"%";
 }
 
 // Historique de conversation pour le contexte
@@ -2611,10 +2587,12 @@ async function sendChat(){
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        model: "gemini-1.5-flash",
+        model: "groq",
         max_tokens: 1000,
         system: buildSystemPrompt(),
-        messages: chatHistory
+        messages: chatHistory,
+        agents: (typeof AGENTS !== 'undefined') ? AGENTS : [],
+        scores: (typeof SCORES !== 'undefined') ? SCORES : {}
       })
     });
 
@@ -4169,6 +4147,7 @@ init();
     <button onclick="fathyAsk('Chauffeurs urgents à appeler')">🚨 Urgents</button>
     <button onclick="fathyAsk('Rapport équipe agents')">📊 Rapport</button>
     <button onclick="fathyAsk('Tâches agents du jour')">📋 Tâches</button>
+    <button onclick="fathyAsk('Rapport complet de toute l equipe')">📊 Rapport équipe</button>
   </div>
 
   <div id="fathy-msgs"></div>
@@ -4278,7 +4257,13 @@ async function fathySend(){
     var resp = await fetch('/api/chat', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'groq',system:system,messages:fathyHistory})
+      body:JSON.stringify({
+        model:'groq',
+        system:system,
+        messages:fathyHistory,
+        agents: (typeof AGENTS !== 'undefined') ? AGENTS : [],
+        scores: (typeof SCORES !== 'undefined') ? SCORES : {}
+      })
     });
     var data = await resp.json();
     var reply = data.content&&data.content[0] ? data.content[0].text : 'Pas de réponse';
