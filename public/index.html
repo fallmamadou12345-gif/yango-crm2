@@ -672,22 +672,121 @@ textarea.form-input{resize:vertical;min-height:70px;}
   </div>
 
   <!-- ══ EQUIPE ══ -->
+  <!-- ══ ÉQUIPE & AGENTS ══ -->
   <div class="page" id="page-equipe">
-    <div style="background:linear-gradient(135deg,var(--s0),var(--s2));border:1px solid var(--b1);border-radius:var(--r3);padding:22px;margin-bottom:16px;">
-      <div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:5px;">Structure d'équipe — 8 membres</div>
-      <div style="font-size:12px;color:var(--mu2)">Basée sur 14 830 chauffeurs · 1 087 actifs · Commission 3% · Annulation 39.4% à corriger</div>
+
+    <!-- FATHY Header -->
+    <div style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);border:1px solid rgba(245,197,24,.4);border-radius:var(--r3);padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;">
+      <div style="width:64px;height:64px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;box-shadow:0 0 20px rgba(245,197,24,.4);">🤖</div>
+      <div style="flex:1">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#f5c518;">FATHY — Manager IA</div>
+        <div style="font-size:12px;color:var(--mu2);margin-top:3px;">Surveille votre équipe · Attribue les tâches · Calcule les scores · Parc Transport Ndongo Fall</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="background:rgba(245,197,24,.15);color:#f5c518;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">🎯 Tâches auto</span>
+          <span style="background:rgba(34,211,160,.15);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">🏆 Classement</span>
+          <span style="background:rgba(139,92,246,.15);color:#a78bfa;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">💰 Points → Primes</span>
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="genererTaches()" style="font-size:12px;white-space:nowrap;">⚡ Générer tâches du jour</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-      <div class="card" style="border-top:3px solid var(--acc)"><div style="font-size:22px;margin-bottom:6px;">👑</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Partenaire — Vous</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">Direction générale</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ Dashboard 10 min/matin<br>▸ Vérifier rappels du jour<br>▸ Appel top 5 VIP/semaine<br>▸ Validation offres fidélité<br>▸ Réunion équipe vendredi</div></div>
-      <div class="card" style="border-top:3px solid var(--blue)"><div style="font-size:22px;margin-bottom:6px;">📊</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Resp. Opérations</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">Données & import</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ Import CSV chaque lundi<br>▸ Rapport hebdo segments<br>▸ Suivi annulations<br>▸ Détection dormants J+15<br>▸ Mise à jour rappels</div></div>
-      <div class="card" style="border-top:3px solid var(--green)"><div style="font-size:22px;margin-bottom:6px;">💬</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Resp. Support</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">1 personne + 1 agent</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ WhatsApp Business &lt;2h<br>▸ Problèmes recharge/comptes<br>▸ Notes après chaque contact<br>▸ Rappels de suivi<br>▸ Satisfaction mensuelle</div></div>
-      <div class="card" style="border-top:3px solid var(--orange)"><div style="font-size:22px;margin-bottom:6px;">🎯</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Resp. Fidélisation</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">1 personne + 2 agents</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ Programme paliers<br>▸ Classement mensuel<br>▸ Campagnes WhatsApp/SMS<br>▸ Rappels fidélisation<br>▸ Analyse départs</div></div>
-      <div class="card" style="border-top:3px solid var(--purple)"><div style="font-size:22px;margin-bottom:6px;">🗺️</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Agents Terrain A & B</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">2 personnes · ~300 chacun</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ Animation groupes WA<br>▸ Visites terrain<br>▸ Aide recharges Wave/OM<br>▸ Notes contact terrain<br>▸ Rapport quotidien</div></div>
-      <div class="card" style="border-top:3px solid var(--red)"><div style="font-size:22px;margin-bottom:6px;">🔔</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;">Agent Relance</div><div style="font-size:10px;color:var(--mu);margin-bottom:10px;">Dormants + annuleurs</div><div style="font-size:11px;line-height:1.9;color:var(--mu2)">▸ 20 appels dormants/lundi<br>▸ Broadcasts WA/SMS<br>▸ Notes résultats appels<br>▸ Rappels de suivi auto<br>▸ Taux conversion</div></div>
+
+    <!-- Classement agents + Scores -->
+    <div class="g2 mb16">
+
+      <!-- Leaderboard -->
+      <div class="card">
+        <div class="ct">🏆 Classement Agents — Score du mois</div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:12px;">1 point = 100 FCFA de prime · 5 pts = 1 jour de repos · 20 pts = Bonus spécial</div>
+        <div id="leaderboard-list"></div>
+        <button class="btn btn-g" style="width:100%;margin-top:10px;justify-content:center;font-size:11px;" onclick="resetScores()">🔄 Réinitialiser les scores (fin de mois)</button>
+      </div>
+
+      <!-- Conversion points -->
+      <div class="card">
+        <div class="ct">💰 Tableau de conversion des points</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+          <div style="background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.2);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;">🥉 10 points</span>
+            <span style="font-weight:700;color:#f5c518;">1 000 FCFA de prime</span>
+          </div>
+          <div style="background:rgba(34,211,160,.08);border:1px solid rgba(34,211,160,.2);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;">🥈 25 points</span>
+            <span style="font-weight:700;color:var(--green);">2 500 FCFA + 1/2 journée repos</span>
+          </div>
+          <div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;">🥇 50 points</span>
+            <span style="font-weight:700;color:#fbbf24;">5 000 FCFA + 1 jour de repos</span>
+          </div>
+          <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;">💎 100 points</span>
+            <span style="font-weight:700;color:#a78bfa;">10 000 FCFA + 2 jours + Badge VIP</span>
+          </div>
+          <div style="background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.4);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;">👑 200 points</span>
+            <span style="font-weight:700;color:#f5c518;">Agent du mois + 25 000 FCFA</span>
+          </div>
+        </div>
+        <div class="ct" style="margin-top:14px;">📊 Comment gagner des points</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b1)"><span>✅ Rappel effectué et noté</span><span style="color:var(--green);font-weight:700">+2 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b1)"><span>🔄 Dormant réactivé</span><span style="color:var(--green);font-weight:700">+5 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b1)"><span>🆕 Jamais actif activé</span><span style="color:var(--green);font-weight:700">+8 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b1)"><span>🎯 Objectif journalier atteint</span><span style="color:#fbbf24;font-weight:700">+10 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b1)"><span>📋 Rapport complet soumis</span><span style="color:var(--acc);font-weight:700">+3 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0"><span>👑 VIP fidélisé (+500 courses)</span><span style="color:#a78bfa;font-weight:700">+15 pts</span></div>
+        </div>
+      </div>
     </div>
+
+    <!-- Tâches du jour par agent -->
+    <div class="card mb16">
+      <div class="ct">📋 Tâches du jour — Assignées par FATHY <span id="taches-date" style="font-size:11px;color:var(--mu);font-weight:400"></span></div>
+      <div id="taches-agents-list">
+        <div class="empty-state"><div class="ico">⚡</div><p>Cliquez "Générer tâches du jour" pour que FATHY assigne les tâches</p></div>
+      </div>
+    </div>
+
+    <!-- Rapport activité agents -->
+    <div class="card mb16">
+      <div class="ct">📊 Rapport d'activité des agents</div>
+      <div id="rapport-agents-list">
+        <div class="empty-state"><div class="ico">📊</div><p>Le rapport se met à jour automatiquement selon les appels enregistrés</p></div>
+      </div>
+    </div>
+
+    <!-- Gestion des agents -->
+    <div class="card">
+      <div class="ct">👥 Gestion des agents — Ajouter / Modifier</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <label class="form-label">Nom de l'agent</label>
+          <input class="form-input" type="text" id="agent-nom" placeholder="Ex: ALIOU CISSE"/>
+        </div>
+        <div>
+          <label class="form-label">Rôle</label>
+          <select class="form-input" id="agent-role">
+            <option>Agent Relance</option>
+            <option>Agent Activation</option>
+            <option>Agent Terrain</option>
+            <option>Superviseur</option>
+            <option>Responsable</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Téléphone</label>
+          <input class="form-input" type="text" id="agent-tel" placeholder="+221 77 000 00 00"/>
+        </div>
+        <div>
+          <label class="form-label">Zone assignée</label>
+          <input class="form-input" type="text" id="agent-zone" placeholder="Ex: Dakar Plateau"/>
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="ajouterAgent()">➕ Ajouter agent</button>
+      <div id="agents-list" style="margin-top:14px;"></div>
+    </div>
+
   </div>
 
-  <!-- ══ PARAMÈTRES ══ -->
   <div class="page" id="page-settings">
     <div style="background:linear-gradient(135deg,var(--s0),var(--s2));border:1px solid var(--b1);border-radius:var(--r3);padding:24px;margin-bottom:16px;">
       <div style="font-family:Syne,sans-serif;font-size:19px;font-weight:800;margin-bottom:5px;">⚙️ Paramètres du CRM</div>
@@ -1024,6 +1123,10 @@ async function loadFromServer(){
         updateKPIs(stats);
         updateAllPageStats(stats);
       }
+      if(json.data.agents && json.data.agents.length>0){
+        AGENTS = json.data.agents;
+        localStorage.setItem('yango_agents', JSON.stringify(AGENTS));
+      }
       // Backup dans localStorage
       try{ localStorage.setItem('yango_bk', JSON.stringify({notes,reminders,cstatus,callLogs,importHist})); }catch(ex){}
       console.log('✅ Données chargées du disque');
@@ -1138,7 +1241,7 @@ const TODAY=new Date().toISOString().split('T')[0];
 // ═══════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════
-const TITLES={dashboard:'Dashboard',rappels:'Rappels & Alertes',chauffeurs:'Chauffeurs CRM',messages:'WhatsApp / SMS',coach:'FATHY',import:'Import CSV',finances:'Finances',equipe:'Équipe'};
+const TITLES={dashboard:'Dashboard',rappels:'Rappels & Alertes',chauffeurs:'Chauffeurs CRM',messages:'WhatsApp / SMS',coach:'FATHY',import:'Import CSV',finances:'Finances',equipe:'Équipe & Agents'};
 // nav() défini dans paramètres
 function filterNav(seg){currentFilter=seg;nav('chauffeurs');renderTable();}
 
@@ -2506,6 +2609,8 @@ function nav(id){
   if(id==='rappels'){renderReminders();updateRemBadges();}
   if(id==='dashboard') renderDashboard();
   if(id==='settings') renderSettings();
+  if(id==='equipe'){renderLeaderboard();renderAgents();renderRapportAgents();}
+  if(id==='equipe') renderAgents();
   if(id==='coach') updateAllPageStats(stats);
 }
 
@@ -2787,6 +2892,564 @@ function getPermis(driverName){
 }
 
 
+// ═══════════════════════════════════════════
+// SYSTÈME AGENTS — FATHY Manager
+// ═══════════════════════════════════════════
+
+// Structure d'un agent:
+// { id, name, role, phone, points, actions[], tasksToday[], score, badge, joinDate }
+
+var AGENTS = JSON.parse(localStorage.getItem('yango_agents') || '[]');
+
+// Barème de points
+var POINTS_RULES = {
+  appel_positif:   50,   // Chauffeur réactivé après appel
+  appel_neutre:    15,   // Appel effectué, chauffeur en attente
+  appel_absent:    10,   // Appel effectué, chauffeur absent
+  rappel_cree:     20,   // Rappel programmé
+  rappel_fait:     30,   // Rappel effectué à l'heure
+  import_csv:     100,   // Import CSV complet
+  whatsapp_envoye: 25,   // Message WA envoyé
+  note_ajoutee:    10,   // Note ajoutée sur un chauffeur
+};
+
+// Paliers de récompense
+var AGENT_REWARDS = [
+  {min:0,    max:499,   badge:'🌱 Débutant',  prime:0,      repos:0},
+  {min:500,  max:999,   badge:'⭐ Bronze',    prime:5000,   repos:0},
+  {min:1000, max:1999,  badge:'⭐⭐ Argent',  prime:10000,  repos:0.5},
+  {min:2000, max:3999,  badge:'⭐⭐⭐ Or',    prime:25000,  repos:1},
+  {min:4000, max:7999,  badge:'💎 Platinum',  prime:50000,  repos:2},
+  {min:8000, max:99999, badge:'👑 Champion',  prime:100000, repos:3},
+];
+
+function getAgentBadge(points){
+  for(var i=AGENT_REWARDS.length-1;i>=0;i--){
+    if(points>=AGENT_REWARDS[i].min) return AGENT_REWARDS[i];
+  }
+  return AGENT_REWARDS[0];
+}
+
+function saveAgents(){
+  localStorage.setItem('yango_agents', JSON.stringify(AGENTS));
+  // Sync with server
+  fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({notes,reminders,cstatus,callLogs,importHist,drivers:DRIVERS.slice(0,20000),agents:AGENTS,updatedAt:new Date().toISOString()})
+  }).catch(function(){});
+}
+
+function addAgent(){
+  var name=document.getElementById('new-agent-name').value.trim();
+  var role=document.getElementById('new-agent-role').value;
+  var phone=document.getElementById('new-agent-phone').value.trim();
+  if(!name){showToast('⚠️','Entrez le nom agent','error');return;}
+  var agent={
+    id:'ag_'+Date.now(),
+    name:name, role:role, phone:phone,
+    points:0, actions:[], tasksToday:[], score:0,
+    badge:'🌱 Débutant', joinDate:new Date().toISOString().split('T')[0]
+  };
+  AGENTS.push(agent);
+  saveAgents();
+  document.getElementById('new-agent-name').value='';
+  document.getElementById('new-agent-phone').value='';
+  renderAgents();
+  showToast('✅','Agent '+name+' ajouté ! Bienvenue 🎉','success');
+}
+
+function addAgentPoints(agentId, actionType, note){
+  var agent=AGENTS.find(function(a){return a.id===agentId;});
+  if(!agent) return;
+  var pts=POINTS_RULES[actionType]||10;
+  agent.points=(agent.points||0)+pts;
+  var oldBadge=agent.badge;
+  var reward=getAgentBadge(agent.points);
+  agent.badge=reward.badge;
+  agent.actions=agent.actions||[];
+  agent.actions.unshift({type:actionType,pts:pts,note:note||'',date:new Date().toLocaleString('fr-FR')});
+  if(agent.actions.length>50) agent.actions=agent.actions.slice(0,50);
+  saveAgents();
+  renderAgents();
+  // Notification si nouveau badge
+  if(oldBadge!==agent.badge){
+    showToast('🎉',''+agent.name+' passe au niveau '+agent.badge+' !','success');
+  }
+}
+
+function assignTask(agentId, task){
+  var agent=AGENTS.find(function(a){return a.id===agentId;});
+  if(!agent) return;
+  agent.tasksToday=agent.tasksToday||[];
+  agent.tasksToday.push({id:'t_'+Date.now(),text:task,done:false,date:new Date().toISOString()});
+  saveAgents();
+  renderAgents();
+  showToast('📋','Tâche assignée à '+agent.name,'success');
+}
+
+function completeTask(agentId, taskId){
+  var agent=AGENTS.find(function(a){return a.id===agentId;});
+  if(!agent) return;
+  var task=agent.tasksToday.find(function(t){return t.id===taskId;});
+  if(task){task.done=true; addAgentPoints(agentId,'rappel_fait','Tâche complétée: '+task.text);}
+  saveAgents(); renderAgents();
+}
+
+function deleteAgent(agentId){
+  if(!confirm('Supprimer cet agent ?')) return;
+  AGENTS=AGENTS.filter(function(a){return a.id!==agentId;});
+  saveAgents(); renderAgents();
+}
+
+function renderAgents(){
+  var grid=document.getElementById('agents-grid');
+  if(!grid) return;
+
+  // Update global stats
+  var totalCalls=AGENTS.reduce(function(s,a){return s+(a.actions||[]).length;},0);
+  var totalPoints=AGENTS.reduce(function(s,a){return s+(a.points||0);},0);
+  var best=AGENTS.slice().sort(function(a,b){return (b.points||0)-(a.points||0);})[0];
+  var agCount=document.getElementById('ag-count');if(agCount)agCount.textContent=AGENTS.length;
+  var agCalls=document.getElementById('ag-calls');if(agCalls)agCalls.textContent=totalCalls;
+  var agPts=document.getElementById('ag-points');if(agPts)agPts.textContent=totalPoints.toLocaleString();
+  var agBest=document.getElementById('ag-best');if(agBest)agBest.textContent=best?best.name+' ('+best.points+'pts)':'—';
+
+  if(!AGENTS.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--mu)">Aucun agent — Ajoutez votre équipe ci-dessous ⬇️</div>';
+    return;
+  }
+  // Event delegation for all buttons
+  grid.onclick=function(e){
+    var btn=e.target.closest('button');
+    if(!btn) return;
+    var aid=btn.dataset.id;
+    if(btn.classList.contains('task-add-btn')){
+      var inp=document.getElementById('task-inp-'+aid);
+      if(inp&&inp.value.trim()){assignTask(aid,inp.value.trim());inp.value='';}
+    } else if(btn.classList.contains('ap-btn')){
+      addAgentPoints(aid, btn.dataset.act, '');
+    } else if(btn.classList.contains('del-agent-btn')){
+      deleteAgent(aid);
+    }
+  };
+  // Checkbox delegation
+  grid.onchange=function(e){
+    if(e.target.classList.contains('task-cb')){
+      completeTask(e.target.dataset.aid, e.target.dataset.tid);
+    }
+  };
+
+  grid.innerHTML='';
+  var sorted=AGENTS.slice().sort(function(a,b){return (b.points||0)-(a.points||0);});
+
+  sorted.forEach(function(agent,rank){
+    var reward=getAgentBadge(agent.points||0);
+    var nextReward=AGENT_REWARDS[AGENT_REWARDS.indexOf(reward)+1];
+    var pct=nextReward?Math.round(((agent.points-reward.min)/(nextReward.min-reward.min))*100):100;
+    var tasksDone=(agent.tasksToday||[]).filter(function(t){return t.done;}).length;
+    var tasksTotal=(agent.tasksToday||[]).length;
+
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--s0);border:1px solid var(--b1);border-radius:14px;padding:16px;position:relative;overflow:hidden;';
+    if(rank===0) card.style.borderColor='var(--acc)';
+
+    var rankEmoji=rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':'#'+(rank+1);
+
+    card.innerHTML=
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'+
+        '<div style="width:46px;height:46px;background:linear-gradient(135deg,var(--acc),#f97316);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">'+
+          agent.name.charAt(0).toUpperCase()+
+        '</div>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+agent.name+'</div>'+
+          '<div style="font-size:11px;color:var(--mu);">'+agent.role+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0;">'+
+          '<div style="font-size:11px;color:var(--mu);">Rang</div>'+
+          '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:800;color:var(--acc);">'+rankEmoji+'</div>'+
+        '</div>'+
+      '</div>'+
+      // Badge et points
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'+
+        '<span style="background:rgba(245,197,24,.15);color:var(--acc);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">'+reward.badge+'</span>'+
+        '<span style="font-family:Syne,sans-serif;font-size:18px;font-weight:800;color:var(--text);">'+
+          (agent.points||0).toLocaleString()+' <span style="font-size:11px;color:var(--mu);font-family:inherit;font-weight:400">pts</span>'+
+        '</span>'+
+      '</div>'+
+      // Barre de progression
+      '<div style="background:var(--s2);border-radius:4px;height:6px;margin-bottom:5px;">'+
+        '<div style="background:linear-gradient(90deg,var(--acc),#f97316);width:'+Math.min(pct,100)+'%;height:100%;border-radius:4px;transition:width .5s"></div>'+
+      '</div>'+
+      '<div style="font-size:10px;color:var(--mu);margin-bottom:12px;">'+
+        (nextReward?pct+'% vers '+nextReward.badge+' ('+nextReward.min.toLocaleString()+' pts)':'🏆 Niveau maximum !')+
+      '</div>'+
+      // Tâches du jour
+      '<div style="background:var(--s2);border-radius:8px;padding:10px;margin-bottom:10px;">'+
+        '<div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📋 Tâches du jour ('+tasksDone+'/'+tasksTotal+')</div>'+
+        renderTasksHTML(agent)+
+        '<div style="display:flex;gap:6px;margin-top:6px;">'+
+          '<input id="task-inp-'+agent.id+'" class="form-input" style="flex:1;font-size:11px;padding:5px 8px" placeholder="Nouvelle tâche..."/>'+
+          '<button class="btn btn-g btn-sm task-add-btn" data-id="'+agent.id+'">+</button>'+
+        '</div>'+      '</div>'+
+      // Récompenses
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">'+
+        '<div style="background:rgba(34,211,160,.07);border-radius:7px;padding:7px;text-align:center;">'+
+          '<div style="font-size:9px;color:var(--mu);margin-bottom:2px;">💵 Prime actuelle</div>'+
+          '<div style="font-size:13px;font-weight:700;color:var(--green);">'+reward.prime.toLocaleString()+' FCFA</div>'+
+        '</div>'+
+        '<div style="background:rgba(167,139,250,.07);border-radius:7px;padding:7px;text-align:center;">'+
+          '<div style="font-size:9px;color:var(--mu);margin-bottom:2px;">🏖️ Jours repos</div>'+
+          '<div style="font-size:13px;font-weight:700;color:#a78bfa;">'+reward.repos+' jour'+(reward.repos>1?'s':'')+'</div>'+
+        '</div>'+
+      '</div>'+
+      // Actions rapides
+      '<div style="display:flex;flex-wrap:wrap;gap:5px;">'+
+        '<button class="btn btn-g btn-sm ap-btn" style="font-size:10px" data-id="'+agent.id+'" data-act="appel_positif">📞+50pts Positif</button>'+
+        '<button class="btn btn-g btn-sm ap-btn" style="font-size:10px" data-id="'+agent.id+'" data-act="appel_neutre">📞+15pts Neutre</button>'+
+        '<button class="btn btn-g btn-sm ap-btn" style="font-size:10px" data-id="'+agent.id+'" data-act="whatsapp_envoye">💬+25pts WA</button>'+
+        '<button class="btn btn-r btn-sm del-agent-btn" style="font-size:10px" data-id="'+agent.id+'">🗑️</button>'+
+      '</div>';
+
+    grid.appendChild(card);
+  });
+}
+
+function renderTasksHTML(agent){
+  var tasks=(agent.tasksToday||[]).slice(-5);
+  if(!tasks.length) return '<div style="font-size:11px;color:var(--mu);font-style:italic">Aucune tâche assignée</div>';
+  return tasks.map(function(t){
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'+
+      '<input type="checkbox" class="task-cb" data-aid="'+agent.id+'" data-tid="'+t.id+'" '+(t.done?'checked':'')+' style="cursor:pointer"/>'+
+      '<span style="font-size:11px;'+(t.done?'text-decoration:line-through;color:var(--mu)':'')+'">'+t.text+'</span>'+
+    '</div>';
+  }).join('');
+}
+
+async function fathyDailyBrief(){
+  var card=document.getElementById('fathy-report-card');
+  var reportDiv=document.getElementById('fathy-report-content');
+  var dateEl=document.getElementById('fathy-report-date');
+  if(!card||!reportDiv) return;
+  card.style.display='block';
+  reportDiv.innerHTML='<div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  if(dateEl) dateEl.textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+  var stats=calcStats();
+  var now=new Date();
+  var urgents=DRIVERS.filter(function(d){
+    if(!d.lastDate)return false;
+    var ds=Math.round((now-new Date(d.lastDate))/864e5);
+    return ds>=8&&ds<=14&&(d.orders||0)>50;
+  }).sort(function(a,b){return (b.orders||0)-(a.orders||0);}).slice(0,10);
+
+  var agentsList=AGENTS.map(function(a){
+    var reward=getAgentBadge(a.points||0);
+    var tasksDone=(a.tasksToday||[]).filter(function(t){return t.done;}).length;
+    var tasksTotal=(a.tasksToday||[]).length;
+    return a.name+' ('+a.role+', '+reward.badge+', '+(a.points||0)+' pts, tâches: '+tasksDone+'/'+tasksTotal+')';
+  }).join('\n');
+
+  var urgentsTxt=urgents.map(function(d){
+    var ds=Math.round((now-new Date(d.lastDate))/864e5);
+    return d.name+' — '+ds+'j inactif, '+d.orders+' courses, '+d.phone;
+  }).join('\n');
+
+    var prompt="Je suis FATHY, manager du Parc Transport Ndongo Fall.\n\n"+
+    "ETAT EQUIPE ("+AGENTS.length+" agents):\n"+agentsList+"\n\n"+
+    "PARC: "+stats.total+" inscrits, "+stats.actif+" actifs, "+stats.alerte+" en alerte, "+stats.dormant+" dormants\n\n"+
+    "TOP URGENTS A CONTACTER AUJOURD HUI:\n"+urgentsTxt+"\n\n"+
+    "Redige un brief motivant pour toute l equipe avec:\n"+
+    "1. Message encouragement personnalise pour chaque agent (par nom)\n"+
+    "2. Attribution chauffeurs urgents a chaque agent\n"+
+    "3. Objectif du jour: nombre appels et reactivations\n"+
+    "4. Points bonus disponibles aujourd hui\n"+
+    "5. Message de motivation finale\n"+
+    "Sois chaleureux, bienveillant, motivant.";
+  try{
+    var r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:1500,
+        system:'Tu es FATHY, manager bienveillant du Parc Ndongo Fall. Reponds en francais.',
+        messages:[{role:'user',content:prompt}]})});
+    var d=await r.json();
+    var txt=d.content&&d.content[0]?d.content[0].text:'Erreur de réponse';
+    reportDiv.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  }catch(e){
+    reportDiv.innerHTML='❌ Erreur: '+e.message;
+  }
+}
+
+
+// ═══════════════════════════════════════════
+// GESTION ÉQUIPE & SCORES AGENTS
+// ═══════════════════════════════════════════
+var AGENTS = JSON.parse(localStorage.getItem('yango_agents') || '[]');
+var SCORES = JSON.parse(localStorage.getItem('yango_scores') || '{}');
+
+function saveAgentsData(){
+  localStorage.setItem('yango_agents', JSON.stringify(AGENTS));
+  localStorage.setItem('yango_scores', JSON.stringify(SCORES));
+}
+
+function ajouterAgent(){
+  var nom = document.getElementById('agent-nom').value.trim();
+  var role = document.getElementById('agent-role').value;
+  var tel = document.getElementById('agent-tel').value.trim();
+  var zone = document.getElementById('agent-zone').value.trim();
+  if(!nom){ showToast('⚠️','Entrez le nom agent','error'); return; }
+  var agent = {id:'ag_'+Date.now(), nom:nom, role:role, tel:tel, zone:zone, dateAjout:new Date().toLocaleDateString('fr-FR')};
+  AGENTS.push(agent);
+  if(!SCORES[agent.id]) SCORES[agent.id] = {points:0, rappels:0, reactives:0, actives:0, rapports:0};
+  saveAgentsData();
+  renderAgents();
+  renderLeaderboard();
+  document.getElementById('agent-nom').value='';
+  document.getElementById('agent-tel').value='';
+  document.getElementById('agent-zone').value='';
+  showToast('✅','Agent '+nom+' ajouté !','success');
+}
+
+function supprimerAgent(id){
+  AGENTS = AGENTS.filter(function(a){return a.id!==id;});
+  saveAgentsData();
+  renderAgents();
+  renderLeaderboard();
+}
+
+function ajouterPoints(agentId, pts, raison){
+  if(!SCORES[agentId]) SCORES[agentId]={points:0,rappels:0,reactives:0,actives:0,rapports:0};
+  SCORES[agentId].points = (SCORES[agentId].points||0) + pts;
+  if(raison==='rappel') SCORES[agentId].rappels++;
+  if(raison==='reactif') SCORES[agentId].reactives++;
+  if(raison==='actif') SCORES[agentId].actives++;
+  if(raison==='rapport') SCORES[agentId].rapports++;
+  saveAgentsData();
+  renderLeaderboard();
+  showToast('🏅','+'+pts+' points attribués !','success');
+}
+
+function resetScores(){
+  if(!confirm('Réinitialiser tous les scores de fin de mois ?')) return;
+  Object.keys(SCORES).forEach(function(id){
+    SCORES[id]={points:0,rappels:0,reactives:0,actives:0,rapports:0};
+  });
+  saveAgentsData();
+  renderLeaderboard();
+  showToast('🔄','Scores réinitialisés pour le nouveau mois','success');
+}
+
+function getBadge(pts){
+  if(pts>=200) return '👑 Agent du mois';
+  if(pts>=100) return '💎 VIP';
+  if(pts>=50)  return '🥇 Gold';
+  if(pts>=25)  return '🥈 Silver';
+  if(pts>=10)  return '🥉 Bronze';
+  return '⭐ Débutant';
+}
+
+function getBarWidth(pts){
+  var max = Math.max(200, pts);
+  return Math.min(100, Math.round(pts/max*100));
+}
+
+function renderLeaderboard(){
+  var el = document.getElementById('leaderboard-list');
+  if(!el) return;
+  if(!AGENTS.length){
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Ajoutez des agents ci-dessous pour voir le classement</div>';
+    return;
+  }
+  var sorted = AGENTS.slice().sort(function(a,b){
+    return ((SCORES[b.id]||{}).points||0) - ((SCORES[a.id]||{}).points||0);
+  });
+  el.innerHTML='';
+  sorted.forEach(function(agent, rank){
+    var sc = SCORES[agent.id]||{points:0,rappels:0,reactives:0,actives:0};
+    var pts = sc.points||0;
+    var badge = getBadge(pts);
+    var rankIco = rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':'#'+(rank+1);
+    var primeVal = Math.floor(pts/10)*1000;
+    var row = document.createElement('div');
+    row.style.cssText='background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:8px;';
+    if(rank===0) row.style.cssText+='border:1px solid rgba(245,197,24,.4);background:rgba(245,197,24,.05);';
+    row.innerHTML=
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'+
+        '<div style="font-size:20px;width:32px;text-align:center">'+rankIco+'</div>'+
+        '<div style="flex:1">'+
+          '<div style="font-weight:700;font-size:13px;">'+agent.nom+'</div>'+
+          '<div style="font-size:11px;color:var(--mu);">'+agent.role+' · '+agent.zone+'</div>'+
+        '</div>'+
+        '<div style="text-align:right">'+
+          '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:var(--acc)">'+pts+'</div>'+
+          '<div style="font-size:10px;color:var(--mu)">points</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="background:var(--s0);border-radius:20px;height:6px;margin-bottom:8px;">'+
+        '<div style="background:linear-gradient(90deg,var(--acc),#f5c518);height:6px;border-radius:20px;width:'+Math.min(100,Math.round(pts/200*100))+'%;transition:width .5s"></div>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+        '<div style="display:flex;gap:8px;font-size:10px;color:var(--mu);">'+
+          '<span>📞 '+sc.rappels+' rappels</span>'+
+          '<span>🔄 '+sc.reactives+' réactivés</span>'+
+          '<span>🆕 '+sc.actives+' activés</span>'+
+        '</div>'+
+        '<div style="display:flex;gap:5px;align-items:center;">'+
+          '<span style="font-size:11px;color:#f5c518;">'+badge+'</span>'+
+          '<button class="btn btn-g btn-sm" data-aid="'+agent.id+'" data-pts="2" data-r="rappel" onclick="ajouterPoints(this.dataset.aid,+this.dataset.pts,this.dataset.r)" style="font-size:9px;padding:2px 6px;">+2</button>'+
+          '<button class="btn btn-p btn-sm" data-aid="'+agent.id+'" data-pts="5" data-r="reactif" onclick="ajouterPoints(this.dataset.aid,+this.dataset.pts,this.dataset.r)" style="font-size:9px;padding:2px 6px;">+5</button>'+
+          '<button class="btn btn-g btn-sm" data-aid="'+agent.id+'" data-pts="8" data-r="actif" onclick="ajouterPoints(this.dataset.aid,+this.dataset.pts,this.dataset.r)" style="font-size:9px;padding:2px 6px;">+8</button>'+
+        '</div>'+
+      '</div>'+
+      (primeVal>0?'<div style="margin-top:6px;padding:6px 10px;background:rgba(34,211,160,.1);border-radius:6px;font-size:11px;color:var(--green);">💰 Prime accumulée: <strong>'+primeVal.toLocaleString()+' FCFA</strong></div>':'')+
+    '';
+    el.appendChild(row);
+  });
+}
+
+function renderAgents(){
+  var el = document.getElementById('agents-list');
+  if(!el) return;
+  if(!AGENTS.length){ el.innerHTML=''; return; }
+  el.innerHTML='<div style="font-size:11px;color:var(--mu);margin-bottom:8px;">'+AGENTS.length+' agent(s) enregistré(s)</div>';
+  AGENTS.forEach(function(a){
+    var div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--s2);border-radius:8px;margin-bottom:6px;font-size:12px;';
+    div.innerHTML='<span>👤</span><div style="flex:1"><strong>'+a.nom+'</strong> <span style="color:var(--mu)">— '+a.role+'</span></div>'+
+      '<span style="color:var(--mu);font-size:11px;">'+a.zone+'</span>'+
+      '<button class="btn btn-r btn-sm" style="font-size:10px;" data-id="'+a.id+'" onclick="supprimerAgent(this.dataset.id)">✕</button>';
+    el.appendChild(div);
+  });
+}
+
+function renderRapportAgents(){
+  var el = document.getElementById('rapport-agents-list');
+  if(!el) return;
+  if(!AGENTS.length){
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Aucun agent enregistré</div>';
+    return;
+  }
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;">'+
+    '<thead><tr style="border-bottom:2px solid var(--b1);">'+
+    '<th style="text-align:left;padding:8px;">Agent</th>'+
+    '<th style="text-align:center;padding:8px;">Rappels</th>'+
+    '<th style="text-align:center;padding:8px;">Réactivés</th>'+
+    '<th style="text-align:center;padding:8px;">Activés</th>'+
+    '<th style="text-align:center;padding:8px;">Points</th>'+
+    '<th style="text-align:center;padding:8px;">Badge</th>'+
+    '<th style="text-align:center;padding:8px;">Prime</th>'+
+    '</tr></thead><tbody>';
+  AGENTS.forEach(function(a){
+    var sc=SCORES[a.id]||{points:0,rappels:0,reactives:0,actives:0};
+    var pts=sc.points||0;
+    var prime=Math.floor(pts/10)*1000;
+    html+='<tr style="border-bottom:1px solid var(--b1);">'+
+      '<td style="padding:8px;"><strong>'+a.nom+'</strong><div style="font-size:10px;color:var(--mu)">'+a.role+'</div></td>'+
+      '<td style="text-align:center;padding:8px;">'+sc.rappels+'</td>'+
+      '<td style="text-align:center;padding:8px;color:var(--orange);">'+sc.reactives+'</td>'+
+      '<td style="text-align:center;padding:8px;color:var(--green);">'+sc.actives+'</td>'+
+      '<td style="text-align:center;padding:8px;font-weight:700;color:var(--acc);">'+pts+'</td>'+
+      '<td style="text-align:center;padding:8px;">'+getBadge(pts)+'</td>'+
+      '<td style="text-align:center;padding:8px;color:var(--green);font-weight:600;">'+(prime>0?prime.toLocaleString()+' FCFA':'—')+'</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function genererTaches(){
+  var el = document.getElementById('taches-agents-list');
+  var dateEl = document.getElementById('taches-date');
+  if(!el) return;
+  if(!AGENTS.length){
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Ajoutez d abord des agents dans la section ci-dessous</div>';
+    return;
+  }
+  if(dateEl) dateEl.textContent = '— ' + new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+  // Récupérer les données
+  var stats = calcStats();
+  var now = new Date();
+
+  // Chauffeurs urgents par catégorie
+  var urgents = DRIVERS.filter(function(d){
+    if(!d.lastDate) return false;
+    var days=Math.round((now-new Date(d.lastDate))/864e5);
+    return days>=8&&days<=14&&(d.orders||0)>50;
+  }).sort(function(a,b){return (b.orders||0)-(a.orders||0)});
+
+  var dormants = DRIVERS.filter(function(d){
+    return d.segment==='Dormant récent';
+  }).slice(0,AGENTS.length*10);
+
+  var jamais = DRIVERS.filter(function(d){
+    return d.segment==='Jamais actif';
+  }).slice(0,AGENTS.length*5);
+
+  // Distribuer les tâches entre agents
+  el.innerHTML='';
+  AGENTS.forEach(function(agent, idx){
+    var tasksUrg = urgents.slice(idx*5, idx*5+5);
+    var tasksDorm = dormants.slice(idx*8, idx*8+8);
+    var tasksJam = jamais.slice(idx*3, idx*3+3);
+    var sc = SCORES[agent.id]||{points:0};
+    var pts = sc.points||0;
+    var objJour = 10; // points objectif/jour
+
+    var card = document.createElement('div');
+    card.style.cssText='background:var(--s2);border-radius:12px;padding:16px;margin-bottom:12px;border-left:3px solid var(--acc);';
+    
+    var html='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">'+
+      '<div>'+
+        '<div style="font-weight:700;font-size:14px;">👤 '+agent.nom+'</div>'+
+        '<div style="font-size:11px;color:var(--mu);">'+agent.role+' · '+agent.zone+'</div>'+
+      '</div>'+
+      '<div style="text-align:right">'+
+        '<div style="font-family:Syne,sans-serif;font-size:18px;font-weight:800;color:var(--acc)">'+pts+' pts</div>'+
+        '<div style="font-size:10px;color:var(--mu)">'+getBadge(pts)+'</div>'+
+      '</div>'+
+    '</div>';
+
+    // Tâches urgentes
+    if(tasksUrg.length>0){
+      html+='<div style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:10px;margin-bottom:8px;">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:6px;">🚨 URGENT — Alerte 8-14j (chacun +5 pts si réactivé)</div>';
+      tasksUrg.forEach(function(d){
+        var days=Math.round((now-new Date(d.lastDate))/864e5);
+        html+='<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;">'+
+          '<span>'+d.name+'</span>'+
+          '<span style="color:var(--mu)">'+d.phone+' · '+days+'j · '+(d.orders||0)+' courses</span>'+
+        '</div>';
+      });
+      html+='</div>';
+    }
+
+    // Tâches dormants
+    if(tasksDorm.length>0){
+      html+='<div style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.2);border-radius:8px;padding:10px;margin-bottom:8px;">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:6px;">🔴 RELANCE DORMANTS (+2 pts/rappel effectué)</div>';
+      tasksDorm.slice(0,5).forEach(function(d){
+        html+='<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;">'+
+          '<span>'+d.name+'</span>'+
+          '<span style="color:var(--mu)">'+d.phone+'</span>'+
+        '</div>';
+      });
+      if(tasksDorm.length>5) html+='<div style="font-size:10px;color:var(--mu);margin-top:4px;">+'+( tasksDorm.length-5)+' autres dormants</div>';
+      html+='</div>';
+    }
+
+    // Objectif du jour
+    html+='<div style="background:rgba(34,211,160,.08);border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">'+
+      '<span style="font-size:11px;color:var(--green);">🎯 Objectif du jour: '+objJour+' pts → Prime '+(objJour/10*1000).toLocaleString()+' FCFA</span>'+
+      '<button class="btn btn-g btn-sm" data-aid="'+agent.id+'" data-pts="10" data-r="objectif" onclick="ajouterPoints(this.dataset.aid,+this.dataset.pts,this.dataset.r)" style="font-size:10px;">✅ Objectif atteint +10</button>'+
+    '</div>';
+
+    card.innerHTML=html;
+    el.appendChild(card);
+  });
+
+  renderRapportAgents();
+  showToast('⚡','FATHY a généré les tâches pour '+AGENTS.length+' agent(s) !','success');
+}
+
+
 async function init(){
   try{ await loadFromServer(); }catch(e){ console.warn('Load error:',e); }
   try{ nav('dashboard'); }catch(e){}
@@ -2820,5 +3483,399 @@ async function init(){
 
 init();
 </script>
+
+<!-- ══════════════════════════════════════ -->
+<!-- FATHY — Bonhomme flottant intelligent -->
+<!-- ══════════════════════════════════════ -->
+
+<style>
+/* FATHY floating widget */
+#fathy-bubble {
+  position:fixed;
+  bottom:24px;
+  right:24px;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:10px;
+  pointer-events:none;
+}
+
+/* Bonhomme FATHY */
+#fathy-avatar {
+  width:62px;
+  height:62px;
+  background:linear-gradient(135deg,#f5c518,#ff6b35);
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+  cursor:pointer;
+  pointer-events:all;
+  box-shadow:0 4px 24px rgba(245,197,24,.5);
+  transition:transform .2s, box-shadow .2s;
+  animation:fathy-float 3s ease-in-out infinite;
+  position:relative;
+}
+#fathy-avatar:hover {
+  transform:scale(1.12);
+  box-shadow:0 6px 32px rgba(245,197,24,.7);
+}
+@keyframes fathy-float {
+  0%,100% { transform:translateY(0); }
+  50%      { transform:translateY(-8px); }
+}
+
+/* Badge notification */
+#fathy-badge {
+  position:absolute;
+  top:-4px;
+  right:-4px;
+  background:#ef4444;
+  color:white;
+  font-size:10px;
+  font-weight:800;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  display:none;
+}
+
+/* Bulle de dialogue */
+#fathy-speech {
+  background:rgba(20,20,35,.97);
+  border:1px solid rgba(245,197,24,.4);
+  border-radius:16px 16px 4px 16px;
+  padding:10px 14px;
+  max-width:220px;
+  font-size:12px;
+  color:#fff;
+  pointer-events:all;
+  cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+  animation:fathy-pop .3s ease;
+  line-height:1.5;
+}
+@keyframes fathy-pop {
+  from { opacity:0; transform:scale(.8) translateY(10px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+#fathy-speech strong { color:#f5c518; }
+
+/* Panel chat FATHY */
+#fathy-panel {
+  position:fixed;
+  bottom:100px;
+  right:24px;
+  width:340px;
+  max-height:520px;
+  background:rgba(15,12,40,.98);
+  border:1px solid rgba(245,197,24,.3);
+  border-radius:20px;
+  display:none;
+  flex-direction:column;
+  z-index:9998;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+  pointer-events:all;
+  overflow:hidden;
+}
+#fathy-panel.open { display:flex; animation:fathy-pop .3s ease; }
+
+#fathy-panel-header {
+  background:linear-gradient(135deg,rgba(245,197,24,.15),rgba(255,107,53,.1));
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-bottom:1px solid rgba(245,197,24,.2);
+  flex-shrink:0;
+}
+
+#fathy-msgs {
+  flex:1;
+  overflow-y:auto;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-height:0;
+}
+
+.fmsg-u {
+  align-self:flex-end;
+  background:rgba(245,197,24,.15);
+  border:1px solid rgba(245,197,24,.2);
+  border-radius:14px 14px 2px 14px;
+  padding:8px 12px;
+  font-size:12px;
+  max-width:85%;
+  color:#fff;
+}
+.fmsg-a {
+  align-self:flex-start;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px 14px 14px 2px;
+  padding:8px 12px;
+  font-size:12px;
+  max-width:90%;
+  color:#e5e7eb;
+  line-height:1.6;
+}
+.fmsg-a strong { color:#f5c518; }
+
+.fathy-thinking {
+  display:flex;
+  gap:4px;
+  padding:4px 0;
+}
+.fathy-thinking .dot {
+  width:6px;height:6px;
+  background:#f5c518;
+  border-radius:50%;
+  animation:fathy-bounce .8s infinite;
+}
+.fathy-thinking .dot:nth-child(2){animation-delay:.15s}
+.fathy-thinking .dot:nth-child(3){animation-delay:.3s}
+@keyframes fathy-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+#fathy-input-row {
+  padding:10px 12px;
+  border-top:1px solid rgba(245,197,24,.15);
+  display:flex;
+  gap:8px;
+  flex-shrink:0;
+}
+#fathy-input {
+  flex:1;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(245,197,24,.2);
+  border-radius:20px;
+  padding:8px 14px;
+  color:#fff;
+  font-size:12px;
+  outline:none;
+}
+#fathy-input:focus { border-color:rgba(245,197,24,.5); }
+#fathy-send {
+  width:36px;height:36px;
+  background:linear-gradient(135deg,#f5c518,#ff6b35);
+  border:none;border-radius:50%;
+  cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+
+/* Suggestions rapides */
+.fathy-sugg {
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  padding:8px 12px 0;
+  flex-shrink:0;
+}
+.fathy-sugg button {
+  background:rgba(245,197,24,.1);
+  border:1px solid rgba(245,197,24,.2);
+  border-radius:20px;
+  color:#f5c518;
+  font-size:10px;
+  padding:3px 10px;
+  cursor:pointer;
+  transition:background .2s;
+}
+.fathy-sugg button:hover { background:rgba(245,197,24,.25); }
+</style>
+
+<!-- Bonhomme flottant -->
+<div id="fathy-bubble">
+  <div id="fathy-speech" onclick="toggleFathy()" style="display:none"></div>
+  <div id="fathy-avatar" onclick="toggleFathy()">
+    🤖
+    <div id="fathy-badge">!</div>
+  </div>
+</div>
+
+<!-- Panel chat FATHY -->
+<div id="fathy-panel">
+  <div id="fathy-panel-header">
+    <div style="width:36px;height:36px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🤖</div>
+    <div style="flex:1">
+      <div style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:#f5c518;">FATHY</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);">Parc Ndongo Fall · toujours là pour vous</div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button onclick="nav('coach')" style="background:rgba(245,197,24,.15);border:none;border-radius:8px;color:#f5c518;font-size:10px;padding:4px 8px;cursor:pointer;">Mode complet</button>
+      <button onclick="toggleFathy()" style="background:rgba(255,255,255,.1);border:none;border-radius:8px;color:#fff;padding:4px 8px;cursor:pointer;">✕</button>
+    </div>
+  </div>
+  
+  <!-- Suggestions rapides -->
+  <div class="fathy-sugg">
+    <button onclick="fathyAsk('Priorités du jour ?')">⚡ Priorités</button>
+    <button onclick="fathyAsk('Chauffeurs urgents à appeler')">🚨 Urgents</button>
+    <button onclick="fathyAsk('Rapport équipe agents')">📊 Rapport</button>
+    <button onclick="fathyAsk('Tâches agents du jour')">📋 Tâches</button>
+  </div>
+
+  <div id="fathy-msgs"></div>
+  
+  <div id="fathy-input-row">
+    <input id="fathy-input" placeholder="Posez une question à FATHY..." 
+      onkeydown="if(event.key==='Enter')fathySend()"/>
+    <button id="fathy-send" onclick="fathySend()">↑</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// FATHY — Bonhomme flottant
+// ══════════════════════════════════════
+var fathyOpen = false;
+var fathyHistory = [];
+var fathyMsgsEl = document.getElementById('fathy-msgs');
+
+// Messages proactifs selon la page
+var fathyProactif = {
+  dashboard: ['Bonjour ! 👋 Votre parc est analysé. Voir les urgences du jour ?', 
+               'Votre parc a évolué. Je peux vous donner les priorités en 1 clic !',
+               '🚨 Des chauffeurs s eloignent ! Je liste les urgents ?'],
+  chauffeurs: ['Je peux chercher un chauffeur par nom, telephone ou permis !',
+                'Voulez-vous que je genere un script appel pour un chauffeur ?'],
+  rappels:    ['Je peux vous aider a prioriser vos rappels du jour !'],
+  coach:      ['Mode complet. Posez-moi toutes vos questions !'],
+  equipe:     ['Je surveille votre equipe ! Cliquez pour voir les scores et taches.'],
+  default:    ['Besoin aide ? Je suis la 24h/24 ! 🤖']
+};
+
+function toggleFathy(){
+  fathyOpen = !fathyOpen;
+  var panel = document.getElementById('fathy-panel');
+  var speech = document.getElementById('fathy-speech');
+  if(fathyOpen){
+    panel.classList.add('open');
+    speech.style.display = 'none';
+    document.getElementById('fathy-badge').style.display = 'none';
+    if(!fathyHistory.length) fathyGreet();
+    setTimeout(function(){ 
+      var inp = document.getElementById('fathy-input');
+      if(inp) inp.focus();
+    }, 300);
+  } else {
+    panel.classList.remove('open');
+  }
+}
+
+function fathyGreet(){
+  var stats = typeof calcStats === 'function' ? calcStats() : {total:0,actif:0,alerte:0,dormant:0};
+  var now = new Date();
+  var h = now.getHours();
+  var salut = h<12?'Bonjour':'Bonsoir';
+  var msg = salut + ' ! Je suis <strong>FATHY</strong>, votre assistant IA du Parc Ndongo Fall. 🚖<br><br>'+
+    '📊 <strong>'+stats.total.toLocaleString()+' chauffeurs</strong> dans la base<br>'+
+    '🟢 <strong style="color:#22d3a0">'+stats.actif+' actifs</strong> · '+
+    '⚠️ <strong style="color:#fbbf24">'+(stats.alerte||0)+' en alerte</strong> · '+
+    '🔴 <strong style="color:#f87171">'+stats.dormant+' dormants</strong><br><br>'+
+    'Comment puis-je vous aider ? 😊';
+  fathyAddMsg('a', msg);
+}
+
+function fathyAddMsg(role, text){
+  var msgs = document.getElementById('fathy-msgs');
+  if(!msgs) return;
+  var div = document.createElement('div');
+  div.className = role==='u' ? 'fmsg-u' : 'fmsg-a';
+  if(role==='u'){
+    div.textContent = text;
+  } else {
+    var html = text.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>');
+    html = html.split('\n').join('<br>');
+    div.innerHTML = html;
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function fathyAsk(q){
+  if(!fathyOpen) toggleFathy();
+  setTimeout(function(){
+    var inp = document.getElementById('fathy-input');
+    if(inp){ inp.value = q; fathySend(); }
+  }, 200);
+}
+
+async function fathySend(){
+  var inp = document.getElementById('fathy-input');
+  if(!inp) return;
+  var q = inp.value.trim();
+  if(!q) return;
+  inp.value = '';
+  inp.disabled = true;
+
+  fathyAddMsg('u', q);
+  fathyHistory.push({role:'user', content: q});
+  if(fathyHistory.length > 8) fathyHistory = fathyHistory.slice(-8);
+
+  // Thinking
+  var thinking = fathyAddMsg('a', '<div class="fathy-thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>');
+
+  try {
+    var system = typeof buildSystemPrompt==='function' ? buildSystemPrompt() : 'Tu es FATHY, assistant du Parc Ndongo Fall.';
+    var resp = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'groq',system:system,messages:fathyHistory})
+    });
+    var data = await resp.json();
+    var reply = data.content&&data.content[0] ? data.content[0].text : 'Pas de réponse';
+    fathyHistory.push({role:'assistant', content:reply});
+    var rhtml=reply.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>').split('\n').join('<br>');
+    if(thinking) thinking.innerHTML = rhtml;
+
+    thinking.className = 'fmsg-a';
+  } catch(e) {
+    if(thinking) thinking.innerHTML = '⚠️ Erreur: '+e.message;
+  }
+
+  inp.disabled = false;
+  inp.focus();
+}
+
+// Afficher bulle proactive après 3 secondes
+function showFathyProactif(pageId){
+  var badge = document.getElementById('fathy-badge');
+  var speech = document.getElementById('fathy-speech');
+  if(!badge||!speech) return;
+  if(fathyOpen) return;
+  var msgs = fathyProactif[pageId] || fathyProactif.default;
+  var msg = msgs[Math.floor(Math.random()*msgs.length)];
+  speech.innerHTML = msg;
+  speech.style.display = 'block';
+  badge.style.display = 'flex';
+  // Cacher après 6 secondes
+  setTimeout(function(){
+    if(!fathyOpen) speech.style.display = 'none';
+  }, 6000);
+}
+
+// Hook sur nav() pour messages proactifs
+var _origNav = typeof nav === 'function' ? nav : null;
+if(typeof nav === 'function'){
+  var _origNavFn = nav;
+  nav = function(id){
+    _origNavFn(id);
+    setTimeout(function(){ showFathyProactif(id); }, 1500);
+  };
+}
+
+// Premier message au démarrage
+setTimeout(function(){ showFathyProactif('dashboard'); }, 3000);
+</script>
+
 </body>
-</html>
