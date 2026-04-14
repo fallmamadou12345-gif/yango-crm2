@@ -3585,6 +3585,7 @@ function genererTaches(){
 
 // Configuration des utilisateurs (stockée localement + serveur)
 // Le directeur peut modifier ces accès depuis Paramètres
+// AUTH_USERS chargé depuis le serveur au démarrage
 var AUTH_USERS = JSON.parse(localStorage.getItem('yango_auth_users') || JSON.stringify([
   {
     id: 'dir_001',
@@ -3596,6 +3597,32 @@ var AUTH_USERS = JSON.parse(localStorage.getItem('yango_auth_users') || JSON.str
     actif: true
   }
 ]));
+
+// Charger TOUS les utilisateurs (avec mdp) depuis serveur au démarrage
+async function loadUsersFromServer(){
+  try {
+    var r = await fetch('/api/users-admin');
+    if(r.ok){
+      var data = await r.json();
+      if(data.users && data.users.length > 0){
+        // Fusionner: garder mdp locaux si serveur n'en a pas
+        data.users.forEach(function(su){
+          var localIdx = AUTH_USERS.findIndex(function(u){ return u.id === su.id; });
+          if(localIdx >= 0){
+            // Garder mdp local si serveur n'en a pas
+            if(!su.password && AUTH_USERS[localIdx].password){
+              su.password = AUTH_USERS[localIdx].password;
+            }
+            AUTH_USERS[localIdx] = su;
+          } else {
+            AUTH_USERS.push(su);
+          }
+        });
+        localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
+      }
+    }
+  } catch(e){ console.warn('loadUsers:', e.message); }
+}
 
 var CURRENT_USER = JSON.parse(sessionStorage.getItem('yango_user') || 'null');
 
@@ -3632,12 +3659,14 @@ var ROLE_PERMISSIONS = {
 
 function saveAuthUsers(){
   localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
-  // Sync vers le serveur pour que tous les appareils y aient accès
-  fetch('/api/users', {
+  // Sync vers serveur AVEC les mots de passe (route admin sécurisée)
+  fetch('/api/users-admin', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({users: AUTH_USERS})
-  }).catch(function(e){ console.warn('Sync users:', e.message); });
+  }).then(function(r){ return r.json(); })
+  .then(function(d){ if(d.success) console.log('Users synced to server'); })
+  .catch(function(e){ console.warn('Sync users failed:', e.message); });
 }
 
 async function doLogin(){
@@ -3771,16 +3800,10 @@ function checkAuth(){
     applyUserPermissions(CURRENT_USER);
     return true;
   }
-  // Charger les utilisateurs depuis le serveur en arrière-plan
-  fetch('/api/users').then(function(r){ return r.json(); }).then(function(data){
-    if(data.users && data.users.length > 0){
-      // Merger avec les locaux (les serveur n'a pas les mdp, garder locaux)
-      data.users.forEach(function(su){
-        var local = AUTH_USERS.find(function(u){ return u.id === su.id; });
-        if(!local) AUTH_USERS.push(su);
-      });
-    }
-  }).catch(function(e){});
+  // Charger les users depuis serveur (avec mdp) avant d'afficher login
+  loadUsersFromServer().then(function(){
+    console.log('Users loaded:', AUTH_USERS.length);
+  });
   return false;
 }
 

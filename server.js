@@ -162,11 +162,29 @@ app.post('/api/data-sync', (req, res) => {
 });
 
 // ─── GESTION DES UTILISATEURS ──────────────
-// Lire les utilisateurs
+// Lire les utilisateurs (sans mdp - lecture publique)
 app.get('/api/users', (req, res) => {
   const db = readDB();
-  const users = (db.users || []).map(u => ({...u, password: undefined})); // ne pas envoyer mdp
+  const users = (db.users || []).map(u => {
+    const {password, ...safe} = u;
+    return safe;
+  });
   res.json({ success: true, users });
+});
+
+// Lire les utilisateurs AVEC mdp (route admin - sync depuis directeur)
+app.get('/api/users-admin', (req, res) => {
+  const db = readDB();
+  res.json({ success: true, users: db.users || [] });
+});
+
+// Sauvegarder utilisateurs AVEC mdp (depuis directeur)
+app.post('/api/users-admin', (req, res) => {
+  const db = readDB();
+  db.users = req.body.users || [];
+  const ok = writeDB(db);
+  console.log('Users saved:', db.users.length, 'users');
+  res.json({ success: ok });
 });
 
 // Connexion
@@ -175,8 +193,9 @@ app.post('/api/login', (req, res) => {
   const users = db.users || [];
   const { username, password } = req.body;
   
-  // Directeur par défaut si aucun utilisateur créé
-  if(users.length === 0 && username === 'directeur' && password === 'ndongo2024'){
+  // Vérifier directeur par défaut (fonctionne toujours)
+  const defaultDir = users.find(u => u.id === 'dir_001');
+  if(!defaultDir && username.toLowerCase() === 'directeur' && password === 'ndongo2024'){
     return res.json({ success: true, user: {
       id: 'dir_001', username: 'directeur', nom: 'Ndongo Fall',
       role: 'directeur', actif: true
