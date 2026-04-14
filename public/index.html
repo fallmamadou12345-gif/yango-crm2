@@ -302,7 +302,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
         <input id="login-user" type="text" placeholder="Votre identifiant"
           style="width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(245,197,24,.2);
           border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;"
-          onkeydown="if(event.key==='Enter')doLogin()"/>
+          onkeydown="if(event.key==='Enter'&&typeof doLogin==='function')doLogin()"/>
       </div>
 
       <div style="margin-bottom:20px;">
@@ -310,14 +310,14 @@ textarea.form-input{resize:vertical;min-height:70px;}
         <input id="login-pass" type="password" placeholder="••••••••"
           style="width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(245,197,24,.2);
           border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;"
-          onkeydown="if(event.key==='Enter')doLogin()"/>
+          onkeydown="if(event.key==='Enter'&&typeof doLogin==='function')doLogin()"/>
       </div>
 
       <div id="login-error" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);
         border-radius:8px;padding:10px;font-size:12px;color:#f87171;margin-bottom:14px;display:none;text-align:center;">
       </div>
 
-      <button onclick="doLogin()" style="width:100%;background:linear-gradient(135deg,#f5c518,#ff6b35);
+      <button onclick="if(typeof doLogin==='function')doLogin();else alert('Chargement...')" id="login-btn" style="width:100%;background:linear-gradient(135deg,#f5c518,#ff6b35);
         border:none;border-radius:12px;padding:14px;font-family:Syne,sans-serif;
         font-size:15px;font-weight:700;color:#000;cursor:pointer;transition:opacity .2s;"
         onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
@@ -3749,17 +3749,30 @@ function renderGestionAcces(){
     var perms = ROLE_PERMISSIONS[u.role] || {};
     var row = document.createElement('div');
     row.style.cssText = 'background:var(--s2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;';
-    row.innerHTML =
-      '<div style="width:36px;height:36px;background:'+(perms.color||'#666')+';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'+(u.role==='directeur'?'👑':u.role==='superviseur'?'🎯':'👤')+'</div>'+
-      '<div style="flex:1">'+
-        '<div style="font-weight:700;font-size:13px;">'+u.nom+'</div>'+
-        '<div style="font-size:11px;color:var(--mu);">@'+u.username+' · '+(perms.label||u.role)+'</div>'+
-      '</div>'+
-      '<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:'+(u.actif?'rgba(34,211,160,.15)':'rgba(248,113,113,.15)')+';color:'+(u.actif?'var(--green)':'var(--red)')+';">'+(u.actif?'Actif':'Suspendu')+'</span>'+
-      (u.id!=='dir_001'?
-        '<button class="btn btn-g btn-sm" onclick="toggleUserActif(''+u.id+'')" style="font-size:10px;">'+(u.actif?'Suspendre':'Activer')+'</button>'+
-        '<button class="btn btn-r btn-sm" onclick="supprimerUser(''+u.id+'')" style="font-size:10px;">✕</button>'
-      :'<span style="font-size:10px;color:var(--mu);">Compte principal</span>');
+    // Build row with DOM to avoid quote issues
+    var ico = u.role==='directeur'?'👑':u.role==='superviseur'?'🎯':'👤';
+    var icoDiv = document.createElement('div');
+    icoDiv.style.cssText='width:36px;height:36px;background:'+(perms.color||'#666')+';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;';
+    icoDiv.textContent=ico;
+    row.appendChild(icoDiv);
+    var info=document.createElement('div');info.style.flex='1';
+    var n=document.createElement('div');n.style.cssText='font-weight:700;font-size:13px;';n.textContent=u.nom;info.appendChild(n);
+    var s2=document.createElement('div');s2.style.cssText='font-size:11px;color:var(--mu);';s2.textContent='@'+u.username+' · '+(perms.label||u.role);info.appendChild(s2);
+    row.appendChild(info);
+    var badge=document.createElement('span');
+    badge.style.cssText='font-size:11px;padding:3px 10px;border-radius:20px;background:'+(u.actif?'rgba(34,211,160,.15)':'rgba(248,113,113,.15)')+';color:'+(u.actif?'var(--green)':'var(--red)');
+    badge.textContent=u.actif?'Actif':'Suspendu';
+    row.appendChild(badge);
+    if(u.id!=='dir_001'){
+      var uid=u.id;
+      var b1=document.createElement('button');b1.className='btn btn-g btn-sm';b1.style.fontSize='10px';
+      b1.textContent=u.actif?'Suspendre':'Activer';
+      b1.onclick=function(){toggleUserActif(uid);};row.appendChild(b1);
+      var b2=document.createElement('button');b2.className='btn btn-r btn-sm';b2.style.fontSize='10px';
+      b2.textContent='✕';b2.onclick=function(){supprimerUser(uid);};row.appendChild(b2);
+    } else {
+      var sp=document.createElement('span');sp.style.cssText='font-size:10px;color:var(--mu);';sp.textContent='Compte principal';row.appendChild(sp);
+    }
     el.appendChild(row);
   });
 }
