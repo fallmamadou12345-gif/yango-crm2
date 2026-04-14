@@ -3841,26 +3841,41 @@ function renderPrimesConfig(){
   PRIMES_CONFIG.forEach(function(p, i){
     var row = document.createElement('div');
     row.style.cssText = 'background:var(--s2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:grid;grid-template-columns:80px 1fr 1fr 1fr auto;gap:10px;align-items:center;font-size:12px;';
-    row.innerHTML =
-      '<div><strong style="color:var(--acc)">'+p.pts+' pts</strong></div>'+
-      '<input class="form-input" value="'+p.prime+'" onchange="updatePrime('+i+','prime',this.value)" style="font-size:12px;padding:6px 10px;" placeholder="Prime FCFA"/>'+
-      '<input class="form-input" value="'+p.repos+'" onchange="updatePrime('+i+','repos',this.value)" style="font-size:12px;padding:6px 10px;" placeholder="Repos"/>'+
-      '<input class="form-input" value="'+p.badge+'" onchange="updatePrime('+i+','badge',this.value)" style="font-size:12px;padding:6px 10px;" placeholder="Badge"/>'+
-      '<button class="btn btn-r btn-sm" onclick="supprimerPrime('+i+')" style="font-size:10px;">✕</button>';
+
+    // Points
+    var pts = document.createElement('div');
+    pts.innerHTML = '<strong style="color:var(--acc)">'+p.pts+' pts</strong>';
+    row.appendChild(pts);
+
+    // Prime input
+    var inp1 = document.createElement('input');
+    inp1.className = 'form-input'; inp1.value = p.prime; inp1.placeholder = 'Prime FCFA';
+    inp1.style.cssText = 'font-size:12px;padding:6px 10px;';
+    (function(idx){ inp1.onchange = function(){ updatePrime(idx,'prime',this.value); }; })(i);
+    row.appendChild(inp1);
+
+    // Repos input
+    var inp2 = document.createElement('input');
+    inp2.className = 'form-input'; inp2.value = p.repos; inp2.placeholder = 'Repos';
+    inp2.style.cssText = 'font-size:12px;padding:6px 10px;';
+    (function(idx){ inp2.onchange = function(){ updatePrime(idx,'repos',this.value); }; })(i);
+    row.appendChild(inp2);
+
+    // Badge input
+    var inp3 = document.createElement('input');
+    inp3.className = 'form-input'; inp3.value = p.badge; inp3.placeholder = 'Badge';
+    inp3.style.cssText = 'font-size:12px;padding:6px 10px;';
+    (function(idx){ inp3.onchange = function(){ updatePrime(idx,'badge',this.value); }; })(i);
+    row.appendChild(inp3);
+
+    // Supprimer
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-r btn-sm'; btn.textContent = '✕'; btn.style.fontSize = '10px';
+    (function(idx){ btn.onclick = function(){ supprimerPrime(idx); }; })(i);
+    row.appendChild(btn);
+
     el.appendChild(row);
   });
-}
-
-function updatePrime(i, field, val){
-  PRIMES_CONFIG[i][field] = val;
-  savePrimesConfig();
-  showToast('💾','Prime mise à jour','success');
-}
-
-function supprimerPrime(i){
-  PRIMES_CONFIG.splice(i, 1);
-  savePrimesConfig();
-  renderPrimesConfig();
 }
 
 function ajouterPrime(){
