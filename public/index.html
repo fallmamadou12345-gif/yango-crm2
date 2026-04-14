@@ -3659,14 +3659,23 @@ var ROLE_PERMISSIONS = {
 
 function saveAuthUsers(){
   localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
-  // Sync vers serveur AVEC les mots de passe (route admin sécurisée)
+  // Sync vers serveur avec tous les utilisateurs et leurs mdp
   fetch('/api/users-admin', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({users: AUTH_USERS})
   }).then(function(r){ return r.json(); })
-  .then(function(d){ if(d.success) console.log('Users synced to server'); })
-  .catch(function(e){ console.warn('Sync users failed:', e.message); });
+  .then(function(d){ 
+    if(d.success){
+      showToast('✅','Accès synchronisé sur le serveur !','success');
+    } else {
+      showToast('⚠️','Erreur sauvegarde serveur - réessayez','error');
+    }
+  })
+  .catch(function(e){ 
+    showToast('⚠️','Serveur inaccessible: '+e.message,'error');
+    console.warn('Sync users failed:', e.message); 
+  });
 }
 
 async function doLogin(){
@@ -3682,10 +3691,11 @@ async function doLogin(){
   }
 
   // Afficher chargement
-  if(btn){ btn.textContent = 'Connexion...'; btn.disabled = true; }
+  if(btn){ btn.textContent = 'Connexion en cours...'; btn.disabled = true; }
+  errEl.style.display = 'none';
 
   try {
-    // 1. Essayer via le serveur (utilisateurs créés par le directeur)
+    // Vérification via le serveur
     var resp = await fetch('/api/login', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -3694,30 +3704,36 @@ async function doLogin(){
     var data = await resp.json();
 
     if(data.success && data.user){
-      // Connexion réussie via serveur
       loginSuccess(data.user);
       return;
     }
+    
+    // Serveur dit non - vérifier message
+    errEl.textContent = '❌ ' + (data.message || 'Identifiant ou mot de passe incorrect');
+    errEl.style.display = 'block';
+    
   } catch(e) {
-    console.warn('Server login failed, trying local:', e.message);
+    console.warn('Server unreachable, trying local:', e.message);
+    
+    // Fallback LOCAL si serveur inaccessible
+    var found = AUTH_USERS.find(function(u){
+      return u.username.toLowerCase() === user.toLowerCase() && 
+             u.password === pass && 
+             u.actif !== false;
+    });
+
+    if(found){
+      loginSuccess(found);
+      return;
+    }
+    
+    errEl.textContent = '❌ Serveur inaccessible et identifiant non trouvé localement';
+    errEl.style.display = 'block';
   }
-
-  // 2. Fallback: vérifier localStorage (accès créés localement)
-  var found = AUTH_USERS.find(function(u){
-    return u.username.toLowerCase() === user.toLowerCase() && u.password === pass && u.actif !== false;
-  });
-
-  if(found){
-    loginSuccess(found);
-    return;
-  }
-
-  // Échec connexion
-  errEl.textContent = '❌ Identifiant ou mot de passe incorrect';
-  errEl.style.display = 'block';
+  
   document.getElementById('login-pass').value = '';
   if(btn){ btn.textContent = 'Se connecter →'; btn.disabled = false; }
-  setTimeout(function(){ errEl.style.display='none'; }, 4000);
+  setTimeout(function(){ errEl.style.display='none'; }, 5000);
 }
 
 function loginSuccess(found){
