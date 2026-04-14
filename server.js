@@ -8,7 +8,41 @@ const PORT = process.env.PORT || 3000;
 // Dossier de sauvegarde sur le disque Render
 // Sur Render, le disque persistant est monté sur /data
 const DATA_DIR = process.env.DATA_DIR || (process.platform === 'win32' ? 'C:\\YangoCRM_Data' : '/data');
-const DB_FILE  = path.join(DATA_DIR, 'yango_crm_data.json');
+const DB_FILE   = path.join(DATA_DIR, 'yango_crm_data.json');
+const USERS_FILE = path.join(DATA_DIR, 'yango_users.json');
+
+// Lire/écrire les utilisateurs (fichier séparé plus fiable)
+function readUsers(){
+  // Toujours inclure le directeur par défaut
+  const defaultDir = {
+    id:'dir_001', username:'directeur', password:'ndongo2024',
+    nom:'Ndongo Fall', role:'directeur', actif:true
+  };
+  try {
+    if(fs.existsSync(USERS_FILE)){
+      const data = JSON.parse(fs.readFileSync(USERS_FILE,'utf8'));
+      const users = data.users || [];
+      // Toujours avoir le directeur
+      if(!users.find(u=>u.id==='dir_001')) users.unshift(defaultDir);
+      return users;
+    }
+  } catch(e){ console.error('readUsers error:', e.message); }
+  return [defaultDir];
+}
+
+function writeUsers(users){
+  try {
+    // Toujours avoir le directeur
+    const defaultDir = {
+      id:'dir_001', username:'directeur', password:'ndongo2024',
+      nom:'Ndongo Fall', role:'directeur', actif:true
+    };
+    if(!users.find(u=>u.id==='dir_001')) users.unshift(defaultDir);
+    fs.writeFileSync(USERS_FILE, JSON.stringify({users, updatedAt:new Date().toISOString()}, null, 2));
+    console.log('Users saved:', users.length, 'users:', users.map(u=>u.username).join(', '));
+    return true;
+  } catch(e){ console.error('writeUsers error:', e.message); return false; }
+}
 
 // S'assurer que le dossier de données existe
 try {
@@ -174,17 +208,15 @@ app.get('/api/users', (req, res) => {
 
 // Lire les utilisateurs AVEC mdp (route admin - sync depuis directeur)
 app.get('/api/users-admin', (req, res) => {
-  const db = readDB();
-  res.json({ success: true, users: db.users || [] });
+  const users = readUsers();
+  res.json({ success: true, users });
 });
 
 // Sauvegarder utilisateurs AVEC mdp (depuis directeur)
 app.post('/api/users-admin', (req, res) => {
-  const db = readDB();
-  db.users = req.body.users || [];
-  const ok = writeDB(db);
-  console.log('Users saved:', db.users.length, 'users');
-  res.json({ success: ok });
+  const users = req.body.users || [];
+  const ok = writeUsers(users);
+  res.json({ success: ok, count: users.length });
 });
 
 // Connexion
@@ -205,11 +237,8 @@ app.post('/api/login', (req, res) => {
   }
 
   // Chercher dans la DB (agents créés par le directeur)
-  const db = readDB();
-  const users = db.users || [];
-  
-  console.log('Login attempt:', username, '| Users in DB:', users.length);
-  users.forEach(u => console.log(' -', u.username, 'pwd:', u.password ? 'yes' : 'no', 'actif:', u.actif));
+  const users = readUsers();
+  console.log('Login attempt:', username, '| Users:', users.length, '→', users.map(u=>u.username).join(','));
 
   const found = users.find(u => 
     u.username && 
@@ -238,8 +267,7 @@ app.post('/api/users', (req, res) => {
 
 // Diagnostic utilisateurs
 app.get('/api/debug-users', (req, res) => {
-  const db = readDB();
-  const users = (db.users || []).map(u => ({
+  const users = readUsers().map(u => ({
     id: u.id,
     username: u.username,
     nom: u.nom,
