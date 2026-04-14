@@ -972,6 +972,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
           ⚠️ Les agents ne voient <strong>jamais</strong> les finances, les chiffres CA/commission, ni cette page Paramètres.
         </div>
         <button class="btn btn-p" onclick="ajouterAcces()">🔐 Créer l'accès</button>
+        <button class="btn btn-g" onclick="forceSyncUsers()" style="margin-left:8px;">🔄 Forcer sync serveur</button>
       </div>
     </div>
 
@@ -3642,6 +3643,25 @@ var ROLE_PERMISSIONS = {
   }
 };
 
+async function forceSyncUsers(){
+  showToast('⏳','Synchronisation en cours...','success');
+  try {
+    var r = await fetch('/api/users-admin', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({users: AUTH_USERS})
+    });
+    var d = await r.json();
+    if(d.success){
+      showToast('✅',AUTH_USERS.length+' comptes synchronisés sur le serveur !','success');
+    } else {
+      showToast('⚠️','Échec synchronisation','error');
+    }
+  } catch(e) {
+    showToast('⚠️','Erreur: '+e.message,'error');
+  }
+}
+
 function saveAuthUsers(){
   localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
   fetch('/api/users-admin', {
@@ -3849,7 +3869,7 @@ function renderGestionAcces(){
   });
 }
 
-function ajouterAcces(){
+async function ajouterAcces(){
   var nom = document.getElementById('acces-nom').value.trim();
   var username = document.getElementById('acces-username').value.trim();
   var password = document.getElementById('acces-password').value.trim();
@@ -3858,8 +3878,10 @@ function ajouterAcces(){
   if(!nom||!username||!password){
     showToast('⚠️','Remplissez tous les champs','error'); return;
   }
+  // Nettoyer username: minuscules, sans espaces
+  username = username.toLowerCase().replace(/\s+/g,'');
   if(AUTH_USERS.find(function(u){return u.username===username;})){
-    showToast('⚠️','Cet identifiant existe déjà','error'); return;
+    showToast('⚠️','Identifiant @'+username+' déjà utilisé','error'); return;
   }
 
   var newUser = {
@@ -3872,13 +3894,31 @@ function ajouterAcces(){
     actif: true
   };
   AUTH_USERS.push(newUser);
-  saveAuthUsers();
-  renderGestionAcces();
+  localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
 
+  // Sauvegarder sur serveur et attendre confirmation
+  showToast('⏳','Enregistrement sur le serveur...','success');
+  try {
+    var r = await fetch('/api/users-admin', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({users: AUTH_USERS})
+    });
+    var d = await r.json();
+    if(d.success){
+      showToast('✅','Accès créé ! @'+username+' peut maintenant se connecter','success');
+    } else {
+      showToast('⚠️','Sauvegarde serveur échouée — réessayez','error');
+    }
+  } catch(e) {
+    showToast('⚠️','Serveur inaccessible: '+e.message,'error');
+    console.error('Save users error:', e);
+  }
+
+  renderGestionAcces();
   document.getElementById('acces-nom').value='';
   document.getElementById('acces-username').value='';
   document.getElementById('acces-password').value='';
-  showToast('✅','Accès créé pour '+nom+'  — ID: @'+username,'success');
 }
 
 function toggleUserActif(id){
