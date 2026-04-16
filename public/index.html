@@ -763,6 +763,55 @@ textarea.form-input{resize:vertical;min-height:70px;}
   <!-- ══ ÉQUIPE & AGENTS ══ -->
   <div class="page" id="page-equipe">
 
+    <!-- MON SCORE PERSONNEL (visible par tous) -->
+    <div id="mon-score-card" class="card mb16" style="background:linear-gradient(135deg,#0f0c29,#1a1040);border:1px solid rgba(245,197,24,.4);">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="width:60px;height:60px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;" id="mon-score-ico">⭐</div>
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:1px;">Mon score ce mois</div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+            <div style="font-family:Syne,sans-serif;font-size:40px;font-weight:800;color:#f5c518;" id="mon-score-pts">0</div>
+            <div style="font-size:14px;color:var(--mu);">points</div>
+            <div style="font-size:18px;" id="mon-score-badge">⭐ Débutant</div>
+          </div>
+          <!-- Barre de progression vers prochain palier -->
+          <div style="margin-top:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mu);margin-bottom:3px;">
+              <span id="mon-score-next-label">Prochain palier: 10 pts</span>
+              <span id="mon-score-pct">0%</span>
+            </div>
+            <div style="background:var(--s0);border-radius:20px;height:8px;">
+              <div id="mon-score-bar" style="background:linear-gradient(90deg,#f5c518,#ff6b35);height:8px;border-radius:20px;width:0%;transition:width .8s;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;">
+          <div style="background:rgba(34,211,160,.1);border:1px solid rgba(34,211,160,.2);border-radius:10px;padding:8px 12px;text-align:center;">
+            <div style="font-size:18px;font-weight:800;color:var(--green);" id="ms-rappels">0</div>
+            <div style="font-size:10px;color:var(--mu);">Rappels</div>
+          </div>
+          <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:8px 12px;text-align:center;">
+            <div style="font-size:18px;font-weight:800;color:#fbbf24;" id="ms-reactives">0</div>
+            <div style="font-size:10px;color:var(--mu);">Réactivés</div>
+          </div>
+          <div style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:8px 12px;text-align:center;">
+            <div style="font-size:18px;font-weight:800;color:#a78bfa;" id="ms-actives">0</div>
+            <div style="font-size:10px;color:var(--mu);">Activés</div>
+          </div>
+          <div style="background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.2);border-radius:10px;padding:8px 12px;text-align:center;">
+            <div style="font-size:18px;font-weight:800;color:#f5c518;" id="ms-prime">0</div>
+            <div style="font-size:10px;color:var(--mu);">FCFA prime</div>
+          </div>
+        </div>
+      </div>
+      <!-- Détails des dernières actions -->
+      <div id="ms-details" style="margin-top:12px;border-top:1px solid var(--b1);padding-top:12px;display:none;">
+        <div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:8px;">📋 Mes dernières actions validées</div>
+        <div id="ms-details-list"></div>
+      </div>
+      <button onclick="toggleMsDetails()" style="background:none;border:none;color:var(--mu);font-size:11px;cursor:pointer;margin-top:8px;padding:0;" id="ms-toggle-btn">▼ Voir mes actions</button>
+    </div>
+
     <!-- FATHY Header -->
     <div style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);border:1px solid rgba(245,197,24,.4);border-radius:var(--r3);padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;">
       <div style="width:64px;height:64px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;box-shadow:0 0 20px rgba(245,197,24,.4);">🤖</div>
@@ -836,10 +885,31 @@ textarea.form-input{resize:vertical;min-height:70px;}
 
     <!-- Rapport activité agents -->
     <div class="card mb16">
-      <div class="ct">📊 Rapport d'activité des agents</div>
-      <div id="rapport-agents-list">
-        <div class="empty-state"><div class="ico">📊</div><p>Le rapport se met à jour automatiquement selon les appels enregistrés</p></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="ct" style="margin-bottom:0;">📊 Rapport activité — <span id="rapport-mois" style="color:var(--mu);font-size:12px;font-weight:400;"></span></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-g btn-sm" onclick="verifierReactivations()" style="font-size:11px;">🔍 Vérifier réactivations</button>
+          <button class="btn btn-r btn-sm" onclick="resetScores()" style="font-size:11px;">🔄 Reset fin de mois</button>
+        </div>
       </div>
+      <div id="rapport-agents-list">
+        <div class="empty-state"><div class="ico">📊</div><p>Le rapport se met à jour selon les actions</p></div>
+      </div>
+    </div>
+
+    <!-- Suivi réactivations -->
+    <div class="card mb16">
+      <div class="ct">🔍 Suivi réactivations — Validation automatique des points</div>
+      <div style="font-size:12px;color:var(--mu2);margin-bottom:12px;">Quand un chauffeur marqué réactivé fait plus de courses, les points sont attribués automatiquement.</div>
+      <div id="reactivations-list">
+        <div style="text-align:center;color:var(--mu);padding:16px;font-size:12px;">Aucune réactivation en suivi ce mois</div>
+      </div>
+    </div>
+
+    <!-- Historique mensuel -->
+    <div class="card mb16">
+      <div class="ct">📅 Historique mensuel des scores</div>
+      <div id="historique-mensuel-list"></div>
     </div>
 
     <!-- Gestion des agents -->
@@ -1234,6 +1304,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
           <button class="btn btn-wa btn-sm" onclick="openWA()">💬 WhatsApp</button>
           <button class="btn btn-sms btn-sm" onclick="callPhone()">📞 Appeler</button>
           <button class="btn btn-ok btn-sm" onclick="quickReminder()">🔔 Rappel rapide (demain)</button>
+          <button id="p-reactiver-btn" class="btn btn-g btn-sm" onclick="">🔄 Marquer réactivé (+pts)</button>
         </div>
       </div>
     </div>
@@ -1913,6 +1984,16 @@ function openPanel(d){
     }
   }
   document.getElementById('p-ord').textContent=d.orders.toLocaleString();
+  // Stocker données pour bouton réactivation
+  var reactBtn=document.getElementById('p-reactiver-btn');
+  if(reactBtn){
+    reactBtn.onclick=function(){
+      marquerReactivationFromPanel(d.name,d.phone||'',d.orders||0);
+      reactBtn.style.background='rgba(34,211,160,.3)';
+      reactBtn.textContent='✅ Réactivation enregistrée';
+      reactBtn.disabled=true;
+    };
+  }
   document.getElementById('p-days').textContent=ds!==null?ds+'j':'—';
   document.getElementById('p-comm').textContent=estM;
   document.getElementById('p-status-pill').innerHTML=`<span class="pill ${d.segment==='Actif'?'g':d.segment.includes('Dormant')?'o':'r'}" style="font-size:10px;">${d.segment}</span>`;
@@ -2741,7 +2822,13 @@ function nav(id){
   if(id==='rappels'){renderReminders();updateRemBadges();}
   if(id==='dashboard') renderDashboard();
   if(id==='settings'){ renderSettings(); renderGestionAcces(); renderPrimesConfig(); }
-  if(id==='equipe'){renderLeaderboard();renderAgents();renderRapportAgents();}
+  if(id==='equipe'){
+    renderLeaderboard();renderAgents();renderRapportAgents();
+    renderMonScore();renderHistoriqueMensuel();renderReactivationsSuivi();
+    var rapportMois=document.getElementById('rapport-mois');
+    if(rapportMois) rapportMois.textContent=new Date().toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    verifierReactivations();
+  }
   if(id==='equipe') renderAgents();
   if(id==='coach') updateAllPageStats(stats);
 }
@@ -3316,6 +3403,116 @@ async function fathyDailyBrief(){
 var AGENTS = JSON.parse(localStorage.getItem('yango_agents') || '[]');
 var SCORES = JSON.parse(localStorage.getItem('yango_scores') || '{}');
 
+// Historique mensuel des scores
+var SCORES_HISTORY = JSON.parse(localStorage.getItem('yango_scores_history') || '[]');
+
+// Suivi des réactivations (chauffeur → avant/après)
+var REACTIVATIONS = JSON.parse(localStorage.getItem('yango_reactivations') || '{}');
+
+// Mois courant (YYYY-MM)
+function getCurrentMonth(){
+  var d = new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1<10?'0':'')+(d.getMonth()+1);
+}
+
+var CURRENT_MONTH = getCurrentMonth();
+
+function saveScoresData(){
+  localStorage.setItem('yango_scores', JSON.stringify(SCORES));
+  localStorage.setItem('yango_scores_history', JSON.stringify(SCORES_HISTORY));
+  localStorage.setItem('yango_reactivations', JSON.stringify(REACTIVATIONS));
+  // Sync vers serveur
+  fetch('/api/scores', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({scores:SCORES, history:SCORES_HISTORY, reactivations:REACTIVATIONS, month:CURRENT_MONTH})
+  }).catch(function(e){});
+}
+
+// Marquer un chauffeur comme réactivé par un agent
+function marquerReactivation(agentId, driverName, driverPhone, ordersAvant){
+  var key = agentId+'_'+driverName.replace(/\s+/g,'_');
+  REACTIVATIONS[key] = {
+    agentId: agentId,
+    driverName: driverName,
+    driverPhone: driverPhone,
+    ordersAvant: ordersAvant,
+    ordersApres: 0,
+    dateMarque: new Date().toISOString(),
+    pointsAttribues: false,
+    mois: CURRENT_MONTH
+  };
+  saveScoresData();
+  showToast('📋','Réactivation enregistrée pour '+driverName+' — Points attribués si +commandes !','success');
+}
+
+// Vérifier les réactivations et attribuer les points automatiquement
+function verifierReactivations(){
+  var now = new Date();
+  var pointsNouveaux = 0;
+  Object.keys(REACTIVATIONS).forEach(function(key){
+    var r = REACTIVATIONS[key];
+    if(r.pointsAttribues) return;
+    if(r.mois !== CURRENT_MONTH) return;
+    // Chercher le chauffeur dans DRIVERS
+    var driver = DRIVERS.find(function(d){
+      return d.name === r.driverName || d.phone === r.driverPhone;
+    });
+    if(!driver) return;
+    var ordersNow = driver.orders || 0;
+    r.ordersApres = ordersNow;
+    // Si le chauffeur a fait plus de commandes → attribuer les points
+    if(ordersNow > r.ordersAvant){
+      var diff = ordersNow - r.ordersAvant;
+      r.pointsAttribues = true;
+      // Points selon performance
+      var pts = diff >= 50 ? 8 : diff >= 20 ? 5 : diff >= 5 ? 3 : 2;
+      if(!SCORES[r.agentId]) SCORES[r.agentId]={points:0,rappels:0,reactives:0,actives:0,rapports:0,details:[]};
+      SCORES[r.agentId].points = (SCORES[r.agentId].points||0) + pts;
+      SCORES[r.agentId].reactives = (SCORES[r.agentId].reactives||0) + 1;
+      if(!SCORES[r.agentId].details) SCORES[r.agentId].details=[];
+      SCORES[r.agentId].details.push({
+        type:'reactivation', driver:r.driverName, pts:pts,
+        avant:r.ordersAvant, apres:ordersNow, diff:diff,
+        date:new Date().toISOString()
+      });
+      pointsNouveaux += pts;
+      saveScoresData();
+      showToast('🏅','+'+pts+' pts: '+r.driverName+' a fait '+diff+' courses de plus !','success');
+    }
+  });
+  return pointsNouveaux;
+}
+
+// Reset mensuel avec sauvegarde historique
+function resetMensuel(force){
+  var mois = getCurrentMonth();
+  if(!force && CURRENT_MONTH === mois && SCORES_HISTORY.find(function(h){return h.mois===mois;})) return;
+  if(!confirm('Réinitialiser les scores pour le nouveau mois ?
+Les scores actuels seront sauvegardés dans l'historique.')) return;
+  
+  // Sauvegarder dans historique
+  var snapshot = {
+    mois: CURRENT_MONTH,
+    date: new Date().toISOString(),
+    scores: JSON.parse(JSON.stringify(SCORES)),
+    agents: JSON.parse(JSON.stringify(AGENTS))
+  };
+  SCORES_HISTORY.push(snapshot);
+  if(SCORES_HISTORY.length > 12) SCORES_HISTORY.shift(); // garder 12 mois
+  
+  // Reset scores
+  Object.keys(SCORES).forEach(function(id){
+    SCORES[id] = {points:0, rappels:0, reactives:0, actives:0, rapports:0, details:[]};
+  });
+  REACTIVATIONS = {};
+  CURRENT_MONTH = getCurrentMonth();
+  saveScoresData();
+  renderLeaderboard();
+  renderMonScore();
+  showToast('🔄','Scores réinitialisés ! Historique sauvegardé.','success');
+}
+
 function saveAgentsData(){
   localStorage.setItem('yango_agents', JSON.stringify(AGENTS));
   localStorage.setItem('yango_scores', JSON.stringify(SCORES));
@@ -3359,13 +3556,93 @@ function ajouterPoints(agentId, pts, raison){
 }
 
 function resetScores(){
-  if(!confirm('Réinitialiser tous les scores de fin de mois ?')) return;
-  Object.keys(SCORES).forEach(function(id){
-    SCORES[id]={points:0,rappels:0,reactives:0,actives:0,rapports:0};
+  resetMensuel(true);
+}
+
+function renderMonScore(){
+  if(!CURRENT_USER) return;
+  // Trouver l'agent connecté
+  var agent = AGENTS.find(function(a){ return a.username===CURRENT_USER.username || a.nom===CURRENT_USER.nom; });
+  var agentId = agent ? agent.id : CURRENT_USER.id;
+  var sc = SCORES[agentId] || {points:0,rappels:0,reactives:0,actives:0,rapports:0,details:[]};
+  var pts = sc.points || 0;
+
+  // Mettre à jour la carte
+  var ptsEl=document.getElementById('mon-score-pts'); if(ptsEl) ptsEl.textContent=pts;
+  var badge=getBadge(pts);
+  var badgeEl=document.getElementById('mon-score-badge'); if(badgeEl) badgeEl.textContent=badge;
+  var icoEl=document.getElementById('mon-score-ico');
+  if(icoEl) icoEl.textContent=pts>=200?'👑':pts>=100?'💎':pts>=50?'🥇':pts>=25?'🥈':pts>=10?'🥉':'⭐';
+
+  // Prochain palier
+  var paliers=[10,25,50,100,200];
+  var prochainPalier=paliers.find(function(p){return p>pts;})||200;
+  var prevPalier=paliers.filter(function(p){return p<=pts;}).pop()||0;
+  var pct=prochainPalier>prevPalier?Math.round((pts-prevPalier)/(prochainPalier-prevPalier)*100):100;
+  var nextEl=document.getElementById('mon-score-next-label');
+  if(nextEl) nextEl.textContent=pts>=200?'Palier maximum atteint !':'Prochain palier: '+prochainPalier+' pts ('+getPrimeForPts(prochainPalier)+')';
+  var pctEl=document.getElementById('mon-score-pct'); if(pctEl) pctEl.textContent=pct+'%';
+  var barEl=document.getElementById('mon-score-bar'); if(barEl) barEl.style.width=pct+'%';
+
+  // Stats
+  var r1=document.getElementById('ms-rappels'); if(r1) r1.textContent=sc.rappels||0;
+  var r2=document.getElementById('ms-reactives'); if(r2) r2.textContent=sc.reactives||0;
+  var r3=document.getElementById('ms-actives'); if(r3) r3.textContent=sc.actives||0;
+  var prime=Math.floor(pts/10)*1000;
+  var r4=document.getElementById('ms-prime'); if(r4) r4.textContent=prime.toLocaleString();
+
+  // Détails actions
+  var detList=document.getElementById('ms-details-list');
+  if(detList && sc.details && sc.details.length>0){
+    detList.innerHTML='';
+    sc.details.slice().reverse().slice(0,10).forEach(function(d){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b1);font-size:11px;';
+      var ico=d.type==='reactivation'?'🔄':d.type==='activation'?'🆕':'📞';
+      var desc=ico+' '+d.driver+(d.diff?' (+'+d.diff+' courses)':'');
+      var date=d.date?new Date(d.date).toLocaleDateString('fr-FR'):'';
+      row.innerHTML='<span>'+desc+'</span><span style="color:var(--acc);font-weight:700">+'+d.pts+' pts</span>';
+      detList.appendChild(row);
+    });
+  }
+}
+
+function getPrimeForPts(pts){
+  var pc=PRIMES_CONFIG.find(function(p){return p.pts>=pts;});
+  return pc?pc.prime:'—';
+}
+
+function toggleMsDetails(){
+  var el=document.getElementById('ms-details');
+  var btn=document.getElementById('ms-toggle-btn');
+  if(!el) return;
+  var visible=el.style.display!=='none';
+  el.style.display=visible?'none':'block';
+  if(btn) btn.textContent=visible?'▼ Voir mes actions':'▲ Masquer';
+}
+
+// Historique mensuel
+function renderHistoriqueMensuel(){
+  var el=document.getElementById('historique-mensuel-list');
+  if(!el) return;
+  if(!SCORES_HISTORY.length){
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:16px;font-size:12px;">Aucun historique — le premier reset de fin de mois créera l'historique</div>';
+    return;
+  }
+  el.innerHTML='';
+  SCORES_HISTORY.slice().reverse().forEach(function(h){
+    var div=document.createElement('div');
+    div.style.cssText='background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:8px;';
+    var top3=Object.entries(h.scores||{}).sort(function(a,b){return (b[1].points||0)-(a[1].points||0);}).slice(0,3);
+    var top3txt=top3.map(function(e,i){
+      var agent=h.agents?h.agents.find(function(a){return a.id===e[0];}):null;
+      return (i===0?'🥇':i===1?'🥈':'🥉')+' '+(agent?agent.nom:'ID:'+e[0])+' ('+e[1].points+' pts)';
+    }).join(' | ');
+    var moisLabel=new Date(h.mois+'-01').toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    div.innerHTML='<div style="font-weight:700;font-size:13px;color:var(--acc);margin-bottom:6px;">'+moisLabel+'</div>'+
+      '<div style="font-size:12px;color:var(--mu2);">'+top3txt+'</div>';
+    el.appendChild(div);
   });
-  saveAgentsData();
-  renderLeaderboard();
-  showToast('🔄','Scores réinitialisés pour le nouveau mois','success');
 }
 
 function getBadge(pts){
@@ -3484,6 +3761,61 @@ function renderRapportAgents(){
   });
   html+='</tbody></table></div>';
   el.innerHTML=html;
+}
+
+function renderReactivationsSuivi(){
+  var el=document.getElementById('reactivations-list');
+  if(!el) return;
+  var keys=Object.keys(REACTIVATIONS).filter(function(k){return REACTIVATIONS[k].mois===CURRENT_MONTH;});
+  if(!keys.length){
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:16px;font-size:12px;">Aucune réactivation en suivi ce mois</div>';
+    return;
+  }
+  el.innerHTML='';
+  keys.forEach(function(key){
+    var r=REACTIVATIONS[key];
+    var agent=AGENTS.find(function(a){return a.id===r.agentId;});
+    var agentNom=agent?agent.nom:'Agent';
+    var diff=r.ordersApres-r.ordersAvant;
+    var row=document.createElement('div');
+    row.style.cssText='background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+    var statColor=r.pointsAttribues?'var(--green)':diff>0?'#fbbf24':'var(--mu)';
+    var statIco=r.pointsAttribues?'✅':diff>0?'⏳':'🔍';
+    row.innerHTML=
+      '<div style="flex:1;min-width:150px;">'+
+        '<div style="font-weight:700;font-size:13px;">'+r.driverName+'</div>'+
+        '<div style="font-size:11px;color:var(--mu);">Par: '+agentNom+' · '+new Date(r.dateMarque).toLocaleDateString('fr-FR')+'</div>'+
+      '</div>'+
+      '<div style="text-align:center;">'+
+        '<div style="font-size:11px;color:var(--mu);">Avant</div>'+
+        '<div style="font-weight:700;">'+r.ordersAvant+'</div>'+
+      '</div>'+
+      '<div style="font-size:16px;">→</div>'+
+      '<div style="text-align:center;">'+
+        '<div style="font-size:11px;color:var(--mu);">Maintenant</div>'+
+        '<div style="font-weight:700;color:'+statColor+';">'+r.ordersApres+'</div>'+
+      '</div>'+
+      '<div style="text-align:center;">'+
+        '<div style="font-size:11px;color:var(--mu);">Diff</div>'+
+        '<div style="font-weight:700;color:'+statColor+';">'+(diff>0?'+':'')+diff+'</div>'+
+      '</div>'+
+      '<span style="font-size:18px;">'+statIco+'</span>'+
+      (r.pointsAttribues?'<span style="background:rgba(34,211,160,.15);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;">Points attribués ✅</span>':'');
+    el.appendChild(row);
+  });
+}
+
+// Bouton dans fiche chauffeur pour marquer réactivation
+function marquerReactivationFromPanel(driverName, driverPhone, ordersAvant){
+  if(!CURRENT_USER) return;
+  var agent=AGENTS.find(function(a){return a.username===CURRENT_USER.username||a.nom===CURRENT_USER.nom;});
+  if(!agent){
+    showToast('⚠️','Votre profil agent doit être créé dans Équipe pour suivre les réactivations','error');
+    return;
+  }
+  marquerReactivation(agent.id, driverName, driverPhone, ordersAvant);
+  // +2 pts immédiatement pour le rappel
+  ajouterPoints(agent.id, 2, 'rappel');
 }
 
 function genererTaches(){

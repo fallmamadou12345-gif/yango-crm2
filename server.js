@@ -265,6 +265,34 @@ app.post('/api/users', (req, res) => {
   res.json({ success: ok });
 });
 
+// ─── SCORES AGENTS ─────────────────────────
+const SCORES_FILE = path.join(DATA_DIR, 'yango_scores.json');
+
+function readScores(){
+  try {
+    if(fs.existsSync(SCORES_FILE)){
+      return JSON.parse(fs.readFileSync(SCORES_FILE,'utf8'));
+    }
+  } catch(e){}
+  return {scores:{}, history:[], reactivations:{}, month:''};
+}
+
+function writeScores(data){
+  try {
+    fs.writeFileSync(SCORES_FILE, JSON.stringify(data, null, 2));
+    return true;
+  } catch(e){ console.error('writeScores:', e.message); return false; }
+}
+
+app.get('/api/scores', (req, res) => {
+  res.json({ success: true, ...readScores() });
+});
+
+app.post('/api/scores', (req, res) => {
+  const ok = writeScores(req.body);
+  res.json({ success: ok });
+});
+
 // Diagnostic utilisateurs
 app.get('/api/debug-users', (req, res) => {
   const users = readUsers().map(u => ({
