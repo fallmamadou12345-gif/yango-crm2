@@ -3625,7 +3625,7 @@ function renderHistoriqueMensuel(){
   var el=document.getElementById('historique-mensuel-list');
   if(!el) return;
   if(!SCORES_HISTORY.length){
-    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:16px;font-size:12px;">Aucun historique — le premier reset de fin de mois créera l'historique</div>';
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:16px;font-size:12px;">Aucun historique mensuel — faites un reset fin de mois</div>';
     return;
   }
   el.innerHTML='';
