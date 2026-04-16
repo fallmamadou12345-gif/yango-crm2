@@ -3488,8 +3488,7 @@ function verifierReactivations(){
 function resetMensuel(force){
   var mois = getCurrentMonth();
   if(!force && CURRENT_MONTH === mois && SCORES_HISTORY.find(function(h){return h.mois===mois;})) return;
-  if(!confirm('Réinitialiser les scores pour le nouveau mois ?
-Les scores actuels seront sauvegardés dans l'historique.')) return;
+  if(!confirm('Reinitialiser les scores pour le nouveau mois ? Les scores seront sauvegardes.')) return;
   
   // Sauvegarder dans historique
   var snapshot = {
