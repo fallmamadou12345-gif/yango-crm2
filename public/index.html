@@ -2847,6 +2847,8 @@ function nav(id){
     var rapportMois=document.getElementById('rapport-mois');
     if(rapportMois) rapportMois.textContent=new Date().toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
     verifierReactivations();
+    // Auto-générer les tâches IA à chaque visite de la page
+    setTimeout(function(){ genererTaches(); }, 800);
   }
   if(id==='equipe') renderAgents();
   if(id==='coach') updateAllPageStats(stats);
@@ -3836,11 +3838,12 @@ function marquerReactivationFromPanel(driverName, driverPhone, ordersAvant){
   ajouterPoints(agent.id, 2, 'rappel');
 }
 
-function genererTaches(){
+async function genererTaches(){
   var el = document.getElementById('taches-agents-list');
   var dateEl = document.getElementById('taches-date');
   if(!el) return;
-  // Si pas d'agents configurés, créer un agent temporaire pour l'utilisateur connecté
+
+  // Si pas d'agents, utiliser l'utilisateur connecté
   if(!AGENTS.length && CURRENT_USER){
     var tempAgent = {
       id: CURRENT_USER.id || 'temp_'+Date.now(),
@@ -3852,959 +3855,169 @@ function genererTaches(){
     AGENTS.push(tempAgent);
     if(!SCORES[tempAgent.id]) SCORES[tempAgent.id]={points:0,rappels:0,reactives:0,actives:0,details:[]};
   }
-  if(!AGENTS.length){
-    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Aucun agent — ajoutez-en dans la section ci-dessous</div>';
-    return;
-  }
+
   if(dateEl) dateEl.textContent = '— ' + new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
 
-  // Récupérer les données
-  var stats = calcStats();
-  var now = new Date();
+  // Afficher un loader pendant génération IA
+  el.innerHTML = '<div style="text-align:center;padding:30px;">' +
+    '<div style="font-size:32px;margin-bottom:10px;animation:fathy-float 1s ease-in-out infinite">🤖</div>' +
+    '<div style="font-size:13px;color:var(--acc);font-weight:600;">FATHY génère vos tâches personnalisées...</div>' +
+    '<div style="font-size:11px;color:var(--mu);margin-top:6px;">Analyse des ' + DRIVERS.length.toLocaleString() + ' chauffeurs en cours</div>' +
+    '</div>';
 
-  // Chauffeurs urgents par catégorie
+  // Préparer les données pour FATHY
+  var now = new Date();
+  var userAgent = CURRENT_USER ? (CURRENT_USER.nom || CURRENT_USER.username) : 'Agent';
+  var userRole = CURRENT_USER ? CURRENT_USER.role : 'agent';
+  var agentObj = AGENTS.find(function(a){ return a.username===CURRENT_USER.username||a.nom===CURRENT_USER.nom; }) || AGENTS[0];
+  var agentId = agentObj ? agentObj.id : '';
+  var sc = SCORES[agentId] || {points:0, rappels:0, reactives:0, actives:0};
+
+  // Chauffeurs urgents (8-14j inactifs avec beaucoup de courses)
   var urgents = DRIVERS.filter(function(d){
     if(!d.lastDate) return false;
     var days=Math.round((now-new Date(d.lastDate))/864e5);
-    return days>=8&&days<=14&&(d.orders||0)>50;
-  }).sort(function(a,b){return (b.orders||0)-(a.orders||0)});
+    return days>=8 && days<=14 && (d.orders||0)>=50;
+  }).sort(function(a,b){return (b.orders||0)-(a.orders||0)}).slice(0,8);
 
+  // Dormants récents à relancer
   var dormants = DRIVERS.filter(function(d){
-    return d.segment==='Dormant récent';
-  }).slice(0,AGENTS.length*10);
+    return d.segment==='Dormant récent' || d.segment==='Alerte 30j';
+  }).sort(function(a,b){return (b.orders||0)-(a.orders||0)}).slice(0,8);
 
+  // Jamais actifs
   var jamais = DRIVERS.filter(function(d){
     return d.segment==='Jamais actif';
-  }).slice(0,AGENTS.length*5);
+  }).slice(0,5);
 
-  // Distribuer les tâches entre agents
-  el.innerHTML='';
-  AGENTS.forEach(function(agent, idx){
-    var tasksUrg = urgents.slice(idx*5, idx*5+5);
-    var tasksDorm = dormants.slice(idx*8, idx*8+8);
-    var tasksJam = jamais.slice(idx*3, idx*3+3);
-    var sc = SCORES[agent.id]||{points:0};
-    var pts = sc.points||0;
-    var objJour = 10; // points objectif/jour
+  // Construire le prompt pour FATHY
+  var urgentsList = urgents.map(function(d){
+    var days=Math.round((now-new Date(d.lastDate))/864e5);
+    return '- '+d.name+' | '+d.phone+' | '+days+'j inactif | '+d.orders+' courses';
+  }).join(' / ');
+  var dormantsList = dormants.map(function(d){
+    return '- '+d.name+' | '+d.phone+' | '+(d.orders||0)+' courses';
+  }).join(' / ');
+  var jamaisList = jamais.map(function(d){
+    return '- '+d.name+' | '+d.phone;
+  }).join(' / ');
 
-    var card = document.createElement('div');
-    card.style.cssText='background:var(--s2);border-radius:12px;padding:16px;margin-bottom:12px;border-left:3px solid var(--acc);';
-    
-    var html='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">'+
-      '<div>'+
-        '<div style="font-weight:700;font-size:14px;">👤 '+agent.nom+'</div>'+
-        '<div style="font-size:11px;color:var(--mu);">'+agent.role+' · '+agent.zone+'</div>'+
-      '</div>'+
-      '<div style="text-align:right">'+
-        '<div style="font-family:Syne,sans-serif;font-size:18px;font-weight:800;color:var(--acc)">'+pts+' pts</div>'+
-        '<div style="font-size:10px;color:var(--mu)">'+getBadge(pts)+'</div>'+
-      '</div>'+
-    '</div>';
-
-    // Tâches urgentes
-    if(tasksUrg.length>0){
-      html+='<div style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:10px;margin-bottom:8px;">'+
-        '<div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:6px;">🚨 URGENT — Alerte 8-14j (chacun +5 pts si réactivé)</div>';
-      tasksUrg.forEach(function(d){
-        var days=Math.round((now-new Date(d.lastDate))/864e5);
-        html+='<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;">'+
-          '<span>'+d.name+'</span>'+
-          '<span style="color:var(--mu)">'+d.phone+' · '+days+'j · '+(d.orders||0)+' courses</span>'+
-        '</div>';
-      });
-      html+='</div>';
-    }
-
-    // Tâches dormants
-    if(tasksDorm.length>0){
-      html+='<div style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.2);border-radius:8px;padding:10px;margin-bottom:8px;">'+
-        '<div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:6px;">🔴 RELANCE DORMANTS (+2 pts/rappel effectué)</div>';
-      tasksDorm.slice(0,5).forEach(function(d){
-        html+='<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;">'+
-          '<span>'+d.name+'</span>'+
-          '<span style="color:var(--mu)">'+d.phone+'</span>'+
-        '</div>';
-      });
-      if(tasksDorm.length>5) html+='<div style="font-size:10px;color:var(--mu);margin-top:4px;">+'+( tasksDorm.length-5)+' autres dormants</div>';
-      html+='</div>';
-    }
-
-    // Objectif du jour
-    html+='<div style="background:rgba(34,211,160,.08);border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">'+
-      '<span style="font-size:11px;color:var(--green);">🎯 Objectif du jour: '+objJour+' pts → Prime '+(objJour/10*1000).toLocaleString()+' FCFA</span>'+
-      '<button class="btn btn-g btn-sm" data-aid="'+agent.id+'" data-pts="10" data-r="objectif" onclick="ajouterPoints(this.dataset.aid,+this.dataset.pts,this.dataset.r)" style="font-size:10px;">✅ Objectif atteint +10</button>'+
-    '</div>';
-
-    card.innerHTML=html;
-    el.appendChild(card);
-  });
-
-  renderRapportAgents();
-  showToast('⚡','FATHY a généré les tâches pour '+AGENTS.length+' agent(s) !','success');
-}
-
-
-// ═══════════════════════════════════════════════════════
-// SYSTÈME D'AUTHENTIFICATION & CONTRÔLE D'ACCÈS
-// ═══════════════════════════════════════════════════════
-
-// Configuration des utilisateurs (stockée localement + serveur)
-// Le directeur peut modifier ces accès depuis Paramètres
-// AUTH_USERS - liste des utilisateurs (avec mdp pour le directeur)
-var AUTH_USERS = JSON.parse(localStorage.getItem('yango_auth_users') || JSON.stringify([
-  { id:'dir_001', username:'directeur', password:'ndongo2024', nom:'Ndongo Fall', role:'directeur', actif:true }
-]));
-
-// Charger les users depuis serveur
-async function loadUsersFromServer(){
-  try {
-    var r = await fetch('/api/users-admin');
-    if(!r.ok) return;
-    var data = await r.json();
-    if(data.users && data.users.length > 0){
-      AUTH_USERS = data.users;
-      // Toujours garder le directeur par défaut
-      if(!AUTH_USERS.find(function(u){ return u.username==='directeur'; })){
-        AUTH_USERS.unshift({id:'dir_001',username:'directeur',password:'ndongo2024',nom:'Ndongo Fall',role:'directeur',actif:true});
-      }
-      localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
-    }
-  } catch(e){ console.warn('loadUsers:', e.message); }
-}
-
-var CURRENT_USER = JSON.parse(sessionStorage.getItem('yango_user') || 'null');
-
-// Pages et permissions par rôle
-var ROLE_PERMISSIONS = {
-  directeur: {
-    pages: ['dashboard','rappels','chauffeurs','messages','coach','import','finances','equipe','settings'],
-    voirFinances: true,
-    voirScores: true,
-    modifierPrimes: true,
-    modifierAcces: true,
-    label: '👑 Directeur',
-    color: '#f5c518'
-  },
-  superviseur: {
-    pages: ['dashboard','rappels','chauffeurs','messages','coach','equipe'],
-    voirFinances: false,
-    voirScores: true,
-    modifierPrimes: false,
-    modifierAcces: false,
-    label: '🎯 Superviseur',
-    color: '#a78bfa'
-  },
-  agent: {
-    pages: ['rappels','chauffeurs','messages','coach'],
-    voirFinances: false,
-    voirScores: true,
-    modifierPrimes: false,
-    modifierAcces: false,
-    label: '👤 Agent',
-    color: '#22d3a0'
-  }
-};
-
-async function forceSyncUsers(){
-  showToast('⏳','Synchronisation en cours...','success');
-  try {
-    var r = await fetch('/api/users-admin', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({users: AUTH_USERS})
-    });
-    var d = await r.json();
-    if(d.success){
-      showToast('✅',AUTH_USERS.length+' comptes synchronisés sur le serveur !','success');
-    } else {
-      showToast('⚠️','Échec synchronisation','error');
-    }
-  } catch(e) {
-    showToast('⚠️','Erreur: '+e.message,'error');
-  }
-}
-
-function saveAuthUsers(){
-  localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
-  fetch('/api/users-admin', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({users: AUTH_USERS})
-  }).then(function(r){ return r.json(); })
-  .then(function(d){ 
-    if(d.success) showToast('✅','Accès sauvegardé sur le serveur !','success');
-    else showToast('⚠️','Erreur serveur — réessayez','error');
-  })
-  .catch(function(e){ showToast('⚠️','Serveur inaccessible','error'); });
-}
-
-async function doLogin(){
-  var user = document.getElementById('login-user').value.trim();
-  var pass = document.getElementById('login-pass').value.trim();
-  var errEl = document.getElementById('login-error');
-  var btn = document.getElementById('login-btn');
-
-  if(!user || !pass){
-    errEl.textContent = '⚠️ Entrez votre identifiant et mot de passe';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  // Afficher chargement
-  if(btn){ btn.textContent = 'Connexion en cours...'; btn.disabled = true; }
-  errEl.style.display = 'none';
+  var prompt = 'Je suis '+userAgent+', '+userRole+' du Parc Ndongo Fall. '+
+    'Mon score ce mois: '+sc.points+' pts. Rappels: '+sc.rappels+'. Reactivés: '+sc.reactives+'. '+
+    'URGENTS A APPELER (8-14j inactifs): '+urgentsList+'. '+
+    'DORMANTS A RELANCER: '+dormantsList+'. '+
+    'JAMAIS ACTIFS: '+jamaisList+'. '+
+    'Génère mes tâches prioritaires du jour en 3 sections avec script appel court, points gagnables, et encouragement. '+
+    'Sois concis, chaleureux, utilise des emojis.';
 
   try {
-    // Vérification via le serveur
-    var resp = await fetch('/api/login', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({username: user, password: pass})
-    });
-    var data = await resp.json();
-
-    if(data.success && data.user){
-      loginSuccess(data.user);
-      return;
-    }
-    
-    // Serveur dit non - vérifier message
-    errEl.innerHTML = '❌ ' + (data.message || 'Identifiant ou mot de passe incorrect') + 
-      '<br><small style="opacity:.7">Demandez au directeur de recréer votre accès dans Paramètres</small>';
-    errEl.style.display = 'block';
-    
-  } catch(e) {
-    console.warn('Server unreachable, trying local:', e.message);
-    
-    // Fallback LOCAL si serveur inaccessible
-    var found = AUTH_USERS.find(function(u){
-      return u.username.toLowerCase() === user.toLowerCase() && 
-             u.password === pass && 
-             u.actif !== false;
-    });
-
-    if(found){
-      loginSuccess(found);
-      return;
-    }
-    
-    errEl.textContent = '❌ Serveur inaccessible et identifiant non trouvé localement';
-    errEl.style.display = 'block';
-  }
-  
-  document.getElementById('login-pass').value = '';
-  if(btn){ btn.textContent = 'Se connecter →'; btn.disabled = false; }
-  // Charger diagnostic
-  fetch('/api/debug-users').then(function(r){return r.json();}).then(function(d){
-    var dbg = document.getElementById('login-debug-info');
-    if(dbg && d.users){
-      var names = d.users.map(function(u){return '@'+u.username+' ('+u.nom+')'}).join(', ');
-      dbg.innerHTML = '📋 Comptes actifs sur le serveur: ' + (names || 'Aucun — Le directeur doit créer les accès dans Paramètres');
-      dbg.style.display = 'block';
-    }
-  }).catch(function(){});
-  setTimeout(function(){ errEl.style.display='none'; }, 5000);
-}
-
-function loginSuccess(found){
-  CURRENT_USER = found;
-  sessionStorage.setItem('yango_user', JSON.stringify(found));
-  document.getElementById('login-screen').style.display = 'none';
-
-  var sbUser = document.querySelector('.sb-user-name');
-  if(sbUser) sbUser.textContent = found.nom || found.username;
-  var sbRole = document.querySelector('.sb-user-role');
-  var roleLabel = (ROLE_PERMISSIONS[found.role] || {}).label || found.role || '';
-  if(sbRole) sbRole.textContent = roleLabel;
-
-  var logEl = document.getElementById('p-user-name');
-  if(logEl) logEl.textContent = found.nom || found.username;
-  var roleEl = document.getElementById('p-user-role');
-  if(roleEl) roleEl.textContent = roleLabel;
-
-  var btn = document.getElementById('login-btn');
-  if(btn){ btn.textContent = 'Se connecter →'; btn.disabled = false; }
-
-  applyUserPermissions(found);
-  showToast('👋', 'Bienvenue ' + (found.nom||found.username) + ' !', 'success');
-}
-
-function doLogout(){
-  sessionStorage.removeItem('yango_user');
-  CURRENT_USER = null;
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-user').value = '';
-  document.getElementById('login-pass').value = '';
-}
-
-function applyUserPermissions(user){
-  if(!user) return;
-  var perms = ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.agent;
-
-  // Masquer les pages non autorisées dans le menu
-  document.querySelectorAll('.ni').forEach(function(ni){
-    var onclick = ni.getAttribute('onclick') || '';
-    var match = onclick.match(/nav\('(\w+)'\)/);
-    if(match){
-      var pageId = match[1];
-      if(perms.pages.includes('all') || perms.pages.includes(pageId)){
-        ni.style.display = 'flex';
-      } else {
-        ni.style.display = 'none';
-      }
-    }
-  });
-
-  // Masquer les finances si pas autorisé
-  if(!perms.voirFinances){
-    var finEl = document.getElementById('page-finances');
-    if(finEl) finEl.style.display = 'none';
-    // Masquer les KPIs financiers sur le dashboard
-    var finDash = document.querySelectorAll('.fin-card');
-    finDash.forEach(function(el){ el.style.display='none'; });
-  }
-
-  // Naviguer vers la première page autorisée
-  var firstPage = perms.pages[0] === 'all' ? 'dashboard' : perms.pages[0];
-  // Charger les données et démarrer le CRM
-  loadFromServer().then(function(){
-    try{ nav(firstPage); }catch(e){}
-    try{ renderTable(); }catch(e){}
-    try{ renderDashboard(); }catch(e){}
-    try{ updateRemBadges(); }catch(e){}
-    try{ updateSaveCounts(); }catch(e){}
-    try{ updateMsgPreview(); }catch(e){}
-    try{ document.getElementById('f-tous').style.fontWeight='700'; }catch(e){}
-    setInterval(async function(){ try{ await save(); }catch(e){} }, 30000);
-  }).catch(function(e){ console.warn(e); });
-}
-
-function checkAuth(){
-  // Vérifier si déjà connecté en session
-  if(CURRENT_USER){
-    document.getElementById('login-screen').style.display = 'none';
-    applyUserPermissions(CURRENT_USER);
-    return true;
-  }
-  // Charger les users depuis serveur (avec mdp) avant d'afficher login
-  loadUsersFromServer().then(function(){
-    console.log('Users loaded:', AUTH_USERS.length);
-  });
-  return false;
-}
-
-// ─── GESTION DES ACCÈS (page Paramètres) ───────────────
-function renderGestionAcces(){
-  var el = document.getElementById('acces-agents-list');
-  if(!el) return;
-  el.innerHTML = '';
-
-  AUTH_USERS.forEach(function(u){
-    var perms = ROLE_PERMISSIONS[u.role] || {};
-    var row = document.createElement('div');
-    row.style.cssText = 'background:var(--s2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;';
-    // Build row with DOM to avoid quote issues
-    var ico = u.role==='directeur'?'👑':u.role==='superviseur'?'🎯':'👤';
-    var icoDiv = document.createElement('div');
-    icoDiv.style.cssText='width:36px;height:36px;background:'+(perms.color||'#666')+';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;';
-    icoDiv.textContent=ico;
-    row.appendChild(icoDiv);
-    var info=document.createElement('div');info.style.flex='1';
-    var n=document.createElement('div');n.style.cssText='font-weight:700;font-size:13px;';n.textContent=u.nom;info.appendChild(n);
-    var s2=document.createElement('div');s2.style.cssText='font-size:11px;color:var(--mu);';s2.textContent='@'+u.username+' · '+(perms.label||u.role);info.appendChild(s2);
-    row.appendChild(info);
-    var badge=document.createElement('span');
-    badge.style.cssText='font-size:11px;padding:3px 10px;border-radius:20px;background:'+(u.actif?'rgba(34,211,160,.15)':'rgba(248,113,113,.15)')+';color:'+(u.actif?'var(--green)':'var(--red)');
-    badge.textContent=u.actif?'Actif':'Suspendu';
-    row.appendChild(badge);
-    if(u.id!=='dir_001'){
-      var uid=u.id;
-      var b1=document.createElement('button');b1.className='btn btn-g btn-sm';b1.style.fontSize='10px';
-      b1.textContent=u.actif?'Suspendre':'Activer';
-      b1.onclick=function(){toggleUserActif(uid);};row.appendChild(b1);
-      var b2=document.createElement('button');b2.className='btn btn-r btn-sm';b2.style.fontSize='10px';
-      b2.textContent='✕';b2.onclick=function(){supprimerUser(uid);};row.appendChild(b2);
-    } else {
-      var sp=document.createElement('span');sp.style.cssText='font-size:10px;color:var(--mu);';sp.textContent='Compte principal';row.appendChild(sp);
-    }
-    el.appendChild(row);
-  });
-}
-
-async function ajouterAcces(){
-  var nom = document.getElementById('acces-nom').value.trim();
-  var username = document.getElementById('acces-username').value.trim();
-  var password = document.getElementById('acces-password').value.trim();
-  var role = document.getElementById('acces-role').value;
-
-  if(!nom||!username||!password){
-    showToast('⚠️','Remplissez tous les champs','error'); return;
-  }
-  // Nettoyer username: minuscules, sans espaces
-  username = username.toLowerCase().replace(/\s+/g,'');
-  if(AUTH_USERS.find(function(u){return u.username===username;})){
-    showToast('⚠️','Identifiant @'+username+' déjà utilisé','error'); return;
-  }
-
-  var newUser = {
-    id: 'u_'+Date.now(),
-    username: username,
-    password: password,
-    nom: nom,
-    role: role,
-    acces: [],
-    actif: true
-  };
-  AUTH_USERS.push(newUser);
-  localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
-
-  // Sauvegarder sur serveur et attendre confirmation
-  showToast('⏳','Enregistrement sur le serveur...','success');
-  try {
-    var r = await fetch('/api/users-admin', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({users: AUTH_USERS})
-    });
-    var d = await r.json();
-    if(d.success){
-      showToast('✅','Accès créé ! @'+username+' peut maintenant se connecter','success');
-    } else {
-      showToast('⚠️','Sauvegarde serveur échouée — réessayez','error');
-    }
-  } catch(e) {
-    showToast('⚠️','Serveur inaccessible: '+e.message,'error');
-    console.error('Save users error:', e);
-  }
-
-  renderGestionAcces();
-  document.getElementById('acces-nom').value='';
-  document.getElementById('acces-username').value='';
-  document.getElementById('acces-password').value='';
-}
-
-function toggleUserActif(id){
-  var u = AUTH_USERS.find(function(u){return u.id===id;});
-  if(u){ u.actif = !u.actif; saveAuthUsers(); renderGestionAcces(); }
-}
-
-function supprimerUser(id){
-  if(!confirm('Supprimer cet accès ?')) return;
-  AUTH_USERS = AUTH_USERS.filter(function(u){return u.id!==id;});
-  saveAuthUsers();
-  renderGestionAcces();
-}
-
-// ─── SYSTÈME DE PRIMES CONFIGURABLE ────────────────────
-var PRIMES_CONFIG = JSON.parse(localStorage.getItem('yango_primes') || JSON.stringify([
-  {pts:10, prime:'1 000 FCFA', repos:'', badge:'🥉 Bronze'},
-  {pts:25, prime:'2 500 FCFA', repos:'1/2 journée', badge:'🥈 Silver'},
-  {pts:50, prime:'5 000 FCFA', repos:'1 jour', badge:'🥇 Gold'},
-  {pts:100, prime:'10 000 FCFA', repos:'2 jours', badge:'💎 VIP'},
-  {pts:200, prime:'25 000 FCFA', repos:'3 jours', badge:'👑 Agent du mois'}
-]));
-
-function savePrimesConfig(){
-  localStorage.setItem('yango_primes', JSON.stringify(PRIMES_CONFIG));
-}
-
-function renderPrimesConfig(){
-  var el = document.getElementById('primes-config-list');
-  if(!el) return;
-  el.innerHTML = '';
-  PRIMES_CONFIG.forEach(function(p, i){
-    var row = document.createElement('div');
-    row.style.cssText = 'background:var(--s2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:grid;grid-template-columns:80px 1fr 1fr 1fr auto;gap:10px;align-items:center;font-size:12px;';
-
-    // Points
-    var pts = document.createElement('div');
-    pts.innerHTML = '<strong style="color:var(--acc)">'+p.pts+' pts</strong>';
-    row.appendChild(pts);
-
-    // Prime input
-    var inp1 = document.createElement('input');
-    inp1.className = 'form-input'; inp1.value = p.prime; inp1.placeholder = 'Prime FCFA';
-    inp1.style.cssText = 'font-size:12px;padding:6px 10px;';
-    (function(idx){ inp1.onchange = function(){ updatePrime(idx,'prime',this.value); }; })(i);
-    row.appendChild(inp1);
-
-    // Repos input
-    var inp2 = document.createElement('input');
-    inp2.className = 'form-input'; inp2.value = p.repos; inp2.placeholder = 'Repos';
-    inp2.style.cssText = 'font-size:12px;padding:6px 10px;';
-    (function(idx){ inp2.onchange = function(){ updatePrime(idx,'repos',this.value); }; })(i);
-    row.appendChild(inp2);
-
-    // Badge input
-    var inp3 = document.createElement('input');
-    inp3.className = 'form-input'; inp3.value = p.badge; inp3.placeholder = 'Badge';
-    inp3.style.cssText = 'font-size:12px;padding:6px 10px;';
-    (function(idx){ inp3.onchange = function(){ updatePrime(idx,'badge',this.value); }; })(i);
-    row.appendChild(inp3);
-
-    // Supprimer
-    var btn = document.createElement('button');
-    btn.className = 'btn btn-r btn-sm'; btn.textContent = '✕'; btn.style.fontSize = '10px';
-    (function(idx){ btn.onclick = function(){ supprimerPrime(idx); }; })(i);
-    row.appendChild(btn);
-
-    el.appendChild(row);
-  });
-}
-
-function ajouterPrime(){
-  var pts = parseInt(document.getElementById('new-prime-pts').value)||0;
-  var prime = document.getElementById('new-prime-val').value.trim();
-  var repos = document.getElementById('new-prime-repos').value.trim();
-  var badge = document.getElementById('new-prime-badge').value.trim();
-  if(!pts||!prime){ showToast('⚠️','Points et prime requis','error'); return; }
-  PRIMES_CONFIG.push({pts:pts, prime:prime, repos:repos, badge:badge});
-  PRIMES_CONFIG.sort(function(a,b){return a.pts-b.pts;});
-  savePrimesConfig();
-  renderPrimesConfig();
-  document.getElementById('new-prime-pts').value='';
-  document.getElementById('new-prime-val').value='';
-  document.getElementById('new-prime-repos').value='';
-  document.getElementById('new-prime-badge').value='';
-  showToast('✅','Nouveau palier ajouté !','success');
-}
-
-
-async function init(){
-  // Vérifier auth - si non connecté, attendre le login
-  if(!checkAuth()) return;
-  try{ await loadFromServer(); }catch(e){ console.warn('Load error:',e); }
-  try{ nav('dashboard'); }catch(e){}
-  try{ renderTable(); }catch(e){}
-  try{ renderDashboard(); }catch(e){}
-  try{ updateRemBadges(); }catch(e){}
-  try{ updateSaveCounts(); }catch(e){}
-  try{ updateMsgPreview(); }catch(e){}
-  try{ document.getElementById('f-tous').style.fontWeight='700'; }catch(e){}
-    setInterval(async function(){ try{ await save(); }catch(e){} }, 30000);
-  // Sauvegarder quand l'utilisateur ferme la page
-  window.addEventListener('beforeunload', function(){
-    if(DRIVERS.length > 0){
-      var payload=JSON.stringify({notes,reminders,cstatus,callLogs,importHist,drivers:DRIVERS.slice(0,20000),updatedAt:new Date().toISOString()});
-      try{ localStorage.setItem('yango_bk', payload); }catch(ex){}
-      // Sauvegarde synchrone au serveur
-      try{
-        navigator.sendBeacon(API+'/data-sync', payload);
-      }catch(ex){}
-    }
-  });
-  try{
-    var todayRems=reminders.filter(function(r){return !r.done&&r.date===TODAY;});
-    if(todayRems.length>0){
-      setTimeout(function(){
-        try{ showNotif('urgent','🔔 '+todayRems.length+' appel(s) aujourd hui !',todayRems.slice(0,2).map(function(r){return r.name;}).join(', ')); }catch(e){}
-      },2000);
-    }
-  }catch(e){}
-}
-
-init();
-</script>
-
-<!-- ══════════════════════════════════════ -->
-<!-- FATHY — Bonhomme flottant intelligent -->
-<!-- ══════════════════════════════════════ -->
-
-<style>
-/* FATHY floating widget */
-#fathy-bubble {
-  position:fixed;
-  bottom:24px;
-  right:24px;
-  z-index:9999;
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:10px;
-  pointer-events:none;
-}
-
-/* Bonhomme FATHY */
-#fathy-avatar {
-  width:62px;
-  height:62px;
-  background:linear-gradient(135deg,#f5c518,#ff6b35);
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:30px;
-  cursor:pointer;
-  pointer-events:all;
-  box-shadow:0 4px 24px rgba(245,197,24,.5);
-  transition:transform .2s, box-shadow .2s;
-  animation:fathy-float 3s ease-in-out infinite;
-  position:relative;
-}
-#fathy-avatar:hover {
-  transform:scale(1.12);
-  box-shadow:0 6px 32px rgba(245,197,24,.7);
-}
-@keyframes fathy-float {
-  0%,100% { transform:translateY(0); }
-  50%      { transform:translateY(-8px); }
-}
-
-/* Badge notification */
-#fathy-badge {
-  position:absolute;
-  top:-4px;
-  right:-4px;
-  background:#ef4444;
-  color:white;
-  font-size:10px;
-  font-weight:800;
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  display:none;
-}
-
-/* Bulle de dialogue */
-#fathy-speech {
-  background:rgba(20,20,35,.97);
-  border:1px solid rgba(245,197,24,.4);
-  border-radius:16px 16px 4px 16px;
-  padding:10px 14px;
-  max-width:220px;
-  font-size:12px;
-  color:#fff;
-  pointer-events:all;
-  cursor:pointer;
-  box-shadow:0 4px 20px rgba(0,0,0,.4);
-  animation:fathy-pop .3s ease;
-  line-height:1.5;
-}
-@keyframes fathy-pop {
-  from { opacity:0; transform:scale(.8) translateY(10px); }
-  to   { opacity:1; transform:scale(1) translateY(0); }
-}
-#fathy-speech strong { color:#f5c518; }
-
-/* Panel chat FATHY */
-#fathy-panel {
-  position:fixed;
-  bottom:100px;
-  right:24px;
-  width:340px;
-  max-height:520px;
-  background:rgba(15,12,40,.98);
-  border:1px solid rgba(245,197,24,.3);
-  border-radius:20px;
-  display:none;
-  flex-direction:column;
-  z-index:9998;
-  box-shadow:0 8px 40px rgba(0,0,0,.6);
-  pointer-events:all;
-  overflow:hidden;
-}
-#fathy-panel.open { display:flex; animation:fathy-pop .3s ease; }
-
-#fathy-panel-header {
-  background:linear-gradient(135deg,rgba(245,197,24,.15),rgba(255,107,53,.1));
-  padding:14px 16px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  border-bottom:1px solid rgba(245,197,24,.2);
-  flex-shrink:0;
-}
-
-#fathy-msgs {
-  flex:1;
-  overflow-y:auto;
-  padding:12px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  min-height:0;
-}
-
-.fmsg-u {
-  align-self:flex-end;
-  background:rgba(245,197,24,.15);
-  border:1px solid rgba(245,197,24,.2);
-  border-radius:14px 14px 2px 14px;
-  padding:8px 12px;
-  font-size:12px;
-  max-width:85%;
-  color:#fff;
-}
-.fmsg-a {
-  align-self:flex-start;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:14px 14px 14px 2px;
-  padding:8px 12px;
-  font-size:12px;
-  max-width:90%;
-  color:#e5e7eb;
-  line-height:1.6;
-}
-.fmsg-a strong { color:#f5c518; }
-
-.fathy-thinking {
-  display:flex;
-  gap:4px;
-  padding:4px 0;
-}
-.fathy-thinking .dot {
-  width:6px;height:6px;
-  background:#f5c518;
-  border-radius:50%;
-  animation:fathy-bounce .8s infinite;
-}
-.fathy-thinking .dot:nth-child(2){animation-delay:.15s}
-.fathy-thinking .dot:nth-child(3){animation-delay:.3s}
-@keyframes fathy-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-
-#fathy-input-row {
-  padding:10px 12px;
-  border-top:1px solid rgba(245,197,24,.15);
-  display:flex;
-  gap:8px;
-  flex-shrink:0;
-}
-#fathy-input {
-  flex:1;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(245,197,24,.2);
-  border-radius:20px;
-  padding:8px 14px;
-  color:#fff;
-  font-size:12px;
-  outline:none;
-}
-#fathy-input:focus { border-color:rgba(245,197,24,.5); }
-#fathy-send {
-  width:36px;height:36px;
-  background:linear-gradient(135deg,#f5c518,#ff6b35);
-  border:none;border-radius:50%;
-  cursor:pointer;font-size:16px;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-}
-
-/* Suggestions rapides */
-.fathy-sugg {
-  display:flex;
-  flex-wrap:wrap;
-  gap:5px;
-  padding:8px 12px 0;
-  flex-shrink:0;
-}
-.fathy-sugg button {
-  background:rgba(245,197,24,.1);
-  border:1px solid rgba(245,197,24,.2);
-  border-radius:20px;
-  color:#f5c518;
-  font-size:10px;
-  padding:3px 10px;
-  cursor:pointer;
-  transition:background .2s;
-}
-.fathy-sugg button:hover { background:rgba(245,197,24,.25); }
-</style>
-
-<!-- Bonhomme flottant -->
-<div id="fathy-bubble">
-  <div id="fathy-speech" onclick="toggleFathy()" style="display:none"></div>
-  <div id="fathy-avatar" onclick="toggleFathy()">
-    🤖
-    <div id="fathy-badge">!</div>
-  </div>
-</div>
-
-<!-- Panel chat FATHY -->
-<div id="fathy-panel">
-  <div id="fathy-panel-header">
-    <div style="width:36px;height:36px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🤖</div>
-    <div style="flex:1">
-      <div style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:#f5c518;">FATHY</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.5);">Parc Ndongo Fall · toujours là pour vous</div>
-    </div>
-    <div style="display:flex;gap:6px;">
-      <button onclick="nav('coach')" style="background:rgba(245,197,24,.15);border:none;border-radius:8px;color:#f5c518;font-size:10px;padding:4px 8px;cursor:pointer;">Mode complet</button>
-      <button onclick="toggleFathy()" style="background:rgba(255,255,255,.1);border:none;border-radius:8px;color:#fff;padding:4px 8px;cursor:pointer;">✕</button>
-    </div>
-  </div>
-  
-  <!-- Suggestions rapides -->
-  <div class="fathy-sugg">
-    <button onclick="fathyAsk('Priorités du jour ?')">⚡ Priorités</button>
-    <button onclick="fathyAsk('Chauffeurs urgents à appeler')">🚨 Urgents</button>
-    <button onclick="fathyAsk('Rapport équipe agents')">📊 Rapport</button>
-    <button onclick="fathyAsk('Tâches agents du jour')">📋 Tâches</button>
-    <button onclick="fathyAsk('Rapport complet de toute l equipe')">📊 Rapport équipe</button>
-  </div>
-
-  <div id="fathy-msgs"></div>
-  
-  <div id="fathy-input-row">
-    <input id="fathy-input" placeholder="Posez une question à FATHY..." 
-      onkeydown="if(event.key==='Enter')fathySend()"/>
-    <button id="fathy-send" onclick="fathySend()">↑</button>
-  </div>
-</div>
-
-<script>
-// ══════════════════════════════════════
-// FATHY — Bonhomme flottant
-// ══════════════════════════════════════
-var fathyOpen = false;
-var fathyHistory = [];
-var fathyMsgsEl = document.getElementById('fathy-msgs');
-
-// Messages proactifs selon la page
-var fathyProactif = {
-  dashboard: ['Bonjour ! 👋 Votre parc est analysé. Voir les urgences du jour ?', 
-               'Votre parc a évolué. Je peux vous donner les priorités en 1 clic !',
-               '🚨 Des chauffeurs s eloignent ! Je liste les urgents ?'],
-  chauffeurs: ['Je peux chercher un chauffeur par nom, telephone ou permis !',
-                'Voulez-vous que je genere un script appel pour un chauffeur ?'],
-  rappels:    ['Je peux vous aider a prioriser vos rappels du jour !'],
-  coach:      ['Mode complet. Posez-moi toutes vos questions !'],
-  equipe:     ['Je surveille votre equipe ! Cliquez pour voir les scores et taches.'],
-  default:    ['Besoin aide ? Je suis la 24h/24 ! 🤖']
-};
-
-function toggleFathy(){
-  fathyOpen = !fathyOpen;
-  var panel = document.getElementById('fathy-panel');
-  var speech = document.getElementById('fathy-speech');
-  if(fathyOpen){
-    panel.classList.add('open');
-    speech.style.display = 'none';
-    document.getElementById('fathy-badge').style.display = 'none';
-    if(!fathyHistory.length) fathyGreet();
-    setTimeout(function(){ 
-      var inp = document.getElementById('fathy-input');
-      if(inp) inp.focus();
-    }, 300);
-  } else {
-    panel.classList.remove('open');
-  }
-}
-
-function fathyGreet(){
-  var stats = typeof calcStats === 'function' ? calcStats() : {total:0,actif:0,alerte:0,dormant:0};
-  var now = new Date();
-  var h = now.getHours();
-  var salut = h<12?'Bonjour':'Bonsoir';
-  var msg = salut + ' ! Je suis <strong>FATHY</strong>, votre assistant IA du Parc Ndongo Fall. 🚖<br><br>'+
-    '📊 <strong>'+stats.total.toLocaleString()+' chauffeurs</strong> dans la base<br>'+
-    '🟢 <strong style="color:#22d3a0">'+stats.actif+' actifs</strong> · '+
-    '⚠️ <strong style="color:#fbbf24">'+(stats.alerte||0)+' en alerte</strong> · '+
-    '🔴 <strong style="color:#f87171">'+stats.dormant+' dormants</strong><br><br>'+
-    'Comment puis-je vous aider ? 😊';
-  fathyAddMsg('a', msg);
-}
-
-function fathyAddMsg(role, text){
-  var msgs = document.getElementById('fathy-msgs');
-  if(!msgs) return;
-  var div = document.createElement('div');
-  div.className = role==='u' ? 'fmsg-u' : 'fmsg-a';
-  if(role==='u'){
-    div.textContent = text;
-  } else {
-    var html = text.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>');
-    html = html.split('\n').join('<br>');
-    div.innerHTML = html;
-  }
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-  return div;
-}
-
-function fathyAsk(q){
-  if(!fathyOpen) toggleFathy();
-  setTimeout(function(){
-    var inp = document.getElementById('fathy-input');
-    if(inp){ inp.value = q; fathySend(); }
-  }, 200);
-}
-
-async function fathySend(){
-  var inp = document.getElementById('fathy-input');
-  if(!inp) return;
-  var q = inp.value.trim();
-  if(!q) return;
-  inp.value = '';
-  inp.disabled = true;
-
-  fathyAddMsg('u', q);
-  fathyHistory.push({role:'user', content: q});
-  if(fathyHistory.length > 8) fathyHistory = fathyHistory.slice(-8);
-
-  // Thinking
-  var thinking = fathyAddMsg('a', '<div class="fathy-thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>');
-
-  try {
-    var system = typeof buildSystemPrompt==='function' ? buildSystemPrompt() : 'Tu es FATHY, assistant du Parc Ndongo Fall.';
     var resp = await fetch('/api/chat', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'groq',
-        system:system,
-        messages:fathyHistory,
-        agents: (typeof AGENTS !== 'undefined') ? AGENTS : [],
-        scores: (typeof SCORES !== 'undefined') ? SCORES : {}
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'groq',
+        system: buildSystemPrompt(),
+        messages: [{role:'user', content: prompt}],
+        agents: AGENTS,
+        scores: SCORES
       })
     });
+
     var data = await resp.json();
-    var reply = data.content&&data.content[0] ? data.content[0].text : 'Pas de réponse';
-    fathyHistory.push({role:'assistant', content:reply});
-    var rhtml=reply.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>').split('\n').join('<br>');
-    if(thinking) thinking.innerHTML = rhtml;
+    var reply = data.content && data.content[0] ? data.content[0].text : null;
 
-    thinking.className = 'fmsg-a';
+    if(reply){
+      // Afficher la réponse IA formatée
+      el.innerHTML = '';
+      var card = document.createElement('div');
+      card.style.cssText = 'background:linear-gradient(135deg,rgba(245,197,24,.05),rgba(255,107,53,.03));border:1px solid rgba(245,197,24,.2);border-radius:14px;padding:18px;';
+
+      // Header avec nom agent
+      var header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(245,197,24,.15);';
+      header.innerHTML =
+        '<div style="width:38px;height:38px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">🤖</div>'+
+        '<div><div style="font-weight:700;font-size:13px;color:#f5c518;">FATHY — Tâches de '+userAgent+'</div>'+
+        '<div style="font-size:11px;color:var(--mu);">'+new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+' · '+urgents.length+' urgents · '+dormants.length+' dormants</div>'+
+        '</div>'+
+        '<div style="margin-left:auto;background:rgba(245,197,24,.1);border-radius:8px;padding:5px 10px;font-size:11px;color:#f5c518;">'+sc.points+' pts ce mois</div>';
+      card.appendChild(header);
+
+      // Contenu IA
+      var body = document.createElement('div');
+      body.style.cssText = 'font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;';
+      body.innerHTML = reply
+        .replace(/\*\*(.*?)\*\*/g,'<strong style="color:#f5c518">$1</strong>')
+        .replace(/🚨/g,'<span style="color:#f87171">🚨</span>')
+        .replace(/🔴/g,'<span style="color:#fb923c">🔴</span>')
+        .replace(/✅/g,'<span style="color:#22d3a0">✅</span>')
+        .split('\n').join('<br>');
+      card.appendChild(body);
+
+      // Boutons actions rapides
+      var actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid rgba(245,197,24,.1);';
+      // Build action buttons with DOM to avoid quote issues
+      var b1=document.createElement('button');
+      b1.className='btn btn-p btn-sm';b1.style.fontSize='11px';
+      b1.textContent='🔄 Régénérer';b1.onclick=genererTaches;
+      actions.appendChild(b1);
+      var b2=document.createElement('button');
+      b2.className='btn btn-g btn-sm';b2.style.fontSize='11px';
+      b2.textContent='💬 Script WhatsApp';
+      b2.onclick=function(){fathyAsk('Script appel chauffeur dormant');};
+      actions.appendChild(b2);
+      var b3=document.createElement('button');
+      b3.className='btn btn-g btn-sm';b3.style.fontSize='11px';
+      b3.textContent='+2 pts Rappel';
+      b3.onclick=function(){ajouterPoints(agentId,2,'rappel');};
+      actions.appendChild(b3);
+      var b4=document.createElement('button');
+      b4.className='btn btn-g btn-sm';b4.style.fontSize='11px';
+      b4.textContent='+5 pts Réactivé';
+      b4.onclick=function(){ajouterPoints(agentId,5,'reactif');};
+      actions.appendChild(b4);
+      card.appendChild(actions);
+
+      el.appendChild(card);
+      showToast('⚡', 'FATHY a généré vos tâches du jour !', 'success');
+    } else {
+      throw new Error('Réponse vide');
+    }
+
   } catch(e) {
-    if(thinking) thinking.innerHTML = '⚠️ Erreur: '+e.message;
+    console.error('FATHY tâches error:', e);
+    // Fallback: tâches statiques si IA indisponible
+    genererTachesStatiques(el, urgents, dormants, jamais, userAgent, agentId);
   }
-
-  inp.disabled = false;
-  inp.focus();
 }
 
-// Afficher bulle proactive après 3 secondes
-function showFathyProactif(pageId){
-  var badge = document.getElementById('fathy-badge');
-  var speech = document.getElementById('fathy-speech');
-  if(!badge||!speech) return;
-  if(fathyOpen) return;
-  var msgs = fathyProactif[pageId] || fathyProactif.default;
-  var msg = msgs[Math.floor(Math.random()*msgs.length)];
-  speech.innerHTML = msg;
-  speech.style.display = 'block';
-  badge.style.display = 'flex';
-  // Cacher après 6 secondes
-  setTimeout(function(){
-    if(!fathyOpen) speech.style.display = 'none';
-  }, 6000);
+// Fallback statique si FATHY indisponible
+function genererTachesStatiques(el, urgents, dormants, jamais, userAgent, agentId){
+  el.innerHTML = '';
+  var now = new Date();
+
+  [[urgents, '🚨', 'rgba(248,113,113,.1)', '#f87171', 'URGENTS — Alerte 8-14j (+5 pts si réactivé)'],
+   [dormants, '🔴', 'rgba(251,146,60,.08)', '#fb923c', 'DORMANTS À RELANCER (+2 pts/rappel)'],
+   [jamais.slice(0,3), '🆕', 'rgba(34,211,160,.08)', '#22d3a0', 'JAMAIS ACTIFS (+8 pts si activation)']
+  ].forEach(function(section){
+    var drivers=section[0], ico=section[1], bg=section[2], col=section[3], title=section[4];
+    if(!drivers.length) return;
+    var div=document.createElement('div');
+    div.style.cssText='background:'+bg+';border-radius:10px;padding:12px 14px;margin-bottom:10px;';
+    var html='<div style="font-size:11px;font-weight:700;color:'+col+';margin-bottom:8px;">'+ico+' '+title+'</div>';
+    drivers.slice(0,5).forEach(function(d){
+      var days=d.lastDate?Math.round((now-new Date(d.lastDate))/864e5):null;
+      html+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,.05)">'+
+        '<span><strong>'+d.name+'</strong></span>'+
+        '<span style="color:var(--mu)">'+d.phone+(days?' · '+days+'j':'')+(d.orders?' · '+d.orders+' courses':'')+'</span>'+
+        '</div>';
+    });
+    div.innerHTML=html;
+    el.appendChild(div);
+  });
+
+  showToast('⚡','Tâches générées (mode hors-ligne)','success');
 }
 
-// Hook sur nav() pour messages proactifs
-var _origNav = typeof nav === 'function' ? nav : null;
-if(typeof nav === 'function'){
-  var _origNavFn = nav;
-  nav = function(id){
-    _origNavFn(id);
-    setTimeout(function(){ showFathyProactif(id); }, 1500);
-  };
-}
-
-// Premier message au démarrage
-setTimeout(function(){ showFathyProactif('dashboard'); }, 3000);
-</script>
-
-</body>
+>
