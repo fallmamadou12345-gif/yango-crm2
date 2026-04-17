@@ -1354,6 +1354,22 @@ async function loadFromServer(){
       }
       // Backup dans localStorage
       try{ localStorage.setItem('yango_bk', JSON.stringify({notes,reminders,cstatus,callLogs,importHist})); }catch(ex){}
+      // Restaurer agents
+      if(json.data.agents && json.data.agents.length>0){
+        while(AGENTS.length) AGENTS.pop();
+        json.data.agents.forEach(function(a){AGENTS.push(a);});
+        localStorage.setItem('yango_agents', JSON.stringify(AGENTS));
+      }
+      // Restaurer scores
+      if(json.data.scores){
+        Object.keys(json.data.scores).forEach(function(k){ SCORES[k]=json.data.scores[k]; });
+        localStorage.setItem('yango_scores', JSON.stringify(SCORES));
+      }
+      if(json.data.scoresHistory && json.data.scoresHistory.length>0){
+        while(SCORES_HISTORY.length) SCORES_HISTORY.pop();
+        json.data.scoresHistory.forEach(function(h){SCORES_HISTORY.push(h);});
+        localStorage.setItem('yango_scores_history', JSON.stringify(SCORES_HISTORY));
+      }
       console.log('✅ Données chargées du disque');
     }
   } catch(e){
@@ -1378,7 +1394,10 @@ async function save(){
     cstatus,
     callLogs,
     importHist,
-    drivers: DRIVERS.slice(0, 20000), // sauvegarder tous les chauffeurs
+    drivers: DRIVERS.slice(0, 20000),
+    agents: AGENTS || [],
+    scores: SCORES || {},
+    scoresHistory: SCORES_HISTORY || [],
     updatedAt: new Date().toISOString()
   };
   // Sauvegarder en localStorage d'abord (immédiat, survit aux rechargements)
@@ -3821,8 +3840,20 @@ function genererTaches(){
   var el = document.getElementById('taches-agents-list');
   var dateEl = document.getElementById('taches-date');
   if(!el) return;
+  // Si pas d'agents configurés, créer un agent temporaire pour l'utilisateur connecté
+  if(!AGENTS.length && CURRENT_USER){
+    var tempAgent = {
+      id: CURRENT_USER.id || 'temp_'+Date.now(),
+      nom: CURRENT_USER.nom || CURRENT_USER.username,
+      role: CURRENT_USER.role || 'agent',
+      zone: 'Dakar',
+      username: CURRENT_USER.username
+    };
+    AGENTS.push(tempAgent);
+    if(!SCORES[tempAgent.id]) SCORES[tempAgent.id]={points:0,rappels:0,reactives:0,actives:0,details:[]};
+  }
   if(!AGENTS.length){
-    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Ajoutez d abord des agents dans la section ci-dessous</div>';
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Aucun agent — ajoutez-en dans la section ci-dessous</div>';
     return;
   }
   if(dateEl) dateEl.textContent = '— ' + new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
