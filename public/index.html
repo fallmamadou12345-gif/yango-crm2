@@ -302,7 +302,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
         <input id="login-user" type="text" placeholder="Votre identifiant"
           style="width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(245,197,24,.2);
           border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;"
-          onkeydown="if(event.key==='Enter'&&typeof doLogin==='function')doLogin()"/>
+          onkeydown="if(event.key==='Enter'){window.doLogin?doLogin():setTimeout(doLogin,100)}"/>
       </div>
 
       <div style="margin-bottom:20px;">
@@ -310,14 +310,14 @@ textarea.form-input{resize:vertical;min-height:70px;}
         <input id="login-pass" type="password" placeholder="••••••••"
           style="width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(245,197,24,.2);
           border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;"
-          onkeydown="if(event.key==='Enter'&&typeof doLogin==='function')doLogin()"/>
+          onkeydown="if(event.key==='Enter'){window.doLogin?doLogin():setTimeout(doLogin,100)}"/>
       </div>
 
       <div id="login-error" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);
         border-radius:8px;padding:10px;font-size:12px;color:#f87171;margin-bottom:14px;display:none;text-align:center;">
       </div>
 
-      <button onclick="doLogin()" id="login-btn" style="width:100%;background:linear-gradient(135deg,#f5c518,#ff6b35);
+      <button onclick="window.doLogin?doLogin():setTimeout(doLogin,100)" id="login-btn" style="width:100%;background:linear-gradient(135deg,#f5c518,#ff6b35);
         border:none;border-radius:12px;padding:14px;font-family:Syne,sans-serif;
         font-size:15px;font-weight:700;color:#000;cursor:pointer;transition:opacity .2s;"
         onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
@@ -333,6 +333,24 @@ textarea.form-input{resize:vertical;min-height:70px;}
   </div>
 </div>
 
+
+<script>
+// doLogin stub — disponible immédiatement avant chargement du script principal
+function doLogin(){
+  if(typeof window._asyncDoLogin==='function'){
+    window._asyncDoLogin();
+  } else {
+    var btn=document.getElementById('login-btn');
+    if(btn){btn.textContent='Chargement...';btn.disabled=true;}
+    var t=setInterval(function(){
+      if(typeof window._asyncDoLogin==='function'){
+        clearInterval(t);
+        window._asyncDoLogin();
+      }
+    },50);
+  }
+}
+</script>
 
 <!-- ═══════ SIDEBAR ═══════ -->
 <div class="sb">
@@ -4020,4 +4038,218 @@ function genererTachesStatiques(el, urgents, dormants, jamais, userAgent, agentI
   showToast('⚡','Tâches générées (mode hors-ligne)','success');
 }
 
->
+// ═══════════════════════════════════════════════════════
+// SYSTÈME D'AUTHENTIFICATION
+// ═══════════════════════════════════════════════════════
+var AUTH_USERS = JSON.parse(localStorage.getItem('yango_auth_users') || JSON.stringify([
+  {id:'dir_001',username:'directeur',password:'ndongo2024',nom:'Ndongo Fall',role:'directeur',actif:true}
+]));
+
+var CURRENT_USER = JSON.parse(sessionStorage.getItem('yango_user') || 'null');
+
+var ROLE_PERMISSIONS = {
+  directeur: {pages:['dashboard','rappels','chauffeurs','messages','coach','import','finances','equipe','settings'],voirFinances:true,label:'👑 Directeur',color:'#f5c518'},
+  superviseur: {pages:['dashboard','rappels','chauffeurs','messages','coach','equipe'],voirFinances:false,label:'🎯 Superviseur',color:'#a78bfa'},
+  agent: {pages:['rappels','chauffeurs','messages','coach','equipe'],voirFinances:false,label:'👤 Agent',color:'#22d3a0'}
+};
+
+function saveAuthUsers(){
+  localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
+  fetch('/api/users-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({users:AUTH_USERS})})
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.success) showToast('✅','Accès synchronisé sur le serveur !','success');})
+    .catch(function(e){console.warn('sync users:',e);});
+}
+
+async function loadUsersFromServer(){
+  try{
+    var r=await fetch('/api/users-admin');
+    if(r.ok){
+      var data=await r.json();
+      if(data.users&&data.users.length>0){
+        data.users.forEach(function(su){
+          var li=AUTH_USERS.findIndex(function(u){return u.id===su.id;});
+          if(li>=0){if(!su.password&&AUTH_USERS[li].password) su.password=AUTH_USERS[li].password; AUTH_USERS[li]=su;}
+          else AUTH_USERS.push(su);
+        });
+        localStorage.setItem('yango_auth_users',JSON.stringify(AUTH_USERS));
+      }
+    }
+  }catch(e){console.warn('loadUsers:',e.message);}
+}
+
+// Défini aussi comme window._asyncDoLogin pour le stub
+window._asyncDoLogin = async function doLoginReal(){
+  var user=document.getElementById('login-user').value.trim();
+  var pass=document.getElementById('login-pass').value.trim();
+  var errEl=document.getElementById('login-error');
+  var btn=document.getElementById('login-btn');
+  if(!user||!pass){errEl.textContent='⚠️ Entrez votre identifiant et mot de passe';errEl.style.display='block';return;}
+  if(btn){btn.textContent='Connexion...';btn.disabled=true;}
+  errEl.style.display='none';
+  try{
+    var resp=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
+    var data=await resp.json();
+    if(data.success&&data.user){loginSuccess(data.user);return;}
+    errEl.innerHTML='❌ '+(data.message||'Identifiant ou mot de passe incorrect')+'<br><small>Demandez au directeur de recréer votre accès</small>';
+    errEl.style.display='block';
+    // Afficher debug
+    fetch('/api/debug-users').then(function(r){return r.json();}).then(function(d){
+      var dbg=document.getElementById('login-debug-info');
+      if(dbg){
+        var names=(d.users||[]).map(function(u){return '@'+u.username+'('+u.nom+')'}).join(', ');
+        dbg.innerHTML='Comptes sur serveur: '+(names||'Aucun — créez des accès dans Paramètres');
+        dbg.style.display='block';
+      }
+    }).catch(function(){});
+  }catch(e){
+    var found=AUTH_USERS.find(function(u){return u.username.toLowerCase()===user.toLowerCase()&&u.password===pass&&u.actif!==false;});
+    if(found){loginSuccess(found);return;}
+    errEl.textContent='❌ Serveur inaccessible et identifiant non trouvé';
+    errEl.style.display='block';
+  }
+  if(btn){btn.textContent='Se connecter →';btn.disabled=false;}
+};
+
+function loginSuccess(found){
+  CURRENT_USER=found;
+  sessionStorage.setItem('yango_user',JSON.stringify(found));
+  document.getElementById('login-screen').style.display='none';
+  var sbUser=document.querySelector('.sb-user-name');if(sbUser) sbUser.textContent=found.nom||found.username;
+  var sbRole=document.querySelector('.sb-user-role');var rl=(ROLE_PERMISSIONS[found.role]||{}).label||found.role;if(sbRole) sbRole.textContent=rl;
+  var btn=document.getElementById('login-btn');if(btn){btn.textContent='Se connecter →';btn.disabled=false;}
+  applyUserPermissions(found);
+  showToast('👋','Bienvenue '+(found.nom||found.username)+' !','success');
+}
+
+function doLogout(){
+  sessionStorage.removeItem('yango_user');CURRENT_USER=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-user').value='';document.getElementById('login-pass').value='';
+}
+
+function checkAuth(){
+  if(CURRENT_USER){document.getElementById('login-screen').style.display='none';applyUserPermissions(CURRENT_USER);return true;}
+  loadUsersFromServer();
+  return false;
+}
+
+function applyUserPermissions(user){
+  if(!user) return;
+  var perms=ROLE_PERMISSIONS[user.role]||ROLE_PERMISSIONS.agent;
+  document.querySelectorAll('.ni').forEach(function(ni){
+    var oc=ni.getAttribute('onclick')||'';var m=oc.match(/nav\('(\w+)'\)/);
+    if(m){ni.style.display=(perms.pages.includes(m[1])||perms.pages.includes('all'))?'flex':'none';}
+  });
+  if(!perms.voirFinances){var f=document.getElementById('page-finances');if(f) f.style.display='none';}
+  loadFromServer().then(function(){
+    var fp=perms.pages[0]==='all'?'dashboard':perms.pages[0];
+    try{nav(fp);}catch(e){}
+    try{renderTable();}catch(e){}
+    try{renderDashboard();}catch(e){}
+    try{updateRemBadges();}catch(e){}
+    setInterval(async function(){try{await save();}catch(e){}},30000);
+  }).catch(function(e){console.warn(e);});
+}
+
+// Gestion accès
+function renderGestionAcces(){
+  var el=document.getElementById('acces-agents-list');if(!el) return;el.innerHTML='';
+  AUTH_USERS.forEach(function(u){
+    var perms=ROLE_PERMISSIONS[u.role]||{};
+    var row=document.createElement('div');
+    row.style.cssText='background:var(--s2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;';
+    var ico=document.createElement('div');ico.style.cssText='width:36px;height:36px;background:'+(perms.color||'#666')+';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;';ico.textContent=u.role==='directeur'?'👑':u.role==='superviseur'?'🎯':'👤';row.appendChild(ico);
+    var info=document.createElement('div');info.style.flex='1';
+    var n=document.createElement('div');n.style.cssText='font-weight:700;font-size:13px;';n.textContent=u.nom;info.appendChild(n);
+    var s2=document.createElement('div');s2.style.cssText='font-size:11px;color:var(--mu);';s2.textContent='@'+u.username+' · '+(perms.label||u.role);info.appendChild(s2);
+    row.appendChild(info);
+    var badge=document.createElement('span');badge.style.cssText='font-size:11px;padding:3px 10px;border-radius:20px;background:'+(u.actif?'rgba(34,211,160,.15)':'rgba(248,113,113,.15)')+';color:'+(u.actif?'var(--green)':'var(--red)');badge.textContent=u.actif?'Actif':'Suspendu';row.appendChild(badge);
+    if(u.id!=='dir_001'){
+      var uid=u.id;
+      var b1=document.createElement('button');b1.className='btn btn-g btn-sm';b1.style.fontSize='10px';b1.textContent=u.actif?'Suspendre':'Activer';b1.onclick=function(){toggleUserActif(uid);};row.appendChild(b1);
+      var b2=document.createElement('button');b2.className='btn btn-r btn-sm';b2.style.fontSize='10px';b2.textContent='✕';b2.onclick=function(){supprimerUser(uid);};row.appendChild(b2);
+    } else {
+      var sp=document.createElement('span');sp.style.cssText='font-size:10px;color:var(--mu);';sp.textContent='Compte principal';row.appendChild(sp);
+    }
+    el.appendChild(row);
+  });
+}
+
+async function ajouterAcces(){
+  var nom=document.getElementById('acces-nom').value.trim();
+  var username=document.getElementById('acces-username').value.trim().toLowerCase().replace(/\s+/g,'');
+  var password=document.getElementById('acces-password').value.trim();
+  var role=document.getElementById('acces-role').value;
+  if(!nom||!username||!password){showToast('⚠️','Remplissez tous les champs','error');return;}
+  if(AUTH_USERS.find(function(u){return u.username===username;})){showToast('⚠️','Identifiant @'+username+' existe déjà','error');return;}
+  AUTH_USERS.push({id:'u_'+Date.now(),username:username,password:password,nom:nom,role:role,acces:[],actif:true});
+  localStorage.setItem('yango_auth_users',JSON.stringify(AUTH_USERS));
+  showToast('⏳','Enregistrement...','success');
+  try{
+    var r=await fetch('/api/users-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({users:AUTH_USERS})});
+    var d=await r.json();
+    if(d.success) showToast('✅','Accès créé ! @'+username+' peut se connecter','success');
+    else showToast('⚠️','Erreur serveur','error');
+  }catch(e){showToast('⚠️','Serveur: '+e.message,'error');}
+  renderGestionAcces();
+  document.getElementById('acces-nom').value='';document.getElementById('acces-username').value='';document.getElementById('acces-password').value='';
+}
+
+async function forceSyncUsers(){
+  showToast('⏳','Synchronisation...','success');
+  try{var r=await fetch('/api/users-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({users:AUTH_USERS})});var d=await r.json();if(d.success) showToast('✅',AUTH_USERS.length+' comptes synchronisés !','success');else showToast('⚠️','Echec','error');}catch(e){showToast('⚠️',e.message,'error');}
+}
+
+function toggleUserActif(id){var u=AUTH_USERS.find(function(u){return u.id===id;});if(u){u.actif=!u.actif;saveAuthUsers();renderGestionAcces();}}
+function supprimerUser(id){if(!confirm('Supprimer cet accès ?')) return;AUTH_USERS=AUTH_USERS.filter(function(u){return u.id!==id;});saveAuthUsers();renderGestionAcces();}
+
+// Primes configurables
+var PRIMES_CONFIG = JSON.parse(localStorage.getItem('yango_primes') || JSON.stringify([
+  {pts:10,prime:'1 000 FCFA',repos:'',badge:'🥉 Bronze'},
+  {pts:25,prime:'2 500 FCFA',repos:'1/2 journee',badge:'🥈 Silver'},
+  {pts:50,prime:'5 000 FCFA',repos:'1 jour',badge:'🥇 Gold'},
+  {pts:100,prime:'10 000 FCFA',repos:'2 jours',badge:'💎 VIP'},
+  {pts:200,prime:'25 000 FCFA',repos:'3 jours',badge:'👑 Agent du mois'}
+]));
+
+function savePrimesConfig(){localStorage.setItem('yango_primes',JSON.stringify(PRIMES_CONFIG));}
+
+function renderPrimesConfig(){
+  var el=document.getElementById('primes-config-list');if(!el) return;el.innerHTML='';
+  PRIMES_CONFIG.forEach(function(p,i){
+    var row=document.createElement('div');
+    row.style.cssText='background:var(--s2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:grid;grid-template-columns:80px 1fr 1fr 1fr auto;gap:10px;align-items:center;font-size:12px;';
+    var pts=document.createElement('div');pts.innerHTML='<strong style="color:var(--acc)">'+p.pts+' pts</strong>';row.appendChild(pts);
+    ['prime','repos','badge'].forEach(function(field){
+      var inp=document.createElement('input');inp.className='form-input';inp.value=p[field]||'';inp.style.cssText='font-size:12px;padding:6px 10px;';
+      (function(idx,f){inp.onchange=function(){updatePrime(idx,f,this.value);};})(i,field);
+      row.appendChild(inp);
+    });
+    var btn=document.createElement('button');btn.className='btn btn-r btn-sm';btn.textContent='✕';btn.style.fontSize='10px';
+    (function(idx){btn.onclick=function(){supprimerPrime(idx);};})(i);
+    row.appendChild(btn);
+    el.appendChild(row);
+  });
+}
+
+function updatePrime(i,field,val){PRIMES_CONFIG[i][field]=val;savePrimesConfig();showToast('💾','Prime mise à jour','success');}
+function supprimerPrime(i){PRIMES_CONFIG.splice(i,1);savePrimesConfig();renderPrimesConfig();}
+function ajouterPrime(){
+  var pts=parseInt(document.getElementById('new-prime-pts').value)||0;
+  var prime=document.getElementById('new-prime-val').value.trim();
+  var repos=document.getElementById('new-prime-repos').value.trim();
+  var badge=document.getElementById('new-prime-badge').value.trim();
+  if(!pts||!prime){showToast('⚠️','Points et prime requis','error');return;}
+  PRIMES_CONFIG.push({pts:pts,prime:prime,repos:repos,badge:badge});
+  PRIMES_CONFIG.sort(function(a,b){return a.pts-b.pts;});
+  savePrimesConfig();renderPrimesConfig();
+  document.getElementById('new-prime-pts').value='';document.getElementById('new-prime-val').value='';
+  document.getElementById('new-prime-repos').value='';document.getElementById('new-prime-badge').value='';
+  showToast('✅','Palier ajouté !','success');
+}
+
+init();
+</script>
+</body>
+</html>
