@@ -352,6 +352,31 @@ function doLogin(){
 }
 </script>
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- SÉLECTEUR DE PARC -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="parc-selector" style="
+  position:fixed;inset:0;
+  background:linear-gradient(135deg,#0a0a1a 0%,#0f0c29 50%,#1a1040 100%);
+  display:none;align-items:center;justify-content:center;
+  z-index:99998;font-family:'Syne',sans-serif;
+  flex-direction:column;gap:20px;padding:20px;
+">
+  <div style="text-align:center;margin-bottom:10px;">
+    <div style="font-size:32px;font-weight:800;color:#fff;">🚖 Choisir un parc</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:6px;" id="parc-sel-user">—</div>
+  </div>
+  <div id="parcs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;width:100%;max-width:900px;"></div>
+  <div id="parc-sel-global" style="display:none;margin-top:8px;">
+    <button onclick="selectParc('all')" style="
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+      border-radius:14px;padding:14px 28px;color:#fff;font-family:Syne,sans-serif;
+      font-size:14px;font-weight:700;cursor:pointer;
+    ">📊 Vue globale — Tous les parcs</button>
+  </div>
+</div>
+
+
 <!-- ═══════ SIDEBAR ═══════ -->
 <div class="sb">
   <div class="sb-logo">
@@ -377,8 +402,9 @@ function doLogin(){
       <div><div style="font-size:11px;font-weight:600;" class="sb-user-name">Partenaire</div><div style="font-size:9px;color:var(--mu);" class="sb-user-role">Administrateur</div></div>
     </div>
   </div>
-  <!-- Bouton déconnexion -->
-  <div style="padding:12px 14px;border-top:1px solid var(--b1);">
+  <!-- Boutons parc + déconnexion -->
+  <div style="padding:10px 14px;border-top:1px solid var(--b1);">
+    <button id="btn-changer-parc" onclick="loadParcs().then(function(){showParcSelector(CURRENT_USER);})" style="width:100%;background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.2);border-radius:10px;padding:8px 14px;color:#f5c518;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:6px;">🚖 <span id="current-parc-name">Changer de parc</span></button>
     <button onclick="doLogout()" style="
       width:100%;
       background:rgba(248,113,113,.1);
@@ -4248,6 +4274,283 @@ function ajouterPrime(){
   document.getElementById('new-prime-repos').value='';document.getElementById('new-prime-badge').value='';
   showToast('✅','Palier ajouté !','success');
 }
+
+// ══════════════════════════════════════════════════════
+// SYSTÈME MULTI-PARCS
+// ══════════════════════════════════════════════════════
+var PARCS_LIST = [];
+var CURRENT_PARC = null; // {id, nom, couleur, ...}
+
+async function loadParcs(){
+  try{
+    var r = await fetch('/api/parcs');
+    var d = await r.json();
+    PARCS_LIST = d.parcs || [];
+    return PARCS_LIST;
+  }catch(e){
+    PARCS_LIST = [
+      {id:'dakar',     nom:'Dakar',      ville:'Dakar',      couleur:'#f5c518', actif:true},
+      {id:'thies',     nom:'Thiès',      ville:'Thiès',      couleur:'#22d3a0', actif:true},
+      {id:'mbour',     nom:'Mbour',      ville:'Mbour',      couleur:'#a78bfa', actif:true},
+      {id:'kaolack',   nom:'Kaolack',    ville:'Kaolack',    couleur:'#fb923c', actif:true},
+      {id:'ziguinchor',nom:'Ziguinchor', ville:'Ziguinchor', couleur:'#f87171', actif:true}
+    ];
+    return PARCS_LIST;
+  }
+}
+
+function showParcSelector(user){
+  var sel = document.getElementById('parc-selector');
+  var grid = document.getElementById('parcs-grid');
+  var userEl = document.getElementById('parc-sel-user');
+  var globalBtn = document.getElementById('parc-sel-global');
+  if(!sel||!grid) return;
+
+  if(userEl) userEl.textContent = 'Connecté : ' + (user.nom||user.username) + ' — ' + ((ROLE_PERMISSIONS[user.role]||{}).label||user.role);
+
+  // Déterminer les parcs accessibles
+  var accessibleParcs = user.parcs && user.parcs.includes('all')
+    ? PARCS_LIST
+    : PARCS_LIST.filter(function(p){ return !user.parcs || user.parcs.includes(p.id); });
+
+  // Afficher bouton vue globale pour directeur
+  if(globalBtn) globalBtn.style.display = (user.role==='directeur') ? 'block' : 'none';
+
+  grid.innerHTML = '';
+  accessibleParcs.filter(function(p){return p.actif;}).forEach(function(p){
+    // Charger stats du parc
+    var card = document.createElement('div');
+    card.style.cssText = 'background:rgba(255,255,255,.05);border:2px solid '+p.couleur+';border-radius:16px;padding:20px;cursor:pointer;transition:all .2s;text-align:center;';
+    card.onmouseover = function(){ this.style.background='rgba(255,255,255,.1)'; this.style.transform='translateY(-4px)'; };
+    card.onmouseout  = function(){ this.style.background='rgba(255,255,255,.05)'; this.style.transform=''; };
+    card.onclick = function(){ selectParc(p.id); };
+    card.innerHTML =
+      '<div style="font-size:36px;margin-bottom:8px;">🚖</div>'+
+      '<div style="font-size:18px;font-weight:800;color:'+p.couleur+';">'+p.nom+'</div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;">'+p.ville+'</div>'+
+      '<div id="parc-stats-'+p.id+'" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.5);">Chargement...</div>';
+    grid.appendChild(card);
+    // Charger stats
+    loadParcStats(p.id);
+  });
+
+  sel.style.display = 'flex';
+}
+
+async function loadParcStats(parcId){
+  try{
+    var r = await fetch('/api/parcs/'+parcId+'/data');
+    var d = await r.json();
+    var el = document.getElementById('parc-stats-'+parcId);
+    if(el && d.data){
+      var total = (d.data.drivers||[]).length;
+      var actifs = (d.data.drivers||[]).filter(function(x){return x.segment&&(x.segment.includes('Actif')||x.segment.includes('Alerte'));}).length;
+      el.innerHTML = '<span style="color:#22d3a0">'+actifs+' actifs</span> / '+total.toLocaleString()+' inscrits';
+    }
+  }catch(e){}
+}
+
+async function selectParc(parcId){
+  document.getElementById('parc-selector').style.display = 'none';
+
+  if(parcId === 'all'){
+    // Vue globale directeur
+    CURRENT_PARC = {id:'all', nom:'Tous les parcs', couleur:'#f5c518'};
+    showGlobalDashboard();
+    return;
+  }
+
+  CURRENT_PARC = PARCS_LIST.find(function(p){return p.id===parcId;}) || {id:parcId,nom:parcId,couleur:'#f5c518'};
+
+  // Mettre à jour le titre
+  var sbName = document.querySelector('.sb-name');
+  if(sbName) sbName.textContent = 'Parc ' + CURRENT_PARC.nom;
+  var sbSub = document.querySelector('.sb-sub');
+  if(sbSub) sbSub.textContent = CURRENT_PARC.ville || CURRENT_PARC.nom;
+
+  // Changer couleur accent
+  document.documentElement.style.setProperty('--acc', CURRENT_PARC.couleur);
+  document.documentElement.style.setProperty('--acc2', CURRENT_PARC.couleur+'99');
+
+  // Charger les données du parc
+  await loadParcData(parcId);
+  
+  // Migration: si Dakar est vide, importer depuis anciennes données
+  if(parcId === 'dakar' && DRIVERS.length === 0){
+    await migrateOldDataToDakar();
+  }
+
+  // Afficher le CRM
+  var main = document.querySelector('.main');
+  if(main) main.style.display = '';
+  var sb = document.querySelector('.sb');
+  if(sb) sb.style.display = '';
+
+  showToast('🚖', 'Parc '+CURRENT_PARC.nom+' chargé !', 'success');
+  var pnEl=document.getElementById('current-parc-name');
+  if(pnEl) pnEl.textContent='Parc '+CURRENT_PARC.nom;
+  applyUserPermissions(CURRENT_USER);
+}
+
+async function loadParcData(parcId){
+  try{
+    var r = await fetch('/api/parcs/'+parcId+'/data', {cache:'no-store'});
+    var json = await r.json();
+    if(json.success && json.data){
+      var d = json.data;
+      // Restaurer toutes les données du parc
+      if(typeof notes!=='undefined')     notes     = d.notes     || {};
+      if(typeof reminders!=='undefined') reminders = d.reminders || [];
+      if(typeof cstatus!=='undefined')   cstatus   = d.cstatus   || {};
+      if(typeof callLogs!=='undefined')  callLogs  = d.callLogs  || {};
+      if(typeof importHist!=='undefined')importHist= d.importHist|| [];
+      if(d.drivers && d.drivers.length > 0){
+        if(typeof DRIVERS!=='undefined'){ DRIVERS.length=0; d.drivers.forEach(function(x){DRIVERS.push(x);}); }
+      }
+      if(d.agents && d.agents.length > 0){
+        if(typeof AGENTS!=='undefined'){ while(AGENTS.length)AGENTS.pop(); d.agents.forEach(function(a){AGENTS.push(a);}); }
+      }
+      if(d.scores){
+        if(typeof SCORES!=='undefined') Object.assign(SCORES, d.scores);
+      }
+      console.log('✅ Parc '+parcId+' chargé: '+((d.drivers||[]).length)+' chauffeurs');
+    }
+  }catch(e){ console.warn('loadParcData:', e.message); }
+}
+
+async function saveParcData(){
+  if(!CURRENT_PARC || CURRENT_PARC.id==='all') return;
+  var payload = {
+    notes:      typeof notes!=='undefined'     ? notes     : {},
+    reminders:  typeof reminders!=='undefined' ? reminders : [],
+    cstatus:    typeof cstatus!=='undefined'   ? cstatus   : {},
+    callLogs:   typeof callLogs!=='undefined'  ? callLogs  : {},
+    importHist: typeof importHist!=='undefined'? importHist: [],
+    drivers:    typeof DRIVERS!=='undefined'   ? DRIVERS.slice(0,20000) : [],
+    agents:     typeof AGENTS!=='undefined'    ? AGENTS    : [],
+    scores:     typeof SCORES!=='undefined'    ? SCORES    : {},
+  };
+  try{
+    await fetch('/api/parcs/'+CURRENT_PARC.id+'/data',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    console.log('✅ Parc '+CURRENT_PARC.nom+' sauvegardé');
+  }catch(e){ console.warn('saveParcData:', e.message); }
+}
+
+// ─── DASHBOARD GLOBAL DIRECTEUR ─────────────────────────
+async function showGlobalDashboard(){
+  var main = document.querySelector('.main');
+  if(main) main.style.display = '';
+  var sb = document.querySelector('.sb');
+  if(sb) sb.style.display = '';
+
+  var sbName = document.querySelector('.sb-name');
+  if(sbName) sbName.textContent = 'Vue Globale';
+
+  try{
+    var r = await fetch('/api/stats-global');
+    var d = await r.json();
+    renderGlobalDashboard(d.stats || []);
+  }catch(e){
+    console.warn('global stats:', e.message);
+  }
+  nav('dashboard');
+  var globalSection=document.getElementById('global-parcs-section');
+  if(globalSection) globalSection.style.display='block';
+  var pnEl=document.getElementById('current-parc-name');
+  if(pnEl) pnEl.textContent='Vue Globale';
+  loadGlobalStats();
+}
+
+async function loadGlobalStats(){
+  try{
+    var r=await fetch('/api/stats-global');
+    var d=await r.json();
+    renderGlobalDashboard(d.stats||[]);
+  }catch(e){ console.warn('global stats:',e.message); }
+}
+
+function renderGlobalDashboard(stats){
+  // Inject global stats into dashboard
+  var el = document.getElementById('global-parcs-grid');
+  if(!el) return;
+  el.innerHTML = '';
+  var totalGlobal=0, actifsGlobal=0, commGlobal=0;
+  stats.forEach(function(p){
+    totalGlobal+=p.total; actifsGlobal+=p.actifs; commGlobal+=p.comm;
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--s2);border:1px solid '+p.couleur+';border-radius:12px;padding:14px;cursor:pointer;';
+    card.onclick = function(){ selectParc(p.id); };
+    card.innerHTML =
+      '<div style="font-weight:800;font-size:14px;color:'+p.couleur+'">🚖 '+p.nom+'</div>'+
+      '<div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">'+
+        '<div><div style="color:var(--mu);font-size:10px;">Total</div><div style="font-weight:700;">'+p.total.toLocaleString()+'</div></div>'+
+        '<div><div style="color:var(--mu);font-size:10px;">Actifs</div><div style="font-weight:700;color:#22d3a0">'+p.actifs+'</div></div>'+
+        '<div><div style="color:var(--mu);font-size:10px;">Agents</div><div style="font-weight:700;">'+p.agents+'</div></div>'+
+        '<div><div style="color:var(--mu);font-size:10px;">Comm/mois</div><div style="font-weight:700;color:'+p.couleur+';">'+p.comm.toLocaleString()+'</div></div>'+
+      '</div>'+
+      '<div style="margin-top:8px;font-size:10px;color:var(--mu);">Cliquer pour ouvrir →</div>';
+    el.appendChild(card);
+  });
+  // Update global KPIs
+  var kpis = [
+    ['kpi-total-global', totalGlobal.toLocaleString()],
+    ['kpi-actifs-global', actifsGlobal.toLocaleString()],
+    ['kpi-comm-global', commGlobal.toLocaleString()+' FCFA']
+  ];
+  kpis.forEach(function(k){ var e=document.getElementById(k[0]); if(e) e.textContent=k[1]; });
+}
+
+
+// ═══════════════════════════════════════════
+// MIGRATION DONNÉES EXISTANTES → PARC DAKAR
+// ═══════════════════════════════════════════
+async function migrateOldDataToDakar(){
+  console.log('Vérification migration données Dakar...');
+  try {
+    // Essayer de charger les anciennes données depuis /api/data
+    var r = await fetch(API+'/data', {cache:'no-store'});
+    if(!r.ok) return;
+    var json = await r.json();
+    if(!json.success || !json.data) return;
+    
+    var oldDrivers = json.data.drivers || [];
+    if(oldDrivers.length === 0) return;
+    
+    console.log('Migration: '+oldDrivers.length+' chauffeurs trouvés → Parc Dakar');
+    
+    // Charger dans DRIVERS
+    DRIVERS.length = 0;
+    oldDrivers.forEach(function(d){ DRIVERS.push(d); });
+    
+    // Restaurer autres données
+    if(json.data.notes)      notes      = json.data.notes;
+    if(json.data.reminders)  reminders  = json.data.reminders;
+    if(json.data.cstatus)    cstatus    = json.data.cstatus;
+    if(json.data.callLogs)   callLogs   = json.data.callLogs;
+    if(json.data.importHist) importHist = json.data.importHist;
+    if(json.data.agents && json.data.agents.length > 0){
+      while(AGENTS.length) AGENTS.pop();
+      json.data.agents.forEach(function(a){ AGENTS.push(a); });
+    }
+    
+    // Sauvegarder dans le nouveau format parc
+    await saveParcData();
+    
+    // Mettre à jour l'interface
+    try{ renderTable(); }catch(e){}
+    try{ renderDashboard(); }catch(e){}
+    
+    showToast('✅', oldDrivers.length.toLocaleString()+' chauffeurs migrés vers Parc Dakar !', 'success');
+    console.log('✅ Migration Dakar terminée');
+    
+  } catch(e) {
+    console.warn('Migration:', e.message);
+  }
+}
+
 
 init();
 </script>
