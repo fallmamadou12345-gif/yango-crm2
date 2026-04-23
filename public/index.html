@@ -1060,6 +1060,54 @@ function doLogin(){
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" id="parc-types"></div>
     </div>
 
+    <!-- GESTION DES PARCS -->
+    <div class="card mb16" id="section-parcs">
+      <div class="ct">🚖 Gestion des parcs</div>
+      <div style="font-size:12px;color:var(--mu2);margin-bottom:14px;">Créez et gérez vos parcs de transport. Chaque parc a ses propres chauffeurs et données.</div>
+
+      <!-- Liste des parcs -->
+      <div id="parcs-list-settings" style="margin-bottom:16px;"></div>
+
+      <!-- Formulaire nouveau parc -->
+      <div style="background:var(--s2);border-radius:10px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:12px;">➕ Créer un nouveau parc</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <label class="form-label">Nom du parc</label>
+            <input class="form-input" id="new-parc-nom" placeholder="Ex: Saint-Louis" oninput="autoFillParcId()"/>
+          </div>
+          <div>
+            <label class="form-label">Ville / Région</label>
+            <input class="form-input" id="new-parc-ville" placeholder="Ex: Saint-Louis"/>
+          </div>
+          <div>
+            <label class="form-label">Identifiant (sans espace)</label>
+            <input class="form-input" id="new-parc-id" placeholder="Ex: saintlouis"/>
+          </div>
+          <div>
+            <label class="form-label">Couleur</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;" id="color-picker">
+              <div onclick="selectColor('#f5c518')" style="width:28px;height:28px;background:#f5c518;border-radius:50%;cursor:pointer;border:2px solid transparent;" data-color="#f5c518"></div>
+              <div onclick="selectColor('#22d3a0')" style="width:28px;height:28px;background:#22d3a0;border-radius:50%;cursor:pointer;border:2px solid transparent;" data-color="#22d3a0"></div>
+              <div onclick="selectColor('#a78bfa')" style="width:28px;height:28px;background:#a78bfa;border-radius:50%;cursor:pointer;border:2px solid transparent;" data-color="#a78bfa"></div>
+              <div onclick="selectColor('#fb923c')" style="width:28px;height:28px;background:#fb923c;border-radius:50%;cursor:pointer;border:2px solid transparent;" data-color="#fb923c"></div>
+              <div onclick="selectColor('#f87171')" style="width:28px;height:28px;background:#f87171;border-radius:50%;cursor:pointer;border:2px solid transparent;" data-color="#f87171"></div>
+              <div onclick="selectColor('#38bdf8')" style="width:28px;height:28px;background:#38bdf8;border-radius:50%;cursor:pointer;border:2px solid transparent;" data-color="#38bdf8"></div>
+              <div onclick="selectColor('#4ade80')" style="width:28px;height:28px;background:#4ade80;border-radius:50%;cursor:pointer;border:2px solid transparent;" data-color="#4ade80"></div>
+              <div onclick="selectColor('#e879f9')" style="width:28px;height:28px;background:#e879f9;border-radius:50%;cursor:pointer;border:2px solid transparent;" data-color="#e879f9"></div>
+              <input type="color" id="new-parc-color-input" value="#f5c518" onchange="selectColor(this.value)" style="width:28px;height:28px;border:none;border-radius:50%;cursor:pointer;padding:0;" title="Couleur personnalisée"/>
+            </div>
+            <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+              <div id="color-preview" style="width:20px;height:20px;background:#f5c518;border-radius:50%;"></div>
+              <span id="color-preview-txt" style="font-size:11px;color:var(--mu);">#f5c518 sélectionné</span>
+              <input type="hidden" id="new-parc-color" value="#f5c518"/>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-p" onclick="creerNouveauParc()">🚖 Créer le parc</button>
+      </div>
+    </div>
+
     <!-- GESTION DES ACCÈS -->
     <div class="card mb16" id="section-acces">
       <div class="ct">🔐 Gestion des accès agents</div>
@@ -2886,8 +2934,11 @@ function nav(id){
   if(id==='dashboard') renderDashboard();
   if(id==='settings'){
     renderSettings(); renderGestionAcces(); renderPrimesConfig();
-    // Remplir les checkboxes de parcs dans le formulaire
-    setTimeout(function(){ populateParcsForm(); }, 100);
+    setTimeout(function(){
+      populateParcsForm();
+      renderParcsSettings();
+      selectColor('#f5c518'); // initialiser couleur par défaut
+    }, 100);
   }
   if(id==='equipe'){
     renderLeaderboard();renderAgents();renderRapportAgents();
@@ -4516,29 +4567,57 @@ async function selectParc(parcId){
 }
 
 async function loadParcData(parcId){
+  // ⚠️ VIDER TOUTES LES DONNÉES AVANT DE CHARGER LE NOUVEAU PARC
+  if(typeof DRIVERS!=='undefined'){ DRIVERS.length=0; }
+  if(typeof notes!=='undefined')     notes      = {};
+  if(typeof reminders!=='undefined') reminders  = [];
+  if(typeof cstatus!=='undefined')   cstatus    = {};
+  if(typeof callLogs!=='undefined')  callLogs   = {};
+  if(typeof importHist!=='undefined')importHist = [];
+  if(typeof AGENTS!=='undefined'){   while(AGENTS.length) AGENTS.pop(); }
+  if(typeof SCORES!=='undefined'){   Object.keys(SCORES).forEach(function(k){delete SCORES[k];}); }
+
+  // Rafraîchir l'interface immédiatement (parc vide)
+  try{ renderTable(); }catch(e){}
+  try{ renderDashboard(); }catch(e){}
+  try{ updateRemBadges(); }catch(e){}
+
   try{
     var r = await fetch('/api/parcs/'+parcId+'/data', {cache:'no-store'});
     var json = await r.json();
     if(json.success && json.data){
       var d = json.data;
-      // Restaurer toutes les données du parc
-      if(typeof notes!=='undefined')     notes     = d.notes     || {};
-      if(typeof reminders!=='undefined') reminders = d.reminders || [];
-      if(typeof cstatus!=='undefined')   cstatus   = d.cstatus   || {};
-      if(typeof callLogs!=='undefined')  callLogs  = d.callLogs  || {};
-      if(typeof importHist!=='undefined')importHist= d.importHist|| [];
+      // Charger les données du parc sélectionné
+      if(typeof notes!=='undefined')     notes      = d.notes     || {};
+      if(typeof reminders!=='undefined') reminders  = d.reminders || [];
+      if(typeof cstatus!=='undefined')   cstatus    = d.cstatus   || {};
+      if(typeof callLogs!=='undefined')  callLogs   = d.callLogs  || {};
+      if(typeof importHist!=='undefined')importHist = d.importHist|| [];
       if(d.drivers && d.drivers.length > 0){
-        if(typeof DRIVERS!=='undefined'){ DRIVERS.length=0; d.drivers.forEach(function(x){DRIVERS.push(x);}); }
+        if(typeof DRIVERS!=='undefined'){
+          d.drivers.forEach(function(x){ DRIVERS.push(x); });
+        }
       }
       if(d.agents && d.agents.length > 0){
-        if(typeof AGENTS!=='undefined'){ while(AGENTS.length)AGENTS.pop(); d.agents.forEach(function(a){AGENTS.push(a);}); }
+        if(typeof AGENTS!=='undefined'){
+          d.agents.forEach(function(a){ AGENTS.push(a); });
+        }
       }
-      if(d.scores){
-        if(typeof SCORES!=='undefined') Object.assign(SCORES, d.scores);
+      if(d.scores && typeof SCORES!=='undefined'){
+        Object.keys(d.scores).forEach(function(k){ SCORES[k]=d.scores[k]; });
       }
-      console.log('✅ Parc '+parcId+' chargé: '+((d.drivers||[]).length)+' chauffeurs');
+      console.log('✅ Parc '+parcId+' chargé: '+(DRIVERS.length)+' chauffeurs');
+    } else {
+      console.log('📭 Parc '+parcId+' vide — aucun chauffeur importé');
     }
-  }catch(e){ console.warn('loadParcData:', e.message); }
+    // Rafraîchir l'interface avec les nouvelles données
+    try{ renderTable(); }catch(e){}
+    try{ renderDashboard(); }catch(e){}
+    try{ updateRemBadges(); }catch(e){}
+    try{ updateSaveCounts(); }catch(e){}
+  }catch(e){
+    console.warn('loadParcData:', e.message);
+  }
 }
 
 async function saveParcData(){
@@ -4671,6 +4750,186 @@ async function migrateOldDataToDakar(){
     
   } catch(e) {
     console.warn('Migration:', e.message);
+  }
+}
+
+
+// ═══════════════════════════════════════════
+// GESTION DES PARCS
+// ═══════════════════════════════════════════
+
+var SELECTED_COLOR = '#f5c518';
+
+function selectColor(color){
+  SELECTED_COLOR = color;
+  var prev = document.getElementById('color-preview');
+  var prevTxt = document.getElementById('color-preview-txt');
+  var inp = document.getElementById('new-parc-color');
+  if(prev) prev.style.background = color;
+  if(prevTxt) prevTxt.textContent = color + ' sélectionné';
+  if(inp) inp.value = color;
+  // Marquer le cercle sélectionné
+  document.querySelectorAll('#color-picker [data-color]').forEach(function(el){
+    el.style.border = el.dataset.color === color ? '2px solid white' : '2px solid transparent';
+  });
+}
+
+async function creerNouveauParc(){
+  var nom   = document.getElementById('new-parc-nom').value.trim();
+  var ville = document.getElementById('new-parc-ville').value.trim();
+  var id    = document.getElementById('new-parc-id').value.trim().toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'');
+  var color = document.getElementById('new-parc-color').value || SELECTED_COLOR;
+
+  if(!nom || !id){
+    showToast('⚠️','Nom et identifiant obligatoires','error');
+    return;
+  }
+
+  // Vérifier unicité
+  var existing = PARCS_LIST.find(function(p){ return p.id === id; });
+  if(existing){
+    showToast('⚠️','Un parc avec cet identifiant existe déjà : '+id,'error');
+    return;
+  }
+
+  var newParc = {
+    id:      id,
+    nom:     nom,
+    ville:   ville || nom,
+    couleur: color,
+    actif:   true,
+    dateCreation: new Date().toISOString()
+  };
+
+  PARCS_LIST.push(newParc);
+
+  // Sauvegarder sur le serveur
+  try {
+    var r = await fetch('/api/parcs', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({parcs: PARCS_LIST})
+    });
+    var d = await r.json();
+    if(d.success){
+      showToast('✅','Parc '+nom+' créé avec succès !','success');
+      // Vider le formulaire
+      document.getElementById('new-parc-nom').value = '';
+      document.getElementById('new-parc-ville').value = '';
+      document.getElementById('new-parc-id').value = '';
+      // Rafraîchir la liste
+      renderParcsSettings();
+      // Rafraîchir les checkboxes dans "Créer un accès"
+      populateParcsForm();
+    } else {
+      showToast('⚠️','Erreur sauvegarde serveur','error');
+    }
+  } catch(e) {
+    showToast('⚠️','Serveur inaccessible — parc créé localement','error');
+    renderParcsSettings();
+    populateParcsForm();
+  }
+}
+
+function renderParcsSettings(){
+  var el = document.getElementById('parcs-list-settings');
+  if(!el) return;
+
+  var parcsList = typeof PARCS_LIST!=='undefined' ? PARCS_LIST : [];
+  if(!parcsList.length){
+    el.innerHTML = '<div style="text-align:center;color:var(--mu);padding:16px;font-size:12px;">Aucun parc configuré</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  parcsList.forEach(function(p, idx){
+    var row = document.createElement('div');
+    row.style.cssText = 'background:var(--s2);border:1px solid '+p.couleur+'44;border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;';
+
+    // Icone couleur
+    var ico = document.createElement('div');
+    ico.style.cssText = 'width:40px;height:40px;background:'+p.couleur+';border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;';
+    ico.textContent = '🚖';
+    row.appendChild(ico);
+
+    // Infos
+    var info = document.createElement('div');
+    info.style.flex = '1';
+    var n = document.createElement('div');
+    n.style.cssText = 'font-weight:700;font-size:14px;color:'+p.couleur+';';
+    n.textContent = p.nom;
+    info.appendChild(n);
+    var s = document.createElement('div');
+    s.style.cssText = 'font-size:11px;color:var(--mu);margin-top:2px;';
+    s.textContent = 'ID: '+p.id+' · '+p.ville+(p.dateCreation?' · Créé: '+new Date(p.dateCreation).toLocaleDateString('fr-FR'):'');
+    info.appendChild(s);
+    row.appendChild(info);
+
+    // Statut
+    var badge = document.createElement('span');
+    badge.style.cssText = 'font-size:11px;padding:3px 10px;border-radius:20px;background:'+(p.actif?'rgba(34,211,160,.15)':'rgba(248,113,113,.15)')+';color:'+(p.actif?'var(--green)':'var(--red)');
+    badge.textContent = p.actif ? 'Actif' : 'Désactivé';
+    row.appendChild(badge);
+
+    // Boutons
+    var pid = p.id;
+    var pActif = p.actif;
+
+    if(p.id !== 'dakar'){ // Dakar ne peut pas être supprimé (données principales)
+      var btnToggle = document.createElement('button');
+      btnToggle.className = 'btn btn-g btn-sm';
+      btnToggle.style.fontSize = '10px';
+      btnToggle.textContent = p.actif ? 'Désactiver' : 'Activer';
+      (function(id, actif){ btnToggle.onclick = function(){ toggleParcActif(id); }; })(pid, pActif);
+      row.appendChild(btnToggle);
+
+      var btnDel = document.createElement('button');
+      btnDel.className = 'btn btn-r btn-sm';
+      btnDel.style.fontSize = '10px';
+      btnDel.textContent = '✕';
+      (function(id){ btnDel.onclick = function(){ supprimerParc(id); }; })(pid);
+      row.appendChild(btnDel);
+    } else {
+      var badge2 = document.createElement('span');
+      badge2.style.cssText = 'font-size:10px;color:var(--mu);';
+      badge2.textContent = 'Parc principal';
+      row.appendChild(badge2);
+    }
+
+    el.appendChild(row);
+  });
+}
+
+async function toggleParcActif(parcId){
+  var parc = PARCS_LIST.find(function(p){ return p.id === parcId; });
+  if(!parc) return;
+  parc.actif = !parc.actif;
+  try {
+    await fetch('/api/parcs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({parcs:PARCS_LIST})});
+    showToast('✅','Parc '+(parc.actif?'activé':'désactivé')+': '+parc.nom,'success');
+  } catch(e) {}
+  renderParcsSettings();
+}
+
+async function supprimerParc(parcId){
+  if(!confirm('Supprimer le parc '+parcId+' ? Les données des chauffeurs seront conservées sur le serveur.')) return;
+  PARCS_LIST = PARCS_LIST.filter(function(p){ return p.id !== parcId; });
+  try {
+    await fetch('/api/parcs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({parcs:PARCS_LIST})});
+    showToast('✅','Parc supprimé','success');
+  } catch(e) {}
+  renderParcsSettings();
+  populateParcsForm();
+}
+
+// Auto-remplir l'ID depuis le nom
+function autoFillParcId(){
+  var nom = document.getElementById('new-parc-nom');
+  var id  = document.getElementById('new-parc-id');
+  if(nom && id && !id.value){
+    id.value = nom.value.toLowerCase()
+      .normalize('NFD').replace(/\p{Diacritic}/gu,'')
+      .replace(/\s+/g,'').replace(/[^a-z0-9]/g,'');
   }
 }
 
