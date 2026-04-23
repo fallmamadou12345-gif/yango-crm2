@@ -2884,7 +2884,11 @@ function nav(id){
   if(id==='chauffeurs') renderTable();
   if(id==='rappels'){renderReminders();updateRemBadges();}
   if(id==='dashboard') renderDashboard();
-  if(id==='settings'){ renderSettings(); renderGestionAcces(); renderPrimesConfig(); }
+  if(id==='settings'){
+    renderSettings(); renderGestionAcces(); renderPrimesConfig();
+    // Remplir les checkboxes de parcs dans le formulaire
+    setTimeout(function(){ populateParcsForm(); }, 100);
+  }
   if(id==='equipe'){
     renderLeaderboard();renderAgents();renderRapportAgents();
     renderMonScore();renderHistoriqueMensuel();renderReactivationsSuivi();
@@ -4179,6 +4183,26 @@ function applyUserPermissions(user){
 }
 
 // Gestion accès
+function populateParcsForm(){
+  var container = document.getElementById('acces-parcs-checkboxes');
+  if(!container) return;
+  var parcsList = typeof PARCS_LIST!=='undefined'&&PARCS_LIST.length ? PARCS_LIST : [
+    {id:'dakar',nom:'Dakar',couleur:'#f5c518'},
+    {id:'thies',nom:'Thiès',couleur:'#22d3a0'},
+    {id:'mbour',nom:'Mbour',couleur:'#a78bfa'},
+    {id:'kaolack',nom:'Kaolack',couleur:'#fb923c'},
+    {id:'ziguinchor',nom:'Ziguinchor',couleur:'#f87171'}
+  ];
+  container.innerHTML='';
+  parcsList.forEach(function(p){
+    var lbl=document.createElement('label');
+    lbl.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--s2);border-radius:8px;cursor:pointer;font-size:12px;';
+    lbl.innerHTML='<input type="checkbox" class="new-parc-check" data-id="'+p.id+'" style="width:15px;height:15px;">'+
+      '<span style="color:'+p.couleur+';font-weight:600;">🚖 '+p.nom+'</span>';
+    container.appendChild(lbl);
+  });
+}
+
 function renderGestionAcces(){
   var el=document.getElementById('acces-agents-list');if(!el) return;el.innerHTML='';
   AUTH_USERS.forEach(function(u){
@@ -4188,13 +4212,17 @@ function renderGestionAcces(){
     var ico=document.createElement('div');ico.style.cssText='width:36px;height:36px;background:'+(perms.color||'#666')+';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;';ico.textContent=u.role==='directeur'?'👑':u.role==='superviseur'?'🎯':'👤';row.appendChild(ico);
     var info=document.createElement('div');info.style.flex='1';
     var n=document.createElement('div');n.style.cssText='font-weight:700;font-size:13px;';n.textContent=u.nom;info.appendChild(n);
-    var s2=document.createElement('div');s2.style.cssText='font-size:11px;color:var(--mu);';s2.textContent='@'+u.username+' · '+(perms.label||u.role);info.appendChild(s2);
+    var s2=document.createElement('div');s2.style.cssText='font-size:11px;color:var(--mu);';
+    var parcsText=(u.parcs||[]).includes('all')?'Tous les parcs':(u.parcs||[]).join(', ')||'—';
+    s2.textContent='@'+u.username+' · '+(perms.label||u.role)+' · Parcs: '+parcsText;info.appendChild(s2);
     row.appendChild(info);
     var badge=document.createElement('span');badge.style.cssText='font-size:11px;padding:3px 10px;border-radius:20px;background:'+(u.actif?'rgba(34,211,160,.15)':'rgba(248,113,113,.15)')+';color:'+(u.actif?'var(--green)':'var(--red)');badge.textContent=u.actif?'Actif':'Suspendu';row.appendChild(badge);
     if(u.id!=='dir_001'){
       var uid=u.id;
       var b1=document.createElement('button');b1.className='btn btn-g btn-sm';b1.style.fontSize='10px';b1.textContent=u.actif?'Suspendre':'Activer';b1.onclick=function(){toggleUserActif(uid);};row.appendChild(b1);
       var b2=document.createElement('button');b2.className='btn btn-r btn-sm';b2.style.fontSize='10px';b2.textContent='✕';b2.onclick=function(){supprimerUser(uid);};row.appendChild(b2);
+      var b3=document.createElement('button');b3.className='btn btn-p btn-sm';b3.style.fontSize='10px';b3.textContent='🚖 Parcs';
+      (function(uid2){b3.onclick=function(){editUserParcs(uid2);};})(uid);row.appendChild(b3);
     } else {
       var sp=document.createElement('span');sp.style.cssText='font-size:10px;color:var(--mu);';sp.textContent='Compte principal';row.appendChild(sp);
     }
@@ -4209,7 +4237,11 @@ async function ajouterAcces(){
   var role=document.getElementById('acces-role').value;
   if(!nom||!username||!password){showToast('⚠️','Remplissez tous les champs','error');return;}
   if(AUTH_USERS.find(function(u){return u.username===username;})){showToast('⚠️','Identifiant @'+username+' existe déjà','error');return;}
-  AUTH_USERS.push({id:'u_'+Date.now(),username:username,password:password,nom:nom,role:role,acces:[],actif:true});
+  // Récupérer les parcs cochés
+  var selectedParcs=[];
+  document.querySelectorAll('.new-parc-check:checked').forEach(function(c){selectedParcs.push(c.dataset.id);});
+  if(selectedParcs.length===0) selectedParcs=['dakar']; // par défaut Dakar
+  AUTH_USERS.push({id:'u_'+Date.now(),username:username,password:password,nom:nom,role:role,parcs:selectedParcs,acces:[],actif:true});
   localStorage.setItem('yango_auth_users',JSON.stringify(AUTH_USERS));
   showToast('⏳','Enregistrement...','success');
   try{
@@ -4220,6 +4252,97 @@ async function ajouterAcces(){
   }catch(e){showToast('⚠️','Serveur: '+e.message,'error');}
   renderGestionAcces();
   document.getElementById('acces-nom').value='';document.getElementById('acces-username').value='';document.getElementById('acces-password').value='';
+}
+
+// ─── MODAL MODIFICATION PARCS ─────────────────────
+function editUserParcs(userId){
+  var user = AUTH_USERS.find(function(u){return u.id===userId;});
+  if(!user) return;
+  
+  // Créer modal
+  var modal = document.createElement('div');
+  modal.id = 'parcs-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:99999;';
+  
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--s1);border:1px solid rgba(245,197,24,.3);border-radius:16px;padding:24px;width:90%;max-width:480px;';
+  
+  var userParcs = user.parcs || [];
+  var parcsList = typeof PARCS_LIST!=='undefined' ? PARCS_LIST : [
+    {id:'dakar',nom:'Dakar',couleur:'#f5c518'},
+    {id:'thies',nom:'Thiès',couleur:'#22d3a0'},
+    {id:'mbour',nom:'Mbour',couleur:'#a78bfa'},
+    {id:'kaolack',nom:'Kaolack',couleur:'#fb923c'},
+    {id:'ziguinchor',nom:'Ziguinchor',couleur:'#f87171'}
+  ];
+  
+  var html = '<div style="font-size:16px;font-weight:800;color:#f5c518;margin-bottom:6px;">🚖 Parcs — '+user.nom+'</div>'+
+    '<div style="font-size:12px;color:var(--mu);margin-bottom:16px;">@'+user.username+' · Cochez les parcs accessibles</div>'+
+    '<div style="margin-bottom:14px;">'+
+    '<label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--s2);border-radius:8px;cursor:pointer;margin-bottom:6px;">'+
+      '<input type="checkbox" id="parc-all-check" '+(userParcs.includes('all')?'checked':'')+' onchange="toggleAllParcs(this)" style="width:18px;height:18px;">'+
+      '<span style="font-weight:700;color:#f5c518;">👑 Tous les parcs (accès complet)</span>'+
+    '</label>'+
+    '</div>'+
+    '<div id="parcs-individual" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;">';
+  
+  parcsList.forEach(function(p){
+    var checked = userParcs.includes('all') || userParcs.includes(p.id);
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--s2);border-radius:8px;cursor:pointer;">'+
+      '<input type="checkbox" class="parc-check" data-id="'+p.id+'" '+(checked?'checked':'')+' style="width:16px;height:16px;">'+
+      '<span style="color:'+p.couleur+';font-weight:600;">🚖 '+p.nom+'</span>'+
+    '</label>';
+  });
+  
+
+  // buttons added via DOM below
+  box.innerHTML = html;
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  
+  // Boutons via DOM
+  var btnDiv=document.createElement('div');btnDiv.style.cssText='display:flex;gap:10px;margin-top:16px;';
+  var bs=document.createElement('button');bs.className='btn btn-p';bs.style.flex='1';bs.textContent='💾 Sauvegarder';
+  (function(uid){bs.onclick=function(){saveUserParcs(uid);};})(userId);
+  btnDiv.appendChild(bs);
+  var bc=document.createElement('button');bc.className='btn btn-g';bc.style.flex='1';bc.textContent='Annuler';
+  bc.onclick=function(){var m=document.getElementById('parcs-modal');if(m)m.remove();};
+  btnDiv.appendChild(bc);
+  box.appendChild(btnDiv);
+}
+
+function toggleAllParcs(checkbox){
+  var checks = document.querySelectorAll('.parc-check');
+  checks.forEach(function(c){ c.checked = checkbox.checked; });
+}
+
+async function saveUserParcs(userId){
+  var user = AUTH_USERS.find(function(u){return u.id===userId;});
+  if(!user) return;
+  
+  var allCheck = document.getElementById('parc-all-check');
+  if(allCheck && allCheck.checked){
+    user.parcs = ['all'];
+  } else {
+    var selected = [];
+    document.querySelectorAll('.parc-check:checked').forEach(function(c){
+      selected.push(c.dataset.id);
+    });
+    user.parcs = selected;
+  }
+  
+  localStorage.setItem('yango_auth_users', JSON.stringify(AUTH_USERS));
+  
+  try{
+    var r = await fetch('/api/users-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({users:AUTH_USERS})});
+    var d = await r.json();
+    if(d.success){
+      showToast('✅', user.nom+' — parcs mis à jour: '+(user.parcs.includes('all')?'Tous':user.parcs.join(', ')), 'success');
+    }
+  }catch(e){ showToast('⚠️','Erreur serveur','error'); }
+  
+  document.getElementById('parcs-modal').remove();
+  renderGestionAcces();
 }
 
 async function forceSyncUsers(){
