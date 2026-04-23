@@ -4166,30 +4166,41 @@ window._asyncDoLogin = async function doLoginReal(){
   if(!user||!pass){errEl.textContent='⚠️ Entrez votre identifiant et mot de passe';errEl.style.display='block';return;}
   if(btn){btn.textContent='Connexion...';btn.disabled=true;}
   errEl.style.display='none';
+
+  // 1. DIRECTEUR: vérification locale AVANT le serveur (toujours valide)
+  if(user.toLowerCase()==='directeur'&&pass==='ndongo2024'){
+    loginSuccess({id:'dir_001',username:'directeur',nom:'Ndongo Fall',role:'directeur',parcs:['all'],actif:true});
+    return;
+  }
+
+  // 2. Vérification locale (agents créés)
+  var foundLocal=AUTH_USERS.find(function(u){
+    return u.username&&u.username.toLowerCase().trim()===user.toLowerCase().trim()&&u.password===pass&&u.actif!==false;
+  });
+  if(foundLocal){loginSuccess(foundLocal);return;}
+
+  // 3. Essayer le serveur (agents créés depuis un autre appareil)
   try{
     var resp=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
     var data=await resp.json();
     if(data.success&&data.user){loginSuccess(data.user);return;}
-    errEl.innerHTML='❌ '+(data.message||'Identifiant ou mot de passe incorrect')+'<br><small>Demandez au directeur de recréer votre accès</small>';
+    errEl.innerHTML='❌ Identifiant ou mot de passe incorrect.<br><small>Comptes disponibles: vérifiez avec le directeur</small>';
     errEl.style.display='block';
-    // Afficher debug
-    fetch('/api/debug-users').then(function(r){return r.json();}).then(function(d){
-      var dbg=document.getElementById('login-debug-info');
-      if(dbg){
-        var names=(d.users||[]).map(function(u){return '@'+u.username+'('+u.nom+')'}).join(', ');
-        dbg.innerHTML='Comptes sur serveur: '+(names||'Aucun — créez des accès dans Paramètres');
-        dbg.style.display='block';
-      }
-    }).catch(function(){});
   }catch(e){
-    var found=AUTH_USERS.find(function(u){return u.username.toLowerCase()===user.toLowerCase()&&u.password===pass&&u.actif!==false;});
-    if(found){loginSuccess(found);return;}
-    errEl.textContent='❌ Serveur inaccessible et identifiant non trouvé';
+    errEl.textContent='❌ Serveur inaccessible. Vérifiez votre connexion.';
     errEl.style.display='block';
   }
   if(btn){btn.textContent='Se connecter →';btn.disabled=false;}
-};
-
+  // Afficher debug
+  fetch('/api/debug-users').then(function(r){return r.json();}).then(function(d){
+    var dbg=document.getElementById('login-debug-info');
+    if(dbg&&d.users){
+      var names=(d.users||[]).map(function(u){return '@'+u.username+'('+u.nom+')'}).join(', ');
+      dbg.innerHTML='Comptes sur serveur: '+(names||'Aucun');
+      dbg.style.display='block';
+    }
+  }).catch(function(){});
+}
 function loginSuccess(found){
   CURRENT_USER=found;
   sessionStorage.setItem('yango_user',JSON.stringify(found));
@@ -4936,6 +4947,11 @@ function autoFillParcId(){
   }
 }
 
+
+async function init(){
+  // Vérifier authentification
+  if(!checkAuth()) return;
+}
 
 init();
 </script>
