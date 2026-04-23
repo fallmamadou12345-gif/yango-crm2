@@ -128,69 +128,110 @@ app.get('/api/stats-global',(req,res)=>{
 app.get('/api/scores',(req,res)=>res.json({success:true,...readScores()}));
 app.post('/api/scores',(req,res)=>res.json({success:writeScores(req.body)}));
 
-// ─── CHAT IA (GROQ) ─────────────────────────────────────
-app.post('/api/chat',async(req,res)=>{
-  const KEY=process.env.GROQ_API_KEY||'';
-  if(!KEY) return res.json({content:[{type:'text',text:'⚠️ GROQ_API_KEY manquante dans Render Environment.'}]});
-  try{
-    const https=require('https');
-    const msgs=[{role:'system',content:req.body.system||'Tu es FATHY, assistant du Parc Transport Ndongo Fall.'},...(req.body.messages||[])];
-    // Enrichir avec données agents si fourni
-    const agentsData=req.body.agents||[];
-    const scoresData=req.body.scores||{};
-    let agentsCtx='';
-    if(agentsData.length>0){
-      agentsCtx='\n\nEQUIPE AGENTS:\n';
-      agentsData.forEach(a=>{
-        const sc=scoresData[a.id]||{points:0,rappels:0,reactives:0,actives:0};
-        const pts=sc.points||0;
-        const prime=Math.floor(pts/10)*1000;
-        const badge=pts>=200?'👑 Agent du mois':pts>=100?'💎 VIP':pts>=50?'🥇 Gold':pts>=25?'🥈 Silver':pts>=10?'🥉 Bronze':'⭐ Débutant';
-        agentsCtx+=`${a.nom} (@${a.username||a.id}): ${pts} pts | ${badge} | Rappels:${sc.rappels||0} | Prime:${prime} FCFA\n`;
-      });
-    }
-    msgs[0].content+= agentsCtx;
-    const body=JSON.stringify({model:'llama-3.3-70b-versatile',messages:msgs,max_tokens:1200,temperature:0.7});
-    const opts={hostname:'api.groq.com',path:'/openai/v1/chat/completions',method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body),'Authorization':'Bearer '+KEY}};
-    const apiReq=https.request(opts,(apiRes)=>{
-      let data='';
-      apiRes.on('data',c=>data+=c);
-      apiRes.on('end',()=>{
-        try{
-          const p=JSON.parse(data);
-          if(p.error) return res.json({content:[{type:'text',text:'❌ Groq: '+p.error.message}]});
-          res.json({content:[{type:'text',text:p.choices?.[0]?.message?.content||'Pas de réponse'}]});
-        }catch(e){ res.json({content:[{type:'text',text:'Erreur: '+e.message}]}); }
-      });
-    });
-    apiReq.on('error',e=>res.json({content:[{type:'text',text:'Réseau: '+e.message}]}));
-    apiReq.write(body);apiReq.end();
-  }catch(e){ res.json({content:[{type:'text',text:'Serveur: '+e.message}]}); }
-});
-
-// ─── COMPATIBILITÉ ANCIENNE VERSION ────────────────────
-// Route /api/data — lit depuis parc_dakar.json (migration)
-app.get('/api/data', (req, res) => {
-  // Chercher d'abord dans parc_dakar, sinon ancien fichier
-  const dakarData = readParcData('dakar');
-  if(dakarData.drivers && dakarData.drivers.length > 0){
-    return res.json({success:true, data: dakarData});
+// ─── CHAT IA (ANTHROPIC CLAUDE) ─────────────────────
+app.post('/api/chat', async (req, res) => {
+  // Essayer Anthropic d'abord, puis Groq en fallback
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
+  const GROQ_KEY = process.env.GROQ_API_KEY || '';
+  
+  if(!ANTHROPIC_KEY && !GROQ_KEY){
+    return res.json({content:[{type:'text',text:'⚠️ Aucune clé API configurée. Ajoutez ANTHROPIC_API_KEY ou GROQ_API_KEY dans Render → Environment.'}]});
   }
-  // Fallback: ancien fichier de données
-  const OLD_FILE = path.join(DATA_DIR, 'yango_crm_data.json');
-  try {
-    if(fs.existsSync(OLD_FILE)){
-      const old = JSON.parse(fs.readFileSync(OLD_FILE,'utf8'));
-      return res.json({success:true, data: old.data||old});
-    }
-  } catch(e){}
-  res.json({success:true, data:{}});
-});
 
-// Route POST /api/data — sauvegarde dans parc_dakar (migration)
-app.post('/api/data', (req, res) => {
-  const ok = writeParcData('dakar', req.body);
-  res.json({success:ok});
+  const systemPrompt = req.body.system || '';
+  const messages = req.body.messages || [];
+  const agentsData = req.body.agents || [];
+  const scoresData = req.body.scores || {};
+
+  // Enrichir le système avec données agents
+  let agentsCtx = '';
+  if(agentsData.length > 0){
+    agentsCtx = '\n\nEQUIPE AGENTS:\n';
+    agentsData.forEach(a => {
+      const sc = scoresData[a.id] || {};
+      const pts = sc.points || 0;
+      const badge = pts>=200?'👑':pts>=100?'💎':pts>=50?'🥇':pts>=25?'🥈':pts>=10?'🥉':'⭐';
+      agentsCtx += `${a.nom}: ${pts} pts ${badge} | Rappels:${sc.rappels||0} | Reactives:${sc.reactives||0}\n`;
+    });
+  }
+  const fullSystem = systemPrompt + agentsCtx;
+
+  // 1. Essayer Anthropic Claude (meilleur pour VTC)
+  if(ANTHROPIC_KEY){
+    try{
+      const https = require('https');
+      const anthropicMsgs = messages.map(m => ({role: m.role==='user'?'user':'assistant', content: m.content}));
+      const body = JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        system: fullSystem,
+        messages: anthropicMsgs
+      });
+      const opts = {
+        hostname: 'api.anthropic.com',
+        path: '/v1/messages',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          'x-api-key': ANTHROPIC_KEY,
+          'anthropic-version': '2023-06-01'
+        }
+      };
+      const result = await new Promise((resolve, reject) => {
+        const req2 = https.request(opts, (r) => {
+          let data = '';
+          r.on('data', c => data += c);
+          r.on('end', () => {
+            try{
+              const p = JSON.parse(data);
+              if(p.error) reject(new Error(p.error.message));
+              else resolve(p.content?.[0]?.text || 'Pas de réponse');
+            }catch(e){ reject(e); }
+          });
+        });
+        req2.on('error', reject);
+        req2.write(body);
+        req2.end();
+      });
+      console.log('Claude repondu OK');
+      return res.json({content:[{type:'text', text: result}]});
+    }catch(e){
+      console.error('Claude error:', e.message, '— fallback Groq');
+    }
+  }
+
+  // 2. Fallback Groq
+  if(GROQ_KEY){
+    try{
+      const https = require('https');
+      const groqMsgs = [{role:'system', content: fullSystem}, ...messages];
+      const body = JSON.stringify({model:'llama-3.3-70b-versatile', messages: groqMsgs, max_tokens:1200, temperature:0.7});
+      const opts = {
+        hostname:'api.groq.com', path:'/openai/v1/chat/completions', method:'POST',
+        headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body),'Authorization':'Bearer '+GROQ_KEY}
+      };
+      const result = await new Promise((resolve, reject) => {
+        const req2 = https.request(opts, (r) => {
+          let data = '';
+          r.on('data', c => data += c);
+          r.on('end', () => {
+            try{
+              const p = JSON.parse(data);
+              if(p.error) reject(new Error(p.error.message));
+              else resolve(p.choices?.[0]?.message?.content || 'Pas de reponse');
+            }catch(e){ reject(e); }
+          });
+        });
+        req2.on('error', reject);
+        req2.write(body);
+        req2.end();
+      });
+      return res.json({content:[{type:'text', text: result}]});
+    }catch(e){
+      return res.json({content:[{type:'text', text:'❌ Erreur IA: '+e.message}]});
+    }
+  }
 });
 
 // ─── SANTÉ ──────────────────────────────────────────────
