@@ -1500,13 +1500,11 @@ async function save(){
   }
   // Puis sur le serveur (survit aux mises à jour)
   try{
-    const r=await fetch(API+'/data',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-    if(r.ok) updateSaveStatus();
-    else console.warn('Serveur répondu:', r.status);
+    // Sauvegarder dans le parc courant uniquement
+    if(typeof saveParcData==='function' && CURRENT_PARC && CURRENT_PARC.id!=='all'){
+      await saveParcData();
+    }
+    updateSaveStatus();
   }catch(e){
     console.warn('Sauvegarde serveur:', e.message);
     updateSaveStatus();
@@ -4223,14 +4221,19 @@ function applyUserPermissions(user){
     if(m){ni.style.display=(perms.pages.includes(m[1])||perms.pages.includes('all'))?'flex':'none';}
   });
   if(!perms.voirFinances){var f=document.getElementById('page-finances');if(f) f.style.display='none';}
-  loadFromServer().then(function(){
-    var fp=perms.pages[0]==='all'?'dashboard':perms.pages[0];
-    try{nav(fp);}catch(e){}
-    try{renderTable();}catch(e){}
-    try{renderDashboard();}catch(e){}
-    try{updateRemBadges();}catch(e){}
-    setInterval(async function(){try{await save();}catch(e){}},30000);
-  }).catch(function(e){console.warn(e);});
+  // Ne PAS appeler loadFromServer ici — les données sont gérées par selectParc()
+  var fp=perms.pages[0]==='all'?'dashboard':perms.pages[0];
+  try{nav(fp);}catch(e){}
+  try{renderTable();}catch(e){}
+  try{renderDashboard();}catch(e){}
+  try{updateRemBadges();}catch(e){}
+  // Auto-save parc toutes les 30s
+  if(!window._autoSaveStarted){
+    window._autoSaveStarted = true;
+    setInterval(async function(){
+      try{ await saveParcData(); }catch(e){}
+    }, 30000);
+  }
 }
 
 // Gestion accès
@@ -4560,7 +4563,7 @@ async function selectParc(parcId){
   var sb = document.querySelector('.sb');
   if(sb) sb.style.display = '';
 
-  showToast('🚖', 'Parc '+CURRENT_PARC.nom+' chargé !', 'success');
+  showToast('🚖', 'Parc '+CURRENT_PARC.nom+' — '+DRIVERS.length.toLocaleString()+' chauffeurs', 'success');
   var pnEl=document.getElementById('current-parc-name');
   if(pnEl) pnEl.textContent='Parc '+CURRENT_PARC.nom;
   applyUserPermissions(CURRENT_USER);
