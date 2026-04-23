@@ -4939,5 +4939,195 @@ function autoFillParcId(){
 
 init();
 </script>
+
+<!-- ══════════════════════════════════════ -->
+<!-- FATHY — Bonhomme flottant intelligent -->
+<!-- ══════════════════════════════════════ -->
+<style>
+#fathy-bubble{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;}
+#fathy-avatar{width:62px;height:62px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;pointer-events:all;box-shadow:0 4px 24px rgba(245,197,24,.5);transition:transform .2s;animation:fathy-float 3s ease-in-out infinite;position:relative;}
+#fathy-avatar:hover{transform:scale(1.12);}
+@keyframes fathy-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+#fathy-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:white;font-size:10px;font-weight:800;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;display:none;}
+#fathy-speech{background:rgba(20,20,35,.97);border:1px solid rgba(245,197,24,.4);border-radius:16px 16px 4px 16px;padding:10px 14px;max-width:220px;font-size:12px;color:#fff;pointer-events:all;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.4);animation:fathy-pop .3s ease;line-height:1.5;}
+@keyframes fathy-pop{from{opacity:0;transform:scale(.8) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#fathy-speech strong{color:#f5c518;}
+#fathy-panel{position:fixed;bottom:100px;right:24px;width:340px;max-height:520px;background:rgba(15,12,40,.98);border:1px solid rgba(245,197,24,.3);border-radius:20px;display:none;flex-direction:column;z-index:9998;box-shadow:0 8px 40px rgba(0,0,0,.6);pointer-events:all;overflow:hidden;}
+#fathy-panel.open{display:flex;animation:fathy-pop .3s ease;}
+#fathy-panel-header{background:linear-gradient(135deg,rgba(245,197,24,.15),rgba(255,107,53,.1));padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(245,197,24,.2);flex-shrink:0;}
+#fathy-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:0;}
+.fmsg-u{align-self:flex-end;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.2);border-radius:14px 14px 2px 14px;padding:8px 12px;font-size:12px;max-width:85%;color:#fff;}
+.fmsg-a{align-self:flex-start;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px 14px 14px 2px;padding:8px 12px;font-size:12px;max-width:90%;color:#e5e7eb;line-height:1.6;}
+.fmsg-a strong{color:#f5c518;}
+.fathy-thinking{display:flex;gap:4px;padding:4px 0;}
+.fathy-thinking .dot{width:6px;height:6px;background:#f5c518;border-radius:50%;animation:fathy-bounce .8s infinite;}
+.fathy-thinking .dot:nth-child(2){animation-delay:.15s}
+.fathy-thinking .dot:nth-child(3){animation-delay:.3s}
+@keyframes fathy-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+#fathy-input-row{padding:10px 12px;border-top:1px solid rgba(245,197,24,.15);display:flex;gap:8px;flex-shrink:0;}
+#fathy-input{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(245,197,24,.2);border-radius:20px;padding:8px 14px;color:#fff;font-size:12px;outline:none;}
+#fathy-input:focus{border-color:rgba(245,197,24,.5);}
+#fathy-send{width:36px;height:36px;background:linear-gradient(135deg,#f5c518,#ff6b35);border:none;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.fathy-sugg{display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px 0;flex-shrink:0;}
+.fathy-sugg button{background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.2);border-radius:20px;color:#f5c518;font-size:10px;padding:3px 10px;cursor:pointer;}
+.fathy-sugg button:hover{background:rgba(245,197,24,.25);}
+</style>
+
+<!-- Bonhomme flottant -->
+<div id="fathy-bubble">
+  <div id="fathy-speech" onclick="toggleFathy()" style="display:none"></div>
+  <div id="fathy-avatar" onclick="toggleFathy()">
+    🤖
+    <div id="fathy-badge">!</div>
+  </div>
+</div>
+
+<!-- Panel chat FATHY -->
+<div id="fathy-panel">
+  <div id="fathy-panel-header">
+    <div style="width:36px;height:36px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🤖</div>
+    <div style="flex:1">
+      <div style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:#f5c518;">FATHY</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);" id="fathy-parc-label">Parc Ndongo Fall</div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button onclick="nav('coach')" style="background:rgba(245,197,24,.15);border:none;border-radius:8px;color:#f5c518;font-size:10px;padding:4px 8px;cursor:pointer;">Mode complet</button>
+      <button onclick="toggleFathy()" style="background:rgba(255,255,255,.1);border:none;border-radius:8px;color:#fff;padding:4px 8px;cursor:pointer;">✕</button>
+    </div>
+  </div>
+  <div class="fathy-sugg">
+    <button onclick="fathyAsk('Priorites du jour')">⚡ Priorités</button>
+    <button onclick="fathyAsk('Chauffeurs urgents a appeler')">🚨 Urgents</button>
+    <button onclick="fathyAsk('Rapport equipe agents')">📊 Rapport</button>
+    <button onclick="fathyAsk('Taches agents du jour')">📋 Tâches</button>
+    <button onclick="fathyAsk('Rapport complet equipe')">👥 Équipe</button>
+  </div>
+  <div id="fathy-msgs"></div>
+  <div id="fathy-input-row">
+    <input id="fathy-input" placeholder="Posez une question a FATHY..." onkeydown="if(event.key==='Enter')fathySend()"/>
+    <button id="fathy-send" onclick="fathySend()">↑</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// FATHY — Bonhomme flottant
+// ══════════════════════════════════════
+var fathyOpen = false;
+var fathyHistory = [];
+
+function toggleFathy(){
+  fathyOpen = !fathyOpen;
+  var panel = document.getElementById('fathy-panel');
+  var speech = document.getElementById('fathy-speech');
+  if(fathyOpen){
+    panel.classList.add('open');
+    if(speech) speech.style.display='none';
+    var badge=document.getElementById('fathy-badge');if(badge) badge.style.display='none';
+    if(!fathyHistory.length) fathyGreet();
+    setTimeout(function(){ var inp=document.getElementById('fathy-input');if(inp) inp.focus(); },300);
+  } else {
+    panel.classList.remove('open');
+  }
+}
+
+function fathyGreet(){
+  var stats = typeof calcStats==='function' ? calcStats() : {};
+  var parc = typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC ? CURRENT_PARC.nom : 'Ndongo Fall';
+  var h = new Date().getHours();
+  var salut = h<12?'Bonjour':'Bonsoir';
+  var total = typeof DRIVERS!=='undefined' ? DRIVERS.length : 0;
+  var actifs = stats.actif||0;
+  var msg = salut+' ! Je suis <strong>FATHY</strong>, votre assistant IA.<br><br>'+
+    '🚖 <strong>Parc '+parc+'</strong><br>'+
+    '📊 <strong>'+total.toLocaleString()+' chauffeurs</strong> | '+
+    '<span style="color:#22d3a0"><strong>'+actifs+' actifs</strong></span><br><br>'+
+    'Comment puis-je vous aider ? 😊';
+  fathyAddMsg('a', msg);
+  // Mettre à jour label parc
+  var lbl=document.getElementById('fathy-parc-label');
+  if(lbl) lbl.textContent='Parc '+parc;
+}
+
+function fathyAddMsg(role, text){
+  var msgs=document.getElementById('fathy-msgs');
+  if(!msgs) return;
+  var div=document.createElement('div');
+  div.className=role==='u'?'fmsg-u':'fmsg-a';
+  if(role==='u'){
+    div.textContent=text;
+  } else {
+    var html=text.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>').split('\n').join('<br>');
+    div.innerHTML=html;
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+
+function fathyAsk(q){
+  if(!fathyOpen) toggleFathy();
+  setTimeout(function(){
+    var inp=document.getElementById('fathy-input');
+    if(inp){inp.value=q;fathySend();}
+  },200);
+}
+
+async function fathySend(){
+  var inp=document.getElementById('fathy-input');
+  if(!inp) return;
+  var q=inp.value.trim();
+  if(!q) return;
+  inp.value='';inp.disabled=true;
+  fathyAddMsg('u',q);
+  fathyHistory.push({role:'user',content:q});
+  if(fathyHistory.length>8) fathyHistory=fathyHistory.slice(-8);
+  var thinking=fathyAddMsg('a','<div class="fathy-thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>');
+  try{
+    var system=typeof buildSystemPrompt==='function'?buildSystemPrompt():'Tu es FATHY, assistant du Parc Transport Ndongo Fall.';
+    var resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'groq',system:system,messages:fathyHistory,
+        agents:typeof AGENTS!=='undefined'?AGENTS:[],
+        scores:typeof SCORES!=='undefined'?SCORES:{}})});
+    var data=await resp.json();
+    var reply=data.content&&data.content[0]?data.content[0].text:'Pas de reponse';
+    fathyHistory.push({role:'assistant',content:reply});
+    if(thinking){
+      var html=reply.replace(/[*][*](.*?)[*][*]/g,'<strong>$1</strong>').split('\n').join('<br>');
+      thinking.innerHTML=html;
+    }
+    thinking.className='fmsg-a';
+  }catch(e){
+    if(thinking) thinking.innerHTML='⚠️ Erreur: '+e.message;
+  }
+  inp.disabled=false;inp.focus();
+}
+
+// Messages proactifs
+var fathyProactif={
+  dashboard:['Votre parc est analysé. Voir les urgences du jour ?','Des chauffeurs s eloignent ! Je liste les urgents ?'],
+  chauffeurs:['Je peux chercher par nom, telephone ou permis !'],
+  rappels:['Je peux prioriser vos rappels du jour !'],
+  equipe:['Je surveille votre equipe ! Voir les scores ?'],
+  default:['Besoin aide ? Je suis la ! 🤖']
+};
+
+function showFathyProactif(pageId){
+  if(fathyOpen) return;
+  var speech=document.getElementById('fathy-speech');
+  var badge=document.getElementById('fathy-badge');
+  if(!speech) return;
+  var msgs=fathyProactif[pageId]||fathyProactif.default;
+  var msg=msgs[Math.floor(Math.random()*msgs.length)];
+  speech.innerHTML=msg;
+  speech.style.display='block';
+  if(badge) badge.style.display='flex';
+  setTimeout(function(){if(!fathyOpen) speech.style.display='none';},6000);
+}
+
+// Afficher bulle après 3s
+setTimeout(function(){showFathyProactif('dashboard');},3000);
+</script>
+
 </body>
 </html>
