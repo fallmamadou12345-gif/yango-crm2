@@ -929,10 +929,11 @@ function doLogin(){
 
     <!-- Rapport activité agents -->
     <div class="card mb16">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="ct" style="margin-bottom:0;">📊 Rapport activité — <span id="rapport-mois" style="color:var(--mu);font-size:12px;font-weight:400;"></span></div>
-        <div style="display:flex;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div class="ct" style="margin-bottom:0;">📊 Évaluation agents — <span id="rapport-mois" style="color:var(--mu);font-size:12px;font-weight:400;"></span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-g btn-sm" onclick="verifierReactivations()" style="font-size:11px;">🔍 Vérifier réactivations</button>
+          <button class="btn btn-p btn-sm" onclick="exportRapportDirecteur()" style="font-size:11px;">📥 Exporter rapport</button>
           <button class="btn btn-r btn-sm" onclick="resetScores()" style="font-size:11px;">🔄 Reset fin de mois</button>
         </div>
       </div>
@@ -3132,10 +3133,26 @@ function applyConfig(){
   var stats=calcStats();
   updateKPIs(stats);
   renderSettings();
-  // Update sidebar name
+  // Mettre à jour sidebar et parc courant
   var sbsub=document.querySelector('.sb-sub');
   if(sbsub) sbsub.textContent=nom+' · v3';
-  showToast('✅','Paramètres sauvegardés ! Objectif : '+obj.toLocaleString()+' actifs','success');
+  var sbname=document.querySelector('.sb-name');
+  if(sbname&&typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC){
+    sbname.textContent='Parc '+CURRENT_PARC.nom;
+  } else if(sbname){
+    sbname.textContent=nom;
+  }
+  // Mettre à jour le nom du parc dans PARCS_LIST
+  if(typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC&&CURRENT_PARC.id!=='all'){
+    var parc=typeof PARCS_LIST!=='undefined'?PARCS_LIST.find(function(p){return p.id===CURRENT_PARC.id;}):null;
+    if(parc){
+      parc.nom=nom;
+      CURRENT_PARC.nom=nom;
+      // Sauvegarder sur serveur
+      fetch('/api/parcs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({parcs:PARCS_LIST})}).catch(function(){});
+    }
+  }
+  showToast('✅','Paramètres sauvegardés ! Parc: '+nom+' | Objectif: '+obj.toLocaleString()+' actifs','success');
 }
 
 function resetConfig(){
@@ -3935,250 +3952,89 @@ function renderAgents(){
 }
 
 function renderRapportAgents(){
-  var el = document.getElementById('rapport-agents-list');
+  var el=document.getElementById('rapport-agents-list');
   if(!el) return;
   if(!AGENTS.length){
-    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Aucun agent enregistré</div>';
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Aucun agent enregistré — ajoutez des agents ci-dessous</div>';
     return;
   }
+  var moisLabel=new Date().toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
   var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;">'+
     '<thead><tr style="border-bottom:2px solid var(--b1);">'+
-    '<th style="text-align:left;padding:8px;">Agent</th>'+
-    '<th style="text-align:center;padding:8px;">Rappels</th>'+
-    '<th style="text-align:center;padding:8px;">Réactivés</th>'+
-    '<th style="text-align:center;padding:8px;">Activés</th>'+
-    '<th style="text-align:center;padding:8px;">Points</th>'+
-    '<th style="text-align:center;padding:8px;">Badge</th>'+
-    '<th style="text-align:center;padding:8px;">Prime</th>'+
+    '<th style="text-align:left;padding:10px 8px;">Agent</th>'+
+    '<th style="text-align:center;padding:10px 8px;">Score</th>'+
+    '<th style="text-align:center;padding:10px 8px;">Badge</th>'+
+    '<th style="text-align:center;padding:10px 8px;">Rappels</th>'+
+    '<th style="text-align:center;padding:10px 8px;">Réactivés</th>'+
+    '<th style="text-align:center;padding:10px 8px;">Activés</th>'+
+    '<th style="text-align:center;padding:10px 8px;">Prime</th>'+
+    '<th style="text-align:center;padding:10px 8px;">Évaluation</th>'+
     '</tr></thead><tbody>';
-  AGENTS.forEach(function(a){
+
+  // Trier par score décroissant
+  var sorted=AGENTS.slice().sort(function(a,b){return ((SCORES[b.id]||{}).points||0)-((SCORES[a.id]||{}).points||0);});
+
+  sorted.forEach(function(a,rank){
     var sc=SCORES[a.id]||{points:0,rappels:0,reactives:0,actives:0};
     var pts=sc.points||0;
     var prime=Math.floor(pts/10)*1000;
+    var badge=getBadge(pts);
+    var rankIco=rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':'#'+(rank+1);
+    
+    // Évaluation auto
+    var total=(sc.rappels||0)+(sc.reactives||0)*3+(sc.actives||0)*5;
+    var eval_txt,eval_color;
+    if(total>=50){eval_txt='⭐⭐⭐ Excellent';eval_color='#22d3a0';}
+    else if(total>=20){eval_txt='⭐⭐ Bien';eval_color='#f5c518';}
+    else if(total>=5){eval_txt='⭐ Moyen';eval_color='#fb923c';}
+    else{eval_txt='📉 Faible';eval_color='#f87171';}
+
     html+='<tr style="border-bottom:1px solid var(--b1);">'+
-      '<td style="padding:8px;"><strong>'+a.nom+'</strong><div style="font-size:10px;color:var(--mu)">'+a.role+'</div></td>'+
-      '<td style="text-align:center;padding:8px;">'+sc.rappels+'</td>'+
-      '<td style="text-align:center;padding:8px;color:var(--orange);">'+sc.reactives+'</td>'+
-      '<td style="text-align:center;padding:8px;color:var(--green);">'+sc.actives+'</td>'+
-      '<td style="text-align:center;padding:8px;font-weight:700;color:var(--acc);">'+pts+'</td>'+
-      '<td style="text-align:center;padding:8px;">'+getBadge(pts)+'</td>'+
-      '<td style="text-align:center;padding:8px;color:var(--green);font-weight:600;">'+(prime>0?prime.toLocaleString()+' FCFA':'—')+'</td>'+
+      '<td style="padding:10px 8px;">'+
+        '<div style="font-weight:700;">'+rankIco+' '+a.nom+'</div>'+
+        '<div style="font-size:10px;color:var(--mu);">'+a.role+' · @'+(a.username||'—')+'</div>'+
+      '</td>'+
+      '<td style="text-align:center;padding:10px 8px;font-family:Syne,sans-serif;font-size:18px;font-weight:800;color:var(--acc);">'+pts+'</td>'+
+      '<td style="text-align:center;padding:10px 8px;">'+badge+'</td>'+
+      '<td style="text-align:center;padding:10px 8px;">'+( sc.rappels||0)+'</td>'+
+      '<td style="text-align:center;padding:10px 8px;color:var(--orange);">'+(sc.reactives||0)+'</td>'+
+      '<td style="text-align:center;padding:10px 8px;color:var(--green);">'+(sc.actives||0)+'</td>'+
+      '<td style="text-align:center;padding:10px 8px;font-weight:600;color:var(--green);">'+(prime>0?prime.toLocaleString()+' FCFA':'—')+'</td>'+
+      '<td style="text-align:center;padding:10px 8px;font-weight:600;color:'+eval_color+';">'+eval_txt+'</td>'+
     '</tr>';
   });
   html+='</tbody></table></div>';
+  
+  // Résumé directeur
+  var totalPts=sorted.reduce(function(s,a){return s+((SCORES[a.id]||{}).points||0);},0);
+  var totalPrime=Math.floor(totalPts/10)*1000;
+  var totalRappels=sorted.reduce(function(s,a){return s+((SCORES[a.id]||{}).rappels||0);},0);
+  var totalReact=sorted.reduce(function(s,a){return s+((SCORES[a.id]||{}).reactives||0);},0);
+  html+='<div style="margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">'+
+    ['📞 '+totalRappels+' rappels total','🔄 '+totalReact+' réactivés total','🏅 '+totalPts+' pts cumulés','💰 '+totalPrime.toLocaleString()+' FCFA total primes'].map(function(txt){
+      return '<div style="background:var(--s2);border-radius:8px;padding:8px;text-align:center;font-size:11px;font-weight:600;">'+txt+'</div>';
+    }).join('')+'</div>';
+  
   el.innerHTML=html;
 }
 
-function renderReactivationsSuivi(){
-  var el=document.getElementById('reactivations-list');
-  if(!el) return;
-  var keys=Object.keys(REACTIVATIONS).filter(function(k){return REACTIVATIONS[k].mois===CURRENT_MONTH;});
-  if(!keys.length){
-    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:16px;font-size:12px;">Aucune réactivation en suivi ce mois</div>';
-    return;
-  }
-  el.innerHTML='';
-  keys.forEach(function(key){
-    var r=REACTIVATIONS[key];
-    var agent=AGENTS.find(function(a){return a.id===r.agentId;});
-    var agentNom=agent?agent.nom:'Agent';
-    var diff=r.ordersApres-r.ordersAvant;
-    var row=document.createElement('div');
-    row.style.cssText='background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
-    var statColor=r.pointsAttribues?'var(--green)':diff>0?'#fbbf24':'var(--mu)';
-    var statIco=r.pointsAttribues?'✅':diff>0?'⏳':'🔍';
-    row.innerHTML=
-      '<div style="flex:1;min-width:150px;">'+
-        '<div style="font-weight:700;font-size:13px;">'+r.driverName+'</div>'+
-        '<div style="font-size:11px;color:var(--mu);">Par: '+agentNom+' · '+new Date(r.dateMarque).toLocaleDateString('fr-FR')+'</div>'+
-      '</div>'+
-      '<div style="text-align:center;">'+
-        '<div style="font-size:11px;color:var(--mu);">Avant</div>'+
-        '<div style="font-weight:700;">'+r.ordersAvant+'</div>'+
-      '</div>'+
-      '<div style="font-size:16px;">→</div>'+
-      '<div style="text-align:center;">'+
-        '<div style="font-size:11px;color:var(--mu);">Maintenant</div>'+
-        '<div style="font-weight:700;color:'+statColor+';">'+r.ordersApres+'</div>'+
-      '</div>'+
-      '<div style="text-align:center;">'+
-        '<div style="font-size:11px;color:var(--mu);">Diff</div>'+
-        '<div style="font-weight:700;color:'+statColor+';">'+(diff>0?'+':'')+diff+'</div>'+
-      '</div>'+
-      '<span style="font-size:18px;">'+statIco+'</span>'+
-      (r.pointsAttribues?'<span style="background:rgba(34,211,160,.15);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;">Points attribués ✅</span>':'');
-    el.appendChild(row);
+function exportRapportDirecteur(){
+  var mois=new Date().toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  var lines=['Rapport Agents — '+mois,'Parc: '+(typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC?CURRENT_PARC.nom:'Ndongo Fall'),'','Agent,Rôle,Score,Badge,Rappels,Réactivés,Activés,Prime FCFA'];
+  AGENTS.forEach(function(a){
+    var sc=SCORES[a.id]||{};
+    var pts=sc.points||0;
+    lines.push([a.nom,a.role,pts,getBadge(pts),sc.rappels||0,sc.reactives||0,sc.actives||0,Math.floor(pts/10)*1000].join(','));
   });
+  var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='rapport_agents_'+mois.replace(' ','_')+'.csv';
+  a.click();URL.revokeObjectURL(url);
+  showToast('📥','Rapport exporté !','success');
 }
 
-// Bouton dans fiche chauffeur pour marquer réactivation
-function marquerReactivationFromPanel(driverName, driverPhone, ordersAvant){
-  if(!CURRENT_USER) return;
-  var agent=AGENTS.find(function(a){return a.username===CURRENT_USER.username||a.nom===CURRENT_USER.nom;});
-  if(!agent){
-    showToast('⚠️','Votre profil agent doit être créé dans Équipe pour suivre les réactivations','error');
-    return;
-  }
-  marquerReactivation(agent.id, driverName, driverPhone, ordersAvant);
-  // +2 pts immédiatement pour le rappel
-  ajouterPoints(agent.id, 2, 'rappel');
-}
 
-async function genererTaches(){
-  var el = document.getElementById('taches-agents-list');
-  var dateEl = document.getElementById('taches-date');
-  if(!el) return;
-
-  // Si pas d'agents, utiliser l'utilisateur connecté
-  if(!AGENTS.length && CURRENT_USER){
-    var tempAgent = {
-      id: CURRENT_USER.id || 'temp_'+Date.now(),
-      nom: CURRENT_USER.nom || CURRENT_USER.username,
-      role: CURRENT_USER.role || 'agent',
-      zone: 'Dakar',
-      username: CURRENT_USER.username
-    };
-    AGENTS.push(tempAgent);
-    if(!SCORES[tempAgent.id]) SCORES[tempAgent.id]={points:0,rappels:0,reactives:0,actives:0,details:[]};
-  }
-
-  if(dateEl) dateEl.textContent = '— ' + new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-
-  // Afficher un loader pendant génération IA
-  el.innerHTML = '<div style="text-align:center;padding:30px;">' +
-    '<div style="font-size:32px;margin-bottom:10px;animation:fathy-float 1s ease-in-out infinite">🤖</div>' +
-    '<div style="font-size:13px;color:var(--acc);font-weight:600;">FATHY génère vos tâches personnalisées...</div>' +
-    '<div style="font-size:11px;color:var(--mu);margin-top:6px;">Analyse des ' + DRIVERS.length.toLocaleString() + ' chauffeurs en cours</div>' +
-    '</div>';
-
-  // Préparer les données pour FATHY
-  var now = new Date();
-  var userAgent = CURRENT_USER ? (CURRENT_USER.nom || CURRENT_USER.username) : 'Agent';
-  var userRole = CURRENT_USER ? CURRENT_USER.role : 'agent';
-  var agentObj = AGENTS.find(function(a){ return a.username===CURRENT_USER.username||a.nom===CURRENT_USER.nom; }) || AGENTS[0];
-  var agentId = agentObj ? agentObj.id : '';
-  var sc = SCORES[agentId] || {points:0, rappels:0, reactives:0, actives:0};
-
-  // Chauffeurs urgents (8-14j inactifs avec beaucoup de courses)
-  var urgents = DRIVERS.filter(function(d){
-    if(!d.lastDate) return false;
-    var days=Math.round((now-new Date(d.lastDate))/864e5);
-    return days>=8 && days<=14 && (d.orders||0)>=50;
-  }).sort(function(a,b){return (b.orders||0)-(a.orders||0)}).slice(0,8);
-
-  // Dormants récents à relancer
-  var dormants = DRIVERS.filter(function(d){
-    return d.segment==='Dormant récent' || d.segment==='Alerte 30j';
-  }).sort(function(a,b){return (b.orders||0)-(a.orders||0)}).slice(0,8);
-
-  // Jamais actifs
-  var jamais = DRIVERS.filter(function(d){
-    return d.segment==='Jamais actif';
-  }).slice(0,5);
-
-  // Construire le prompt pour FATHY
-  var urgentsList = urgents.map(function(d){
-    var days=Math.round((now-new Date(d.lastDate))/864e5);
-    return '- '+d.name+' | '+d.phone+' | '+days+'j inactif | '+d.orders+' courses';
-  }).join(' / ');
-  var dormantsList = dormants.map(function(d){
-    return '- '+d.name+' | '+d.phone+' | '+(d.orders||0)+' courses';
-  }).join(' / ');
-  var jamaisList = jamais.map(function(d){
-    return '- '+d.name+' | '+d.phone;
-  }).join(' / ');
-
-  var prompt = 'Je suis '+userAgent+', '+userRole+' du Parc Ndongo Fall. '+
-    'Mon score ce mois: '+sc.points+' pts. Rappels: '+sc.rappels+'. Reactivés: '+sc.reactives+'. '+
-    'URGENTS A APPELER (8-14j inactifs): '+urgentsList+'. '+
-    'DORMANTS A RELANCER: '+dormantsList+'. '+
-    'JAMAIS ACTIFS: '+jamaisList+'. '+
-    'Génère mes tâches prioritaires du jour en 3 sections avec script appel court, points gagnables, et encouragement. '+
-    'Sois concis, chaleureux, utilise des emojis.';
-
-  try {
-    var resp = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'groq',
-        system: buildSystemPrompt(),
-        messages: [{role:'user', content: prompt}],
-        agents: AGENTS,
-        scores: SCORES
-      })
-    });
-
-    var data = await resp.json();
-    var reply = data.content && data.content[0] ? data.content[0].text : null;
-
-    if(reply){
-      // Afficher la réponse IA formatée
-      el.innerHTML = '';
-      var card = document.createElement('div');
-      card.style.cssText = 'background:linear-gradient(135deg,rgba(245,197,24,.05),rgba(255,107,53,.03));border:1px solid rgba(245,197,24,.2);border-radius:14px;padding:18px;';
-
-      // Header avec nom agent
-      var header = document.createElement('div');
-      header.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(245,197,24,.15);';
-      header.innerHTML =
-        '<div style="width:38px;height:38px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">🤖</div>'+
-        '<div><div style="font-weight:700;font-size:13px;color:#f5c518;">FATHY — Tâches de '+userAgent+'</div>'+
-        '<div style="font-size:11px;color:var(--mu);">'+new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+' · '+urgents.length+' urgents · '+dormants.length+' dormants</div>'+
-        '</div>'+
-        '<div style="margin-left:auto;background:rgba(245,197,24,.1);border-radius:8px;padding:5px 10px;font-size:11px;color:#f5c518;">'+sc.points+' pts ce mois</div>';
-      card.appendChild(header);
-
-      // Contenu IA
-      var body = document.createElement('div');
-      body.style.cssText = 'font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;';
-      body.innerHTML = reply
-        .replace(/\*\*(.*?)\*\*/g,'<strong style="color:#f5c518">$1</strong>')
-        .replace(/🚨/g,'<span style="color:#f87171">🚨</span>')
-        .replace(/🔴/g,'<span style="color:#fb923c">🔴</span>')
-        .replace(/✅/g,'<span style="color:#22d3a0">✅</span>')
-        .split('\n').join('<br>');
-      card.appendChild(body);
-
-      // Boutons actions rapides
-      var actions = document.createElement('div');
-      actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid rgba(245,197,24,.1);';
-      // Build action buttons with DOM to avoid quote issues
-      var b1=document.createElement('button');
-      b1.className='btn btn-p btn-sm';b1.style.fontSize='11px';
-      b1.textContent='🔄 Régénérer';b1.onclick=genererTaches;
-      actions.appendChild(b1);
-      var b2=document.createElement('button');
-      b2.className='btn btn-g btn-sm';b2.style.fontSize='11px';
-      b2.textContent='💬 Script WhatsApp';
-      b2.onclick=function(){fathyAsk('Script appel chauffeur dormant');};
-      actions.appendChild(b2);
-      var b3=document.createElement('button');
-      b3.className='btn btn-g btn-sm';b3.style.fontSize='11px';
-      b3.textContent='+2 pts Rappel';
-      b3.onclick=function(){ajouterPoints(agentId,2,'rappel');};
-      actions.appendChild(b3);
-      var b4=document.createElement('button');
-      b4.className='btn btn-g btn-sm';b4.style.fontSize='11px';
-      b4.textContent='+5 pts Réactivé';
-      b4.onclick=function(){ajouterPoints(agentId,5,'reactif');};
-      actions.appendChild(b4);
-      card.appendChild(actions);
-
-      el.appendChild(card);
-      showToast('⚡', 'FATHY a généré vos tâches du jour !', 'success');
-    } else {
-      throw new Error('Réponse vide');
-    }
-
-  } catch(e) {
-    console.error('FATHY tâches error:', e);
-    // Fallback: tâches statiques si IA indisponible
-    genererTachesStatiques(el, urgents, dormants, jamais, userAgent, agentId);
-  }
-}
-
-// Fallback statique si FATHY indisponible
 function genererTachesStatiques(el, urgents, dormants, jamais, userAgent, agentId){
   el.innerHTML = '';
   var now = new Date();
