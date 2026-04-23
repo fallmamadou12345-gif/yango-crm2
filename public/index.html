@@ -1014,6 +1014,55 @@ function doLogin(){
             <input class="form-input" type="text" id="cfg-nom" value="Partenaire Dakar" placeholder="Ex: Parc Dakar Centre"/>
           </div>
         </div>
+        <!-- OBJECTIFS PAR AGENT -->
+        <div style="background:var(--s2);border-radius:12px;padding:16px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--acc);margin-bottom:12px;">🎯 Objectifs des agents</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div>
+              <label class="form-label">📞 Rappels / jour</label>
+              <input class="form-input" type="number" id="cfg-obj-rappels-jour" value="10" min="1" max="100"
+                style="font-size:16px;font-weight:700;color:#22d3a0;"/>
+              <div style="font-size:10px;color:var(--mu);margin-top:3px;">Min. appels/agent/jour</div>
+            </div>
+            <div>
+              <label class="form-label">🔄 Réactivations / jour</label>
+              <input class="form-input" type="number" id="cfg-obj-reactiv-jour" value="3" min="1" max="50"
+                style="font-size:16px;font-weight:700;color:#fb923c;"/>
+              <div style="font-size:10px;color:var(--mu);margin-top:3px;">Dormants à relancer/jour</div>
+            </div>
+            <div>
+              <label class="form-label">🆕 Activations / jour</label>
+              <input class="form-input" type="number" id="cfg-obj-activ-jour" value="2" min="1" max="20"
+                style="font-size:16px;font-weight:700;color:#a78bfa;"/>
+              <div style="font-size:10px;color:var(--mu);margin-top:3px;">Jamais actifs à activer/jour</div>
+            </div>
+            <div>
+              <label class="form-label">📞 Rappels / mois</label>
+              <input class="form-input" type="number" id="cfg-obj-rappels-mois" value="200" min="1"
+                style="font-size:16px;font-weight:700;color:#22d3a0;"/>
+              <div style="font-size:10px;color:var(--mu);margin-top:3px;">Total rappels/agent/mois</div>
+            </div>
+            <div>
+              <label class="form-label">🔄 Réactivations / mois</label>
+              <input class="form-input" type="number" id="cfg-obj-reactiv-mois" value="60" min="1"
+                style="font-size:16px;font-weight:700;color:#fb923c;"/>
+              <div style="font-size:10px;color:var(--mu);margin-top:3px;">Total réactivations/mois</div>
+            </div>
+            <div>
+              <label class="form-label">🆕 Activations / mois</label>
+              <input class="form-input" type="number" id="cfg-obj-activ-mois" value="40" min="1"
+                style="font-size:16px;font-weight:700;color:#a78bfa;"/>
+              <div style="font-size:10px;color:var(--mu);margin-top:3px;">Total activations/mois</div>
+            </div>
+          </div>
+          <!-- Preview calcul points -->
+          <div style="background:var(--s0);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--mu2);">
+            💡 Un agent qui atteint ses objectifs journaliers gagne <strong style="color:var(--acc)">+10 pts/jour</strong> → 
+            <strong style="color:var(--acc)" id="pts-mois-preview">220 pts/mois</strong> → 
+            Prime estimée: <strong style="color:#22d3a0" id="prime-mois-preview">22 000 FCFA</strong>
+          </div>
+        </div>
+
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
           <button class="btn btn-p" onclick="applyConfig()">💾 Appliquer les paramètres</button>
           <button class="btn btn-g" onclick="resetConfig()">↩️ Réinitialiser</button>
@@ -3052,6 +3101,25 @@ function renderSettings(){
   var inp2=document.getElementById('cfg-nom');if(inp2)inp2.value=nom;
   var cp=cfg.commPart||3;
   var inp3=document.getElementById('cfg-comm-part');if(inp3)inp3.value=cp;
+  // Charger objectifs agents
+  var oa=OBJECTIFS_AGENTS;
+  var objFields={
+    'cfg-obj-rappels-jour': oa.rappelsJour||10,
+    'cfg-obj-reactiv-jour': oa.reactivJour||3,
+    'cfg-obj-activ-jour':   oa.activJour||2,
+    'cfg-obj-rappels-mois': oa.rappelsMois||200,
+    'cfg-obj-reactiv-mois': oa.reactivMois||60,
+    'cfg-obj-activ-mois':   oa.activMois||40
+  };
+  Object.keys(objFields).forEach(function(id){
+    var el=document.getElementById(id);if(el) el.value=objFields[id];
+  });
+  // Preview calcul
+  var joursDispo=26; // jours travaillés/mois
+  var ptsEstimes=joursDispo*10+20;
+  var primeEstimee=Math.floor(ptsEstimes/10)*1000;
+  var ptsEl=document.getElementById('pts-mois-preview');if(ptsEl) ptsEl.textContent=ptsEstimes+' pts/mois';
+  var primEl=document.getElementById('prime-mois-preview');if(primEl) primEl.textContent=primeEstimee.toLocaleString()+' FCFA';
 
   // Stats preview
   var stats=calcStats();
@@ -3130,6 +3198,16 @@ function applyConfig(){
   OBJECTIF=obj; PARC_NOM=nom;
   CRM_CONFIG={objectif:obj,parcNom:nom,commPart:cp};
   saveConfig();
+  // Sauvegarder objectifs agents
+  OBJECTIFS_AGENTS={
+    rappelsJour:  parseInt((document.getElementById('cfg-obj-rappels-jour')||{}).value)||10,
+    reactivJour:  parseInt((document.getElementById('cfg-obj-reactiv-jour')||{}).value)||3,
+    activJour:    parseInt((document.getElementById('cfg-obj-activ-jour')||{}).value)||2,
+    rappelsMois:  parseInt((document.getElementById('cfg-obj-rappels-mois')||{}).value)||200,
+    reactivMois:  parseInt((document.getElementById('cfg-obj-reactiv-mois')||{}).value)||60,
+    activMois:    parseInt((document.getElementById('cfg-obj-activ-mois')||{}).value)||40
+  };
+  localStorage.setItem('yango_objectifs', JSON.stringify(OBJECTIFS_AGENTS));
   var stats=calcStats();
   updateKPIs(stats);
   renderSettings();
@@ -3982,12 +4060,18 @@ function renderRapportAgents(){
     var rankIco=rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':'#'+(rank+1);
     
     // Évaluation auto
+    var oa=typeof OBJECTIFS_AGENTS!=='undefined'?OBJECTIFS_AGENTS:{rappelsMois:200,reactivMois:60,activMois:40};
+    var rappelsPct=oa.rappelsMois>0?Math.round(((sc.rappels||0)/oa.rappelsMois)*100):0;
+    var reactivPct=oa.reactivMois>0?Math.round(((sc.reactives||0)/oa.reactivMois)*100):0;
+    var activPct=oa.activMois>0?Math.round(((sc.actives||0)/oa.activMois)*100):0;
     var total=(sc.rappels||0)+(sc.reactives||0)*3+(sc.actives||0)*5;
+    var objTotal=oa.rappelsMois+oa.reactivMois*3+oa.activMois*5;
+    var perfPct=objTotal>0?Math.round(total/objTotal*100):0;
     var eval_txt,eval_color;
-    if(total>=50){eval_txt='⭐⭐⭐ Excellent';eval_color='#22d3a0';}
-    else if(total>=20){eval_txt='⭐⭐ Bien';eval_color='#f5c518';}
-    else if(total>=5){eval_txt='⭐ Moyen';eval_color='#fb923c';}
-    else{eval_txt='📉 Faible';eval_color='#f87171';}
+    if(perfPct>=100){eval_txt='⭐⭐⭐ Objectif atteint';eval_color='#22d3a0';}
+    else if(perfPct>=70){eval_txt='⭐⭐ Bien ('+perfPct+'%)';eval_color='#f5c518';}
+    else if(perfPct>=30){eval_txt='⭐ Moyen ('+perfPct+'%)';eval_color='#fb923c';}
+    else{eval_txt='📉 Faible ('+perfPct+'%)';eval_color='#f87171';}
 
     html+='<tr style="border-bottom:1px solid var(--b1);">'+
       '<td style="padding:10px 8px;">'+
@@ -3996,9 +4080,12 @@ function renderRapportAgents(){
       '</td>'+
       '<td style="text-align:center;padding:10px 8px;font-family:Syne,sans-serif;font-size:18px;font-weight:800;color:var(--acc);">'+pts+'</td>'+
       '<td style="text-align:center;padding:10px 8px;">'+badge+'</td>'+
-      '<td style="text-align:center;padding:10px 8px;">'+( sc.rappels||0)+'</td>'+
-      '<td style="text-align:center;padding:10px 8px;color:var(--orange);">'+(sc.reactives||0)+'</td>'+
-      '<td style="text-align:center;padding:10px 8px;color:var(--green);">'+(sc.actives||0)+'</td>'+
+      '<td style="text-align:center;padding:10px 8px;">'+(sc.rappels||0)+
+        '<div style="font-size:9px;color:'+(rappelsPct>=100?'#22d3a0':'var(--mu)')+';">'+rappelsPct+'% obj.</div></td>'+
+      '<td style="text-align:center;padding:10px 8px;color:var(--orange);">'+(sc.reactives||0)+
+        '<div style="font-size:9px;color:'+(reactivPct>=100?'#22d3a0':'var(--mu)')+';">'+reactivPct+'% obj.</div></td>'+
+      '<td style="text-align:center;padding:10px 8px;color:var(--green);">'+(sc.actives||0)+
+        '<div style="font-size:9px;color:'+(activPct>=100?'#22d3a0':'var(--mu)')+';">'+activPct+'% obj.</div></td>'+
       '<td style="text-align:center;padding:10px 8px;font-weight:600;color:var(--green);">'+(prime>0?prime.toLocaleString()+' FCFA':'—')+'</td>'+
       '<td style="text-align:center;padding:10px 8px;font-weight:600;color:'+eval_color+';">'+eval_txt+'</td>'+
     '</tr>';
