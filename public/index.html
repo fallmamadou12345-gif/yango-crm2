@@ -1286,7 +1286,16 @@ function doLogin(){
           <div class="stab" onclick="switchScript(this,'wapp')">💬 WhatsApp</div>
           <div class="stab" onclick="switchScript(this,'sms')">📱 SMS</div>
         </div>
-        <div class="script-box" id="script-box"><button class="scopy" onclick="copyCurrentScript()">📋 Copier</button><div id="script-inner">—</div></div>
+        <div class="script-box" id="script-box">
+          <button class="scopy" onclick="copyCurrentScript()">📋 Copier</button>
+          <div id="script-inner">—</div>
+        </div>
+        <!-- Boutons d'action directs -->
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;" id="script-action-btns">
+          <a id="panel-btn-appel" href="#" onclick="lancerAppel(event)" style="text-decoration:none;background:linear-gradient(135deg,#f5c518,#ff6b35);color:#000;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;">📞 Lancer l'appel</a>
+          <a id="panel-btn-wa" href="#" onclick="ouvrirWA(event)" style="text-decoration:none;background:rgba(37,211,102,.2);color:#25d366;border:1px solid #25d366;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;">🟢 Envoyer WhatsApp</a>
+          <a id="panel-btn-sms" href="#" onclick="lancerSMSScript(event)" style="text-decoration:none;background:rgba(96,165,250,.15);color:#60a5fa;border:1px solid #60a5fa;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;">💬 Envoyer SMS</a>
+        </div>
       </div>
 
       <!-- STATUT -->
@@ -1392,11 +1401,11 @@ function doLogin(){
       <div class="psec">
         <div class="psect">⚡ Actions rapides</div>
         <div style="display:flex;gap:7px;flex-wrap:wrap;">
-          <button class="btn btn-g btn-sm" onclick="copyPhone()">📞 Copier tél.</button>
-          <button class="btn btn-wa btn-sm" onclick="openWA()">💬 WhatsApp</button>
-          <button class="btn btn-sms btn-sm" onclick="callPhone()">📞 Appeler</button>
-          <button class="btn btn-ok btn-sm" onclick="quickReminder()">🔔 Rappel rapide (demain)</button>
-          <button id="p-reactiver-btn" class="btn btn-g btn-sm" onclick="">🔄 Marquer réactivé (+pts)</button>
+          <a id="btn-appel" href="#" class="btn btn-sms btn-sm" onclick="lancerAppel(event)" style="text-decoration:none;display:flex;align-items:center;gap:4px;">📞 Appeler</a>
+          <a id="btn-sms" href="#" class="btn btn-g btn-sm" onclick="lancerSMS(event)" style="text-decoration:none;display:flex;align-items:center;gap:4px;">💬 SMS</a>
+          <button class="btn btn-wa btn-sm" onclick="openWA()">🟢 WhatsApp</button>
+          <button class="btn btn-ok btn-sm" onclick="quickReminder()">🔔 Rappel demain</button>
+          <button id="p-reactiver-btn" class="btn btn-g btn-sm" onclick="">🔄 Réactivé (+pts)</button>
         </div>
       </div>
     </div>
@@ -2055,6 +2064,23 @@ function openPanel(d){
   // Infos détaillées
   var phEl=document.getElementById('p-phone-disp');
   if(phEl) phEl.textContent=fmtPhone(d.phone);
+  // Mettre à jour les liens appel et SMS
+  var cleanPh = typeof getCleanPhone==='function' ? getCleanPhone(d.phone||'') : (d.phone||'');
+  var btnAppel=document.getElementById('btn-appel');
+  if(btnAppel) btnAppel.href='tel:'+cleanPh;
+  var btnSMS=document.getElementById('btn-sms');
+  if(btnSMS){
+    var msg=encodeURIComponent('Bonjour '+d.name+', votre compte Yango vous attend ! Reconnectez-vous.');
+    btnSMS.href='sms:'+cleanPh+'?body='+msg;
+  }
+  // Boutons panel script
+  var pbAppel=document.getElementById('panel-btn-appel');
+  if(pbAppel) pbAppel.href='tel:'+cleanPh;
+  var waPhone=cleanPh.replace('+','');
+  var pbWA=document.getElementById('panel-btn-wa');
+  if(pbWA) pbWA.href='https://wa.me/'+waPhone;
+  var pbSMS=document.getElementById('panel-btn-sms');
+  if(pbSMS) pbSMS.href='sms:'+cleanPh;
   var cityEl=document.getElementById('p-city-disp');
   if(cityEl) cityEl.textContent=d.city||'Dakar';
   // Charger le permis depuis les notes
@@ -2241,7 +2267,70 @@ function renderCallHist(key){
 // ═══════════════════════════════════════════
 function copyPhone(){if(currentDriver)navigator.clipboard.writeText(currentDriver.phone||'').then(()=>showToast('📞','Numéro copié !','success'));}
 function openWA(){if(currentDriver&&currentDriver.phone)window.open('https://wa.me/221'+currentDriver.phone.replace(/\D/g,''),'_blank');}
-function callPhone(){if(currentDriver&&currentDriver.phone)window.location.href='tel:+221'+currentDriver.phone.replace(/\D/g,'');}
+function callPhone(){if(currentDriver&&currentDriver.phone)lancerAppel();}
+
+function ouvrirWA(e){
+  if(e) e.preventDefault();
+  if(!currentDriver||!currentDriver.phone){ showToast('⚠️','Numéro non disponible','error'); return; }
+  var phone = getCleanPhone(currentDriver.phone).replace('+','');
+  // Récupérer le script WA actuel
+  var scriptTxt = document.getElementById('script-inner') ? document.getElementById('script-inner').textContent : '';
+  var msg = scriptTxt && scriptTxt !== '—' ? encodeURIComponent(scriptTxt) : encodeURIComponent('Bonjour '+currentDriver.name+', votre compte Yango vous attend !');
+  var waUrl = 'https://wa.me/'+phone+'?text='+msg;
+  window.open(waUrl, '_blank');
+  showToast('🟢','WhatsApp ouvert pour '+currentDriver.name,'success');
+  try{ addCallLog(currentDriver.name,'wapp'); }catch(ex){}
+}
+
+function lancerSMSScript(e){
+  if(e) e.preventDefault();
+  if(!currentDriver||!currentDriver.phone){ showToast('⚠️','Numéro non disponible','error'); return; }
+  var phone = getCleanPhone(currentDriver.phone);
+  var scriptTxt = document.getElementById('script-inner') ? document.getElementById('script-inner').textContent : '';
+  var msg = scriptTxt && scriptTxt !== '—' ? scriptTxt : 'Bonjour '+currentDriver.name+', votre compte Yango vous attend !';
+  var smsUrl = 'sms:'+phone+'?body='+encodeURIComponent(msg);
+  window.location.href = smsUrl;
+  showToast('💬','SMS vers '+currentDriver.name,'success');
+  try{ addCallLog(currentDriver.name,'sms'); }catch(ex){}
+}
+
+function getCleanPhone(phone){
+  if(!phone) return '';
+  var clean = phone.replace(/[\s\-\.\(\)]/g,'');
+  // Ajouter +221 si pas déjà présent
+  if(clean.startsWith('+')) return clean;
+  if(clean.startsWith('221')) return '+'+clean;
+  if(clean.startsWith('0')) return '+221'+clean.slice(1);
+  return '+221'+clean;
+}
+
+function lancerAppel(e){
+  if(e) e.preventDefault();
+  if(!currentDriver||!currentDriver.phone){ showToast('⚠️','Numéro non disponible','error'); return; }
+  var phone = getCleanPhone(currentDriver.phone);
+  var btn = document.getElementById('btn-appel');
+  if(btn) btn.href = 'tel:'+phone;
+  // Ouvre l'appel: fonctionne sur mobile + Windows Phone
+  window.location.href = 'tel:'+phone;
+  showToast('📞','Appel vers '+currentDriver.name,'success');
+  // Enregistrer l'appel
+  try{ addCallLog(currentDriver.name,'appel'); }catch(ex){}
+}
+
+function lancerSMS(e){
+  if(e) e.preventDefault();
+  if(!currentDriver||!currentDriver.phone){ showToast('⚠️','Numéro non disponible','error'); return; }
+  var phone = getCleanPhone(currentDriver.phone);
+  var nom = currentDriver.name || '';
+  var btn = document.getElementById('btn-sms');
+  // Message pré-rempli
+  var msg = encodeURIComponent('Bonjour '+nom+', votre compte Yango vous attend ! Reconnectez-vous pour continuer à faire des courses.');
+  var smsUrl = 'sms:'+phone+'?body='+msg;
+  if(btn) btn.href = smsUrl;
+  window.location.href = smsUrl;
+  showToast('💬','SMS vers '+currentDriver.name,'success');
+  try{ addCallLog(currentDriver.name,'sms'); }catch(ex){}
+}
 function quickReminder(){
   if(!currentDriver)return;
   const tom=new Date();tom.setDate(tom.getDate()+1);
@@ -4129,7 +4218,7 @@ var CURRENT_USER = JSON.parse(sessionStorage.getItem('yango_user') || 'null');
 var ROLE_PERMISSIONS = {
   directeur: {pages:['dashboard','rappels','chauffeurs','messages','coach','import','finances','equipe','settings'],voirFinances:true,label:'👑 Directeur',color:'#f5c518'},
   superviseur: {pages:['dashboard','rappels','chauffeurs','messages','coach','equipe'],voirFinances:false,label:'🎯 Superviseur',color:'#a78bfa'},
-  agent: {pages:['rappels','chauffeurs','messages','coach','equipe'],voirFinances:false,label:'👤 Agent',color:'#22d3a0'}
+  agent: {pages:['dashboard','rappels','chauffeurs','messages','coach','equipe'],voirFinances:false,label:'👤 Agent',color:'#22d3a0'}
 };
 
 function saveAuthUsers(){
@@ -4575,6 +4664,12 @@ async function selectParc(parcId){
   if(sb) sb.style.display = '';
 
   showToast('🚖', 'Parc '+CURRENT_PARC.nom+' — '+DRIVERS.length.toLocaleString()+' chauffeurs', 'success');
+  // FATHY toujours visible après sélection du parc
+  setTimeout(function(){
+    var fb=document.getElementById('fathy-bubble');
+    if(fb){fb.style.display='flex';fb.style.pointerEvents='all';}
+    showFathyProactif('dashboard');
+  }, 2000);
   var pnEl=document.getElementById('current-parc-name');
   if(pnEl) pnEl.textContent='Parc '+CURRENT_PARC.nom;
   applyUserPermissions(CURRENT_USER);
