@@ -1158,34 +1158,96 @@ function doLogin(){
       </div>
     </div>
 
+    <!-- SESSIONS EN TEMPS RÉEL -->
+    <div class="card mb16" id="section-sessions">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div class="ct" style="margin:0;">🟢 Agents connectés — Temps réel</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="sessions-counter" style="font-size:12px;color:var(--green);font-weight:600;">—</span>
+          <button class="btn btn-g btn-sm" onclick="refreshSessionsView()" style="font-size:11px;">🔄 Actualiser</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--mu2);margin-bottom:12px;">
+        Voyez qui est connecté en ce moment, sur quel parc ils travaillent et leur dernière activité. Mise à jour automatique toutes les 15 secondes.
+      </div>
+      <div id="sessions-live-list">
+        <div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">⏳ Chargement...</div>
+      </div>
+    </div>
+
     <!-- GESTION DES ACCÈS -->
     <div class="card mb16" id="section-acces">
-      <div class="ct">🔐 Gestion des accès agents</div>
-      <div style="font-size:12px;color:var(--mu2);margin-bottom:14px;">Créez des comptes pour vos agents avec des permissions limitées. Eux ne voient pas les finances.</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div class="ct" style="margin:0;">🔐 Gestion des accès agents</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-g btn-sm" onclick="forceSyncUsers()" style="font-size:11px;">🔄 Sync serveur</button>
+          <button class="btn btn-p btn-sm" onclick="toggleFormAcces()" id="btn-toggle-form" style="font-size:11px;">➕ Nouvel accès</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--mu2);margin-bottom:14px;">
+        Gérez les comptes agents. Chaque agent voit uniquement ses parcs assignés et ne voit jamais les finances.
+      </div>
 
       <!-- Liste utilisateurs -->
       <div id="acces-agents-list" style="margin-bottom:16px;"></div>
 
-      <!-- Ajouter un accès -->
-      <div style="background:var(--s2);border-radius:10px;padding:14px;">
-        <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:12px;">➕ Créer un accès</div>
+      <!-- Formulaire création accès (caché par défaut) -->
+      <div id="form-acces" style="display:none;background:var(--s2);border-radius:12px;padding:18px;border:1px solid rgba(245,197,24,.2);">
+        <div style="font-size:13px;font-weight:700;color:var(--acc);margin-bottom:16px;">➕ Créer un accès agent</div>
+        
+        <!-- Ligne 1: Nom + Identifiant -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div><label class="form-label">Nom complet</label><input class="form-input" id="acces-nom" placeholder="Ex: Aliou Cisse"/></div>
-          <div><label class="form-label">Identifiant (@)</label><input class="form-input" id="acces-username" placeholder="Ex: aliou"/></div>
-          <div><label class="form-label">Mot de passe</label><input class="form-input" type="password" id="acces-password" placeholder="Choisir un mot de passe"/></div>
-          <div><label class="form-label">Rôle</label>
+          <div>
+            <label class="form-label">👤 Nom complet</label>
+            <input class="form-input" id="acces-nom" placeholder="Ex: Aliou Cisse"/>
+          </div>
+          <div>
+            <label class="form-label">@ Identifiant (connexion)</label>
+            <input class="form-input" id="acces-username" placeholder="Ex: aliou" oninput="this.value=this.value.toLowerCase().replace(/\s/g,'')"/>
+          </div>
+        </div>
+
+        <!-- Ligne 2: Mot de passe + Rôle -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div>
+            <label class="form-label">🔑 Mot de passe</label>
+            <div style="position:relative;">
+              <input class="form-input" type="password" id="acces-password" placeholder="Choisir un mot de passe" style="padding-right:40px;"/>
+              <button onclick="toggleMdp()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:14px;">👁</button>
+            </div>
+          </div>
+          <div>
+            <label class="form-label">🎯 Rôle</label>
             <select class="form-input" id="acces-role">
               <option value="agent">👤 Agent — Rappels + Chauffeurs + FATHY</option>
-              <option value="superviseur">🎯 Superviseur — Agent + Tableau de bord + Équipe</option>
+              <option value="superviseur">🎯 Superviseur — + Dashboard + Équipe</option>
             </select>
           </div>
         </div>
-        <div style="background:rgba(245,197,24,.08);border-radius:8px;padding:10px;font-size:11px;color:var(--mu);margin-bottom:10px;">
-          ⚠️ Les agents ne voient <strong>jamais</strong> les finances, les chiffres CA/commission, ni cette page Paramètres.
+
+        <!-- Ligne 3: Parcs assignés -->
+        <div style="margin-bottom:14px;">
+          <label class="form-label">🚖 Parcs assignés <small style="color:var(--mu);font-weight:400;">(cochez les parcs accessibles)</small></label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-top:6px;" id="acces-parcs-checkboxes"></div>
+          <div style="margin-top:6px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--mu2);">
+              <input type="checkbox" id="acces-all-parcs" onchange="toggleAllParcsForm(this)" style="width:14px;height:14px;">
+              Tous les parcs (accès complet)
+            </label>
+          </div>
         </div>
-        <button class="btn btn-p" onclick="ajouterAcces()">🔐 Créer l'accès</button>
-        <button class="btn btn-g" onclick="forceSyncUsers()" style="margin-left:8px;">🔄 Forcer sync serveur</button>
+
+        <!-- Info permissions -->
+        <div style="background:rgba(245,197,24,.08);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--mu2);margin-bottom:14px;">
+          ⚠️ Les agents ne voient <strong>jamais</strong> : Finances · Commissions · CA · Cette page Paramètres
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-p" onclick="ajouterAcces()">🔐 Créer l'accès</button>
+          <button class="btn btn-g" onclick="toggleFormAcces()">Annuler</button>
+        </div>
       </div>
+
     </div>
 
     <!-- PRIMES CONFIGURABLES -->
@@ -3117,8 +3179,11 @@ function nav(id){
     setTimeout(function(){
       populateParcsForm();
       renderParcsSettings();
-      selectColor('#f5c518'); // initialiser couleur par défaut
+      selectColor('#f5c518');
+      startSessionsRefresh(); // Démarrer refresh sessions
     }, 100);
+  } else {
+    stopSessionsRefresh(); // Arrêter refresh quand on quitte settings
   }
   if(id==='equipe'){
     renderLeaderboard();renderAgents();renderRapportAgents();
@@ -4279,6 +4344,8 @@ window._asyncDoLogin = async function doLoginReal(){
 function loginSuccess(found){
   CURRENT_USER=found;
   sessionStorage.setItem('yango_user',JSON.stringify(found));
+  // Démarrer le ping de présence
+  startSessionPing();
   document.getElementById('login-screen').style.display='none';
   var sbUser=document.querySelector('.sb-user-name');if(sbUser) sbUser.textContent=found.nom||found.username;
   var sbRole=document.querySelector('.sb-user-role');var rl=(ROLE_PERMISSIONS[found.role]||{}).label||found.role;if(sbRole) sbRole.textContent=rl;
@@ -4288,7 +4355,13 @@ function loginSuccess(found){
 }
 
 function doLogout(){
+  // Signaler la déconnexion au serveur
+  if(CURRENT_USER){
+    fetch('/api/session/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:CURRENT_USER.id})}).catch(function(){});
+  }
+  if(window._pingInterval){ clearInterval(window._pingInterval); window._pingInterval=null; }
   sessionStorage.removeItem('yango_user');CURRENT_USER=null;
+  if(typeof CURRENT_PARC!=='undefined') CURRENT_PARC=null;
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('login-user').value='';document.getElementById('login-pass').value='';
 }
@@ -4483,6 +4556,153 @@ async function saveUserParcs(userId){
   
   document.getElementById('parcs-modal').remove();
   renderGestionAcces();
+}
+
+// ─── GESTION ACCÈS AMÉLIORÉE ──────────────────
+function toggleFormAcces(){
+  var form = document.getElementById('form-acces');
+  var btn = document.getElementById('btn-toggle-form');
+  if(!form) return;
+  var visible = form.style.display !== 'none';
+  form.style.display = visible ? 'none' : 'block';
+  if(btn) btn.textContent = visible ? '➕ Nouvel accès' : '✕ Fermer';
+  if(!visible){
+    populateParcsForm();
+    document.getElementById('acces-nom').focus();
+  }
+}
+
+function toggleMdp(){
+  var inp = document.getElementById('acces-password');
+  if(inp) inp.type = inp.type==='password' ? 'text' : 'password';
+}
+
+function toggleAllParcsForm(cb){
+  document.querySelectorAll('.new-parc-check').forEach(function(c){ c.checked = cb.checked; });
+}
+
+function populateParcsForm(){
+  var container = document.getElementById('acces-parcs-checkboxes');
+  if(!container) return;
+  var parcsList = typeof PARCS_LIST!=='undefined'&&PARCS_LIST.length ? PARCS_LIST : [
+    {id:'dakar',nom:'Dakar',couleur:'#f5c518'},
+    {id:'thies',nom:'Thiès',couleur:'#22d3a0'},
+    {id:'mbour',nom:'Mbour',couleur:'#a78bfa'},
+    {id:'kaolack',nom:'Kaolack',couleur:'#fb923c'},
+    {id:'ziguinchor',nom:'Ziguinchor',couleur:'#f87171'}
+  ];
+  container.innerHTML = '';
+  parcsList.filter(function(p){return p.actif!==false;}).forEach(function(p){
+    var lbl = document.createElement('label');
+    lbl.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--s0);border:1px solid '+p.couleur+'44;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;';
+    lbl.innerHTML = '<input type="checkbox" class="new-parc-check" data-id="'+p.id+'" style="width:15px;height:15px;accent-color:'+p.couleur+';">'+
+      '<span style="color:'+p.couleur+';">🚖 '+p.nom+'</span>';
+    container.appendChild(lbl);
+  });
+  // Cocher Dakar par défaut
+  var dakarCheck = container.querySelector('[data-id="dakar"]');
+  if(dakarCheck) dakarCheck.checked = true;
+}
+
+function renderGestionAcces(){
+  var el = document.getElementById('acces-agents-list');
+  if(!el) return;
+  if(!AUTH_USERS.length){
+    el.innerHTML = '<div style="text-align:center;color:var(--mu);padding:16px;font-size:12px;">Aucun agent créé</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  AUTH_USERS.forEach(function(u){
+    var perms = ROLE_PERMISSIONS[u.role] || {};
+    var parcsList = (u.parcs||[]).includes('all') ? ['Tous les parcs'] : (u.parcs||[]);
+    var parcsHtml = parcsList.map(function(p){
+      var parc = typeof PARCS_LIST!=='undefined' ? PARCS_LIST.find(function(x){return x.id===p;}) : null;
+      var col = parc ? parc.couleur : '#f5c518';
+      var nom = parc ? parc.nom : p;
+      return '<span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:600;">🚖 '+nom+'</span>';
+    }).join(' ');
+
+    var row = document.createElement('div');
+    row.style.cssText = 'background:var(--s2);border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:3px solid '+(perms.color||'#666')+';';
+
+    // Ligne 1: Avatar + Nom + Rôle + Statut
+    var top = document.createElement('div');
+    top.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;';
+    top.innerHTML =
+      '<div style="width:40px;height:40px;background:'+(perms.color||'#666')+';border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">'+(u.role==='directeur'?'👑':u.role==='superviseur'?'🎯':'👤')+'</div>'+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="font-weight:700;font-size:14px;">'+u.nom+'</div>'+
+        '<div style="font-size:11px;color:var(--mu);">@'+u.username+' · '+(perms.label||u.role)+'</div>'+
+      '</div>'+
+      '<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:'+(u.actif!==false?'rgba(34,211,160,.15)':'rgba(248,113,113,.15)')+';color:'+(u.actif!==false?'var(--green)':'var(--red)')+';">'+(u.actif!==false?'✅ Actif':'⛔ Suspendu')+'</span>';
+    row.appendChild(top);
+
+    // Ligne 2: Parcs assignés
+    var parcsRow = document.createElement('div');
+    parcsRow.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;';
+    parcsRow.innerHTML = '<span style="font-size:11px;color:var(--mu);">Parcs:</span> '+parcsHtml;
+    row.appendChild(parcsRow);
+
+    // Ligne 3: Boutons actions
+    var actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+
+    if(u.id !== 'dir_001'){
+      var uid = u.id;
+      // Bouton modifier parcs
+      var btnParcs = document.createElement('button');
+      btnParcs.className = 'btn btn-p btn-sm';
+      btnParcs.style.fontSize = '11px';
+      btnParcs.textContent = '🚖 Modifier parcs';
+      btnParcs.onclick = function(){ editUserParcs(uid); };
+      actions.appendChild(btnParcs);
+
+      // Bouton changer mot de passe
+      var btnMdp = document.createElement('button');
+      btnMdp.className = 'btn btn-g btn-sm';
+      btnMdp.style.fontSize = '11px';
+      btnMdp.textContent = '🔑 Changer MDP';
+      btnMdp.onclick = function(){ changerMdpAgent(uid); };
+      actions.appendChild(btnMdp);
+
+      // Bouton suspendre/activer
+      var btnToggle = document.createElement('button');
+      btnToggle.className = 'btn btn-g btn-sm';
+      btnToggle.style.fontSize = '11px';
+      btnToggle.textContent = u.actif!==false ? '⛔ Suspendre' : '✅ Activer';
+      btnToggle.onclick = function(){ toggleUserActif(uid); };
+      actions.appendChild(btnToggle);
+
+      // Bouton supprimer
+      var btnDel = document.createElement('button');
+      btnDel.className = 'btn btn-r btn-sm';
+      btnDel.style.fontSize = '11px';
+      btnDel.textContent = '🗑 Supprimer';
+      btnDel.onclick = function(){ supprimerUser(uid); };
+      actions.appendChild(btnDel);
+    } else {
+      var span = document.createElement('span');
+      span.style.cssText = 'font-size:11px;color:var(--mu);';
+      span.textContent = '🔒 Compte principal — non modifiable';
+      actions.appendChild(span);
+    }
+    row.appendChild(actions);
+    el.appendChild(row);
+  });
+}
+
+function changerMdpAgent(userId){
+  var user = AUTH_USERS.find(function(u){ return u.id===userId; });
+  if(!user) return;
+  var newMdp = prompt('Nouveau mot de passe pour '+user.nom+' (@'+user.username+'):');
+  if(!newMdp || newMdp.trim().length < 3){
+    showToast('⚠️','Mot de passe trop court (min 3 caractères)','error');
+    return;
+  }
+  user.password = newMdp.trim();
+  saveAuthUsers();
+  showToast('✅','Mot de passe de '+user.nom+' mis à jour !','success');
 }
 
 async function forceSyncUsers(){

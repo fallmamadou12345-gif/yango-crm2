@@ -234,6 +234,46 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// ─── SESSIONS ACTIVES ───────────────────────────────────
+const ACTIVE_SESSIONS = {}; // { userId: { nom, username, role, parc, lastSeen, ip } }
+
+// Ping de présence (appelé toutes les 30s par le client)
+app.post('/api/session/ping', (req, res) => {
+  const { userId, nom, username, role, parcId, parcNom } = req.body;
+  if(!userId) return res.json({success:false});
+  ACTIVE_SESSIONS[userId] = {
+    userId, nom, username, role,
+    parcId: parcId||'—', parcNom: parcNom||'—',
+    lastSeen: new Date().toISOString(),
+    ip: req.headers['x-forwarded-for']||req.socket.remoteAddress||'—'
+  };
+  res.json({success:true});
+});
+
+// Déconnexion
+app.post('/api/session/logout', (req, res) => {
+  const { userId } = req.body;
+  if(userId) delete ACTIVE_SESSIONS[userId];
+  res.json({success:true});
+});
+
+// Liste des sessions actives (directeur seulement)
+app.get('/api/sessions', (req, res) => {
+  const now = new Date();
+  // Nettoyer les sessions inactives depuis +2 minutes
+  Object.keys(ACTIVE_SESSIONS).forEach(id => {
+    const s = ACTIVE_SESSIONS[id];
+    const diff = (now - new Date(s.lastSeen)) / 1000;
+    if(diff > 120) delete ACTIVE_SESSIONS[id];
+  });
+  const sessions = Object.values(ACTIVE_SESSIONS).map(s => ({
+    ...s,
+    actif: (now - new Date(s.lastSeen)) / 1000 < 60,
+    derniereActivite: s.lastSeen
+  }));
+  res.json({success:true, sessions, total: sessions.length});
+});
+
 // ─── SANTÉ ──────────────────────────────────────────────
 app.get('/api/health',(req,res)=>res.json({status:'OK',version:'multi-parc-v1',parcs:readParcs().parcs?.length||0}));
 
