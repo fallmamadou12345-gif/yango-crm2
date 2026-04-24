@@ -1318,35 +1318,57 @@ function doLogin(){
   <!-- ══ GESTION ACCÈS ══ -->
   <div class="page" id="page-acces">
 
-    <!-- Header -->
-    <div style="background:linear-gradient(135deg,#0f0c29,#1a1040);border:1px solid rgba(245,197,24,.3);border-radius:var(--r3);padding:20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-      <div style="width:56px;height:56px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🔐</div>
+    <!-- HEADER -->
+    <div style="background:linear-gradient(135deg,#0f0c29,#1a1040);border:1px solid rgba(245,197,24,.3);border-radius:var(--r3);padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;">🔐</div>
       <div style="flex:1;">
-        <div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#f5c518;">Gestion des Accès</div>
-        <div style="font-size:12px;color:var(--mu2);margin-top:3px;">Créez des comptes · Affectez les parcs · Suivez les connexions</div>
+        <div style="font-family:Syne,sans-serif;font-size:22px;font-weight:800;color:#f5c518;">Gestion des Accès</div>
+        <div style="font-size:12px;color:var(--mu2);margin-top:2px;">Supervision · Connexions · Flux de travail · Affectation parcs</div>
       </div>
-      <button class="btn btn-p" onclick="toggleFormAcces()" id="btn-toggle-form2" style="font-size:12px;">➕ Nouvel accès</button>
+      <button class="btn btn-p" onclick="toggleFormAcces()" id="btn-toggle-form2">➕ Nouvel accès</button>
     </div>
 
-    <!-- SESSIONS EN TEMPS RÉEL -->
+    <!-- KPIs AGENTS -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;" id="acces-kpis">
+      <div style="background:var(--s2);border-radius:12px;padding:14px;text-align:center;border-top:3px solid #22d3a0;">
+        <div style="font-size:28px;font-weight:800;font-family:Syne,sans-serif;color:#22d3a0;" id="kpi-online">—</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px;">🟢 En ligne</div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:14px;text-align:center;border-top:3px solid var(--acc);">
+        <div style="font-size:28px;font-weight:800;font-family:Syne,sans-serif;color:var(--acc);" id="kpi-total-agents">—</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px;">👥 Agents total</div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:14px;text-align:center;border-top:3px solid #fb923c;">
+        <div style="font-size:28px;font-weight:800;font-family:Syne,sans-serif;color:#fb923c;" id="kpi-actions-today">—</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px;">⚡ Actions aujourd'hui</div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:14px;text-align:center;border-top:3px solid #a78bfa;">
+        <div style="font-size:28px;font-weight:800;font-family:Syne,sans-serif;color:#a78bfa;" id="kpi-parcs-actifs">—</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px;">🚖 Parcs actifs</div>
+      </div>
+    </div>
+
+    <!-- CONNEXIONS TEMPS RÉEL -->
     <div class="card mb16">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:10px;">
-          <div class="ct" style="margin:0;">🟢 Connexions en temps réel</div>
-          <span id="sessions-counter2" style="background:rgba(34,211,160,.15);color:#22d3a0;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">— en ligne</span>
+          <div class="ct" style="margin:0;">🟢 Supervision en temps réel</div>
+          <span id="sessions-counter2" style="background:rgba(34,211,160,.15);color:#22d3a0;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;">— en ligne</span>
         </div>
-        <button class="btn btn-g btn-sm" onclick="refreshSessionsView2()" style="font-size:11px;">🔄 Actualiser</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:11px;color:var(--mu);">Auto-refresh 15s</span>
+          <button class="btn btn-g btn-sm" onclick="refreshSessionsView2()" style="font-size:11px;">🔄</button>
+        </div>
       </div>
-      <div style="font-size:11px;color:var(--mu);margin-bottom:12px;">Mise à jour automatique toutes les 15 secondes</div>
       <div id="sessions-live-list2">
-        <div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">⏳ Chargement...</div>
+        <div style="text-align:center;color:var(--mu);padding:24px;">⏳ Chargement...</div>
       </div>
     </div>
 
     <!-- LISTE DES COMPTES -->
     <div class="card mb16">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-        <div class="ct" style="margin:0;">👥 Comptes agents</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div class="ct" style="margin:0;">👥 Comptes & Affectations</div>
         <button class="btn btn-g btn-sm" onclick="forceSyncUsers()" style="font-size:11px;">🔄 Sync serveur</button>
       </div>
       <div id="acces-agents-list2"></div>
@@ -1362,36 +1384,38 @@ function doLogin(){
         </div>
         <div>
           <label class="form-label">@ Identifiant</label>
-          <input class="form-input" id="acces-username2" placeholder="Ex: aliou" oninput="this.value=this.value.toLowerCase().replace(/\s/g,'')"/>
+          <input class="form-input" id="acces-username2" placeholder="Ex: aliou" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9]/g,'')"/>
         </div>
         <div>
           <label class="form-label">🔑 Mot de passe</label>
           <div style="position:relative;">
-            <input class="form-input" type="password" id="acces-password2" placeholder="Mot de passe" style="padding-right:40px;"/>
-            <button onclick="var i=document.getElementById('acces-password2');i.type=i.type==='password'?'text':'password'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);">👁</button>
+            <input class="form-input" type="password" id="acces-password2" placeholder="Mot de passe" style="padding-right:44px;"/>
+            <button onclick="var i=document.getElementById('acces-password2');i.type=i.type==='password'?'text':'password';" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">👁</button>
           </div>
         </div>
         <div>
           <label class="form-label">🎯 Rôle</label>
           <select class="form-input" id="acces-role2">
-            <option value="agent">👤 Agent</option>
-            <option value="superviseur">🎯 Superviseur</option>
+            <option value="agent">👤 Agent — Rappels + Chauffeurs + FATHY</option>
+            <option value="superviseur">🎯 Superviseur — + Dashboard + Équipe</option>
           </select>
         </div>
       </div>
+      <!-- Parcs -->
       <div style="margin-bottom:14px;">
-        <label class="form-label">🚖 Parcs assignés</label>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:6px;" id="acces-parcs2"></div>
-        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;cursor:pointer;font-size:12px;color:var(--mu2);">
-          <input type="checkbox" id="acces-all2" onchange="document.querySelectorAll('.parc-check2').forEach(function(c){c.checked=this.checked;}.bind(this))"> Tous les parcs
+        <label class="form-label">🚖 Parcs assignés <small style="color:var(--mu);font-weight:400;">(obligatoire)</small></label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:8px;" id="acces-parcs2"></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;font-size:12px;color:var(--mu2);padding:8px 12px;background:var(--s2);border-radius:8px;width:fit-content;">
+          <input type="checkbox" id="acces-all2" onchange="document.querySelectorAll('.parc-check2').forEach(function(c){c.checked=this.checked;}.bind(this))" style="width:15px;height:15px;">
+          👑 Tous les parcs (accès complet)
         </label>
       </div>
-      <div style="background:rgba(245,197,24,.08);border-radius:8px;padding:10px;font-size:11px;color:var(--mu2);margin-bottom:12px;">
-        ⚠️ Les agents ne voient jamais : Finances · CA · Commissions · Paramètres
+      <div style="background:rgba(245,197,24,.08);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--mu2);margin-bottom:14px;line-height:1.6;">
+        ⚠️ Les agents ne voient <strong>jamais</strong> : Finances · CA total · Commissions · Paramètres
       </div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-p" onclick="ajouterAcces2()">🔐 Créer l'accès</button>
-        <button class="btn btn-g" onclick="toggleFormAcces()">Annuler</button>
+        <button class="btn btn-g" onclick="var f=document.getElementById('form-acces2');if(f)f.style.display='none';var b=document.getElementById('btn-toggle-form2');if(b)b.textContent='➕ Nouvel accès';">Annuler</button>
       </div>
     </div>
 
@@ -3242,6 +3266,7 @@ function updateSaveCounts(){
 // TITLES défini plus haut
 
 function nav(id){
+  window._currentPage = id; // Track page for session
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('active');});
   var pg=document.getElementById('page-'+id);
@@ -5351,6 +5376,7 @@ function startSessionPing(){
 }
 function sendSessionPing(){
   if(!CURRENT_USER) return;
+  var sc = typeof SCORES!=='undefined'&&CURRENT_USER.id ? (SCORES[CURRENT_USER.id]||{}) : {};
   fetch('/api/session/ping',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       userId:   CURRENT_USER.id,
@@ -5358,7 +5384,14 @@ function sendSessionPing(){
       username: CURRENT_USER.username,
       role:     CURRENT_USER.role,
       parcId:   typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC?CURRENT_PARC.id:'—',
-      parcNom:  typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC?CURRENT_PARC.nom:'—'
+      parcNom:  typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC?CURRENT_PARC.nom:'—',
+      stats:{
+        rappels:   sc.rappels||0,
+        reactives: sc.reactives||0,
+        actives:   sc.actives||0,
+        total:     (sc.rappels||0)+(sc.reactives||0)+(sc.actives||0),
+        page:      window._currentPage||'—'
+      }
     })
   }).catch(function(){});
 }
@@ -5483,41 +5516,162 @@ function renderGestionAcces2(){
 }
 
 async function refreshSessionsView2(){
-  var el=document.getElementById('sessions-live-list2');
-  var counter=document.getElementById('sessions-counter2');
-  var badge=document.getElementById('badge-online');
+  var el = document.getElementById('sessions-live-list2');
+  var counter = document.getElementById('sessions-counter2');
+  var badge = document.getElementById('badge-online');
+  var kpiOnline = document.getElementById('kpi-online');
+  var kpiTotal = document.getElementById('kpi-total-agents');
+  var kpiActions = document.getElementById('kpi-actions-today');
+  var kpiParcs = document.getElementById('kpi-parcs-actifs');
   if(!el) return;
+
   try{
-    var r=await fetch('/api/sessions');
-    var data=await r.json();
-    var sessions=data.sessions||[];
-    var now=new Date();
-    var online=sessions.filter(function(s){return (now-new Date(s.derniereActivite))/1000<60;}).length;
-    if(counter) counter.textContent=online+' en ligne / '+sessions.length;
-    if(badge){badge.textContent=online;badge.style.display=online>0?'flex':'none';}
+    var r = await fetch('/api/sessions');
+    var data = await r.json();
+    var sessions = data.sessions || [];
+    var now = new Date();
+
+    // Calculer stats
+    var online = sessions.filter(function(s){
+      return (now - new Date(s.derniereActivite)) / 1000 < 60;
+    });
+    var totalActions = sessions.reduce(function(s,x){return s+(x.totalActions||0);}, 0);
+    var parcsActifs = [...new Set(sessions.map(function(s){return s.parcId;}).filter(function(p){return p&&p!=='—';}))]
+    .length;
+
+    // Update KPIs
+    if(kpiOnline) kpiOnline.textContent = online.length;
+    if(kpiTotal) kpiTotal.textContent = AUTH_USERS ? AUTH_USERS.length : '—';
+    if(kpiActions) kpiActions.textContent = totalActions;
+    if(kpiParcs) kpiParcs.textContent = parcsActifs;
+    if(counter) counter.textContent = online.length + ' en ligne / ' + sessions.length;
+    if(badge){ badge.textContent = online.length; badge.style.display = online.length > 0 ? 'flex' : 'none'; }
+
     if(!sessions.length){
-      el.innerHTML='<div style="text-align:center;color:var(--mu);padding:24px;font-size:13px;">👥 Aucun agent connecté actuellement</div>';
+      el.innerHTML = '<div style="text-align:center;padding:32px;"><div style="font-size:40px;margin-bottom:8px;">👥</div><div style="color:var(--mu);font-size:13px;">Aucun agent connecté actuellement</div><div style="color:var(--mu);font-size:11px;margin-top:4px;">Les agents apparaîtront ici dès leur connexion</div></div>';
       return;
     }
-    el.innerHTML='';
-    sessions.sort(function(a,b){return new Date(b.derniereActivite)-new Date(a.derniereActivite);});
-    sessions.forEach(function(s){
-      var diff=Math.round((now-new Date(s.derniereActivite))/1000);
-      var diffTxt=diff<60?'Il y a '+diff+'s':'Il y a '+Math.round(diff/60)+'min';
-      var isOnline=diff<60;
-      var roleIco=s.role==='directeur'?'👑':s.role==='superviseur'?'🎯':'👤';
-      var row=document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--s2);border-radius:10px;margin-bottom:8px;border-left:3px solid '+(isOnline?'#22d3a0':'var(--b1)')+';flex-wrap:wrap;';
-      row.innerHTML=
-        '<div style="width:12px;height:12px;border-radius:50%;flex-shrink:0;background:'+(isOnline?'#22d3a0':'#555')+';'+(isOnline?'box-shadow:0 0 8px #22d3a0;animation:fathy-float 2s ease-in-out infinite;':'')+'"></div>'+
-        '<span style="font-size:22px;">'+roleIco+'</span>'+
-        '<div style="flex:1;min-width:120px;"><div style="font-weight:700;font-size:13px;">'+s.nom+'</div><div style="font-size:11px;color:var(--mu);">@'+s.username+' · '+(s.role||'')+'</div></div>'+
-        '<div style="text-align:center;min-width:90px;"><div style="font-size:10px;color:var(--mu);">Parc actif</div><div style="font-size:13px;font-weight:700;color:var(--acc);">🚖 '+(s.parcNom||'—')+'</div></div>'+
-        '<div style="text-align:right;min-width:80px;"><div style="font-size:12px;font-weight:700;color:'+(isOnline?'#22d3a0':'var(--mu)')+';">'+(isOnline?'🟢 En ligne':'⚪ Inactif')+'</div><div style="font-size:10px;color:var(--mu);">'+diffTxt+'</div></div>';
-      el.appendChild(row);
+
+    el.innerHTML = '';
+    // Trier: en ligne d'abord, puis par activité
+    sessions.sort(function(a,b){
+      var aOnline = (now - new Date(a.derniereActivite)) / 1000 < 60 ? 1 : 0;
+      var bOnline = (now - new Date(b.derniereActivite)) / 1000 < 60 ? 1 : 0;
+      return bOnline - aOnline || (b.totalActions||0) - (a.totalActions||0);
     });
-  }catch(e){
-    if(el) el.innerHTML='<div style="color:var(--red);text-align:center;padding:16px;font-size:12px;">⚠️ '+e.message+'</div>';
+
+    sessions.forEach(function(s){
+      var diff = Math.round((now - new Date(s.derniereActivite)) / 1000);
+      var isOnline = diff < 60;
+      var diffTxt = diff < 60 ? diff+'s' : diff < 3600 ? Math.round(diff/60)+'min' : Math.round(diff/3600)+'h';
+      
+      // Temps connecté
+      var connDiff = s.connectedAt ? Math.round((now - new Date(s.connectedAt)) / 1000) : 0;
+      var connTxt = connDiff < 60 ? connDiff+'s' : connDiff < 3600 ? Math.round(connDiff/60)+'min' : Math.round(connDiff/3600)+'h '+(Math.round((connDiff%3600)/60))+'min';
+
+      var roleIco = s.role==='directeur'?'👑':s.role==='superviseur'?'🎯':'👤';
+      var roleColor = s.role==='directeur'?'#f5c518':s.role==='superviseur'?'#a78bfa':'#22d3a0';
+
+      // Score agent
+      var agentScore = typeof SCORES!=='undefined'&&SCORES[s.userId] ? SCORES[s.userId] : {};
+      var pts = agentScore.points || 0;
+      var rappels = s.rappels || agentScore.rappels || 0;
+      var reactives = s.reactives || agentScore.reactives || 0;
+      var actives = s.actives || agentScore.actives || 0;
+
+      // Page courante
+      var pageLabels = {
+        dashboard:'📊 Dashboard', rappels:'🔔 Rappels', chauffeurs:'🚗 Chauffeurs',
+        messages:'📱 Messages', coach:'🤖 FATHY', equipe:'👥 Équipe',
+        settings:'⚙️ Paramètres', acces:'🔐 Accès', import:'📥 Import', finances:'💰 Finances'
+      };
+      var pageLbl = pageLabels[s.pageCourante] || (s.pageCourante||'—');
+
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--s2);border-radius:14px;padding:16px;margin-bottom:10px;border-left:4px solid '+(isOnline?roleColor:'var(--b1)')+';transition:all .2s;';
+
+      // Ligne 1: Identité + statut
+      var html = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">';
+      // Avatar
+      html += '<div style="width:44px;height:44px;background:'+(isOnline?roleColor+'33':'var(--s0)')+';border:2px solid '+(isOnline?roleColor:'var(--b1)')+';border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">'+roleIco+'</div>';
+      // Nom + rôle
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px;">'+s.nom;
+      if(isOnline) html += '<span style="width:8px;height:8px;background:#22d3a0;border-radius:50%;display:inline-block;box-shadow:0 0 6px #22d3a0;animation:fathy-float 2s infinite;"></span>';
+      html += '</div>';
+      html += '<div style="font-size:11px;color:var(--mu);">@'+s.username+' · <span style="color:'+roleColor+';">'+s.role+'</span></div>';
+      html += '</div>';
+      // Statut connexion
+      html += '<div style="text-align:right;flex-shrink:0;">';
+      html += '<div style="font-size:12px;font-weight:700;color:'+(isOnline?'#22d3a0':'var(--mu)')+';">'+(isOnline?'🟢 En ligne':'⚪ Inactif')+'</div>';
+      html += '<div style="font-size:10px;color:var(--mu);">Dernière activité: '+diffTxt+'</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Ligne 2: Métriques en grille
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">';
+      
+      // Parc actif
+      html += '<div style="background:var(--s0);border-radius:8px;padding:8px;text-align:center;">';
+      html += '<div style="font-size:10px;color:var(--mu);margin-bottom:2px;">🚖 Parc</div>';
+      html += '<div style="font-size:12px;font-weight:700;color:var(--acc);">'+(s.parcNom||'—')+'</div>';
+      html += '</div>';
+
+      // Temps connecté
+      html += '<div style="background:var(--s0);border-radius:8px;padding:8px;text-align:center;">';
+      html += '<div style="font-size:10px;color:var(--mu);margin-bottom:2px;">⏱ Durée</div>';
+      html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;">'+(isOnline?connTxt:'—')+'</div>';
+      html += '</div>';
+
+      // Page courante
+      html += '<div style="background:var(--s0);border-radius:8px;padding:8px;text-align:center;">';
+      html += '<div style="font-size:10px;color:var(--mu);margin-bottom:2px;">📍 Écran</div>';
+      html += '<div style="font-size:11px;font-weight:600;color:var(--text);">'+(isOnline?pageLbl:'—')+'</div>';
+      html += '</div>';
+
+      // Score
+      html += '<div style="background:var(--s0);border-radius:8px;padding:8px;text-align:center;">';
+      html += '<div style="font-size:10px;color:var(--mu);margin-bottom:2px;">🏅 Score</div>';
+      html += '<div style="font-size:14px;font-weight:800;font-family:Syne,sans-serif;color:var(--acc);">'+pts+'</div>';
+      html += '</div>';
+
+      html += '</div>';
+
+      // Ligne 3: Flux de travail du jour
+      html += '<div style="background:var(--s0);border-radius:10px;padding:10px 14px;">';
+      html += '<div style="font-size:10px;color:var(--mu);margin-bottom:8px;font-weight:600;letter-spacing:.5px;">ACTIVITÉ DU JOUR</div>';
+      html += '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+      
+      var oa = typeof OBJECTIFS_AGENTS!=='undefined' ? OBJECTIFS_AGENTS : {rappelsMois:200,reactivMois:60,activMois:40};
+      var rappelPct = oa.rappelsMois > 0 ? Math.min(100, Math.round(rappels/(oa.rappelsMois/26)*100)) : 0;
+      var reactivPct = oa.reactivMois > 0 ? Math.min(100, Math.round(reactives/(oa.reactivMois/26)*100)) : 0;
+      var activPct = oa.activMois > 0 ? Math.min(100, Math.round(actives/(oa.activMois/26)*100)) : 0;
+
+      [[rappels,'📞','Rappels',rappelPct,'#22d3a0'],
+       [reactives,'🔄','Réactivés',reactivPct,'#fb923c'],
+       [actives,'🆕','Activés',activPct,'#a78bfa']
+      ].forEach(function(item){
+        var val=item[0],ico=item[1],lbl=item[2],pct=item[3],col=item[4];
+        html += '<div style="flex:1;min-width:70px;">';
+        html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
+        html += '<span style="font-size:11px;color:var(--mu);">'+ico+' '+lbl+'</span>';
+        html += '<span style="font-size:12px;font-weight:700;color:'+col+';">'+val+'</span>';
+        html += '</div>';
+        // Barre de progression
+        html += '<div style="background:var(--s2);border-radius:4px;height:4px;overflow:hidden;">';
+        html += '<div style="background:'+col+';height:100%;width:'+pct+'%;border-radius:4px;transition:width .5s;"></div>';
+        html += '</div>';
+        html += '<div style="font-size:9px;color:var(--mu);margin-top:2px;">'+pct+'% obj. journalier</div>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+
+      card.innerHTML = html;
+      el.appendChild(card);
+    });
+
+  } catch(e) {
+    if(el) el.innerHTML = '<div style="color:var(--red);text-align:center;padding:20px;font-size:12px;">⚠️ Erreur: '+e.message+'</div>';
   }
 }
 

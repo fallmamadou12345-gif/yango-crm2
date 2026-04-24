@@ -239,13 +239,22 @@ const ACTIVE_SESSIONS = {}; // { userId: { nom, username, role, parc, lastSeen, 
 
 // Ping de présence (appelé toutes les 30s par le client)
 app.post('/api/session/ping', (req, res) => {
-  const { userId, nom, username, role, parcId, parcNom } = req.body;
+  const { userId, nom, username, role, parcId, parcNom, stats } = req.body;
   if(!userId) return res.json({success:false});
+  const now = new Date().toISOString();
+  const existing = ACTIVE_SESSIONS[userId] || {};
   ACTIVE_SESSIONS[userId] = {
     userId, nom, username, role,
     parcId: parcId||'—', parcNom: parcNom||'—',
-    lastSeen: new Date().toISOString(),
-    ip: req.headers['x-forwarded-for']||req.socket.remoteAddress||'—'
+    lastSeen: now,
+    connectedAt: existing.connectedAt || now,
+    ip: req.headers['x-forwarded-for']||req.socket.remoteAddress||'—',
+    // Flux de travail
+    rappels:   stats?.rappels   ?? existing.rappels   ?? 0,
+    reactives: stats?.reactives ?? existing.reactives ?? 0,
+    actives:   stats?.actives   ?? existing.actives   ?? 0,
+    pageCourante: stats?.page   ?? existing.pageCourante ?? '—',
+    totalActions: stats?.total  ?? existing.totalActions ?? 0,
   };
   res.json({success:true});
 });
