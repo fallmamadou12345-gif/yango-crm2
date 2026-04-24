@@ -1509,6 +1509,20 @@ function doLogin(){
           <button class="scopy" onclick="copyCurrentScript()">📋 Copier</button>
           <div id="script-inner">—</div>
         </div>
+        <!-- Calculateur bonus recharge -->
+        <div style="background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.2);border-radius:10px;padding:12px;margin-top:10px;">
+          <div style="font-size:11px;font-weight:700;color:#f5c518;margin-bottom:8px;">🎁 Calculateur Bonus Recharge</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;background:var(--s2);border-radius:8px;padding:6px 10px;">
+              <span style="font-size:12px;color:var(--mu);">Recharge:</span>
+              <input type="number" id="calc-recharge" value="10000" min="1000" step="1000"
+                oninput="calcBonus()" style="width:80px;background:none;border:none;outline:none;color:var(--acc);font-weight:700;font-size:13px;font-family:Syne,sans-serif;"/>
+              <span style="font-size:11px;color:var(--mu);">FCFA</span>
+            </div>
+            <div style="font-size:18px;">→</div>
+            <div id="bonus-result" style="font-size:12px;line-height:1.6;"></div>
+          </div>
+        </div>
         <!-- Boutons d'action directs -->
         <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;" id="script-action-btns">
           <a id="panel-btn-appel" href="#" onclick="lancerAppel(event)" style="text-decoration:none;background:linear-gradient(135deg,#f5c518,#ff6b35);color:#000;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;">📞 Lancer l'appel</a>
@@ -3050,69 +3064,86 @@ function buildSystemPrompt(){
   var dormants = (stats.dormant||0) + (stats.alerte||0);
   var NL = '\n';
 
-  return 'Tu es FATHY, assistant IA expert VTC et partenaire Yango au Senegal.'+NL+NL+
+  return 'Tu es FATHY, assistant IA du Parc '+parcNom+', partenaire officiel Yango au Senegal.'+NL+NL+
 
-    '🏢 PARC: '+parcNom+' | Partenaire Yango Dakar'+NL+
-    '📊 '+total.toLocaleString()+' inscrits | '+actifs+' actifs | '+dormants+' dormants/alertes'+NL+NL+
+    '🏢 QUI SOMMES-NOUS — A BIEN COMPRENDRE:'+NL+
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'+NL+
+    'Nous sommes un PARTENAIRE YANGO, pas Yango lui-meme.'+NL+
+    'Notre role: INSCRIRE, FORMER, ASSISTER et SUIVRE les chauffeurs.'+NL+
+    'Nous aidons les chauffeurs a maximiser leurs revenus sur Yango.'+NL+NL+
+    'CE QUE NOUS POUVONS FAIRE:'+NL+
+    '✅ Inscrire de nouveaux chauffeurs sur la plateforme Yango'+NL+
+    '✅ Former les chauffeurs sur utilisation de l application'+NL+
+    '✅ Assister les chauffeurs: problemes de compte, recharge, navigation'+NL+
+    '✅ Suivre les performances et motiver les chauffeurs'+NL+
+    '✅ Rappeler les chauffeurs inactifs pour les relancer'+NL+
+    '✅ Aider a comprendre les commissions et revenus'+NL+
+    '✅ Contacter le Support Yango pour signaler un probleme d un chauffeur'+NL+NL+
+    'CE QUE NOUS NE POUVONS PAS FAIRE (pouvoir Yango uniquement):'+NL+
+    '❌ Debloquer un compte chauffeur (→ contacter Support Yango)'+NL+
+    '❌ Lever une sanction ou un blocage (→ Support Yango)'+NL+
+    '❌ Modifier les commandes ou courses dans le systeme (→ Yango)'+NL+
+    '❌ Changer le taux de commission Yango de 15% (→ fixe par Yango)'+NL+
+    '❌ Annuler des penalites infligees par Yango (→ Support Yango)'+NL+
+    '❌ Regler les problemes techniques de l application Yango (→ Support)'+NL+NL+
+    'QUAND UN CHAUFFEUR A UN BLOCAGE OU SANCTION:'+NL+
+    '→ Lui dire: "Je vais contacter le Support Yango pour toi"'+NL+
+    '→ Noter le probleme et escalader a Yango Support'+NL+
+    '→ Ne JAMAIS promettre de debloquer soi-meme'+NL+
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'+NL+NL+
 
-    '💡 COMPRENDRE LE MODELE ECONOMIQUE YANGO (TRES IMPORTANT):'+NL+
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'+NL+
-    'Les chauffeurs RECHARGENT leur solde pour recevoir des commandes.'+NL+
-    'Commission totale = 18% (Yango 15% + Partenaire 3%)'+NL+NL+
-    'FORMULE CLEE - Comment ca marche:'+NL+
-    '  Solde rechargé × (1 / 0.18) = Chiffre affaires généré'+NL+
-    '  Exemple: 1 000 FCFA rechargés → 1000 / 0.18 = 5 556 FCFA de CA'+NL+
-    '  Exemple: 7 200 FCFA rechargés → 7200 / 0.18 = 40 000 FCFA de CA'+NL+
-    '  Exemple: 18 000 FCFA rechargés → 18000 / 0.18 = 100 000 FCFA de CA'+NL+NL+
-    'FORMULE INVERSE - Combien recharger pour un CA cible:'+NL+
-    '  CA voulu × 0.18 = Montant a recharger'+NL+
-    '  Pour 40 000 FCFA de CA → 40 000 × 0.18 = 7 200 FCFA a recharger'+NL+
-    '  Pour 100 000 FCFA de CA → 100 000 × 0.18 = 18 000 FCFA a recharger'+NL+
-    '  Pour 200 000 FCFA de CA → 200 000 × 0.18 = 36 000 FCFA a recharger'+NL+NL+
-    'CALCUL DES GAINS PARTENAIRE:'+NL+
-    '  Commission partenaire = CA × 3% = Solde rechargé × (3/18)'+NL+
-    '  Exemple: 7 200 rechargés → CA 40 000 → Partenaire gagne 40 000 × 3% = 1 200 FCFA'+NL+
-    '  Exemple: 36 000 rechargés → CA 200 000 → Partenaire gagne 6 000 FCFA'+NL+NL+
-    'CALCUL GAINS CHAUFFEUR:'+NL+
-    '  Gain net chauffeur = CA - (CA × 18%) = CA × 82%'+NL+
-    '  Exemple: CA 40 000 → Chauffeur garde 40 000 × 82% = 32 800 FCFA'+NL+
-    '  Exemple: CA 100 000 → Chauffeur garde 82 000 FCFA'+NL+NL+
-    'COMMENT CONVAINCRE UN CHAUFFEUR DE RECHARGER:'+NL+
-    '  - Recharger 3 600 FCFA → faire 20 000 FCFA de courses (gain net 16 400 FCFA)'+NL+
-    '  - Recharger 9 000 FCFA → faire 50 000 FCFA de courses (gain net 41 000 FCFA)'+NL+
-    '  - Recharger 18 000 FCFA → faire 100 000 FCFA de courses (gain net 82 000 FCFA)'+NL+
-    '  Message cle: "Pour chaque 1 000 FCFA que tu recharges, tu peux faire 5 556 FCFA de courses!"'+NL+NL+
-    'QUAND UN CHAUFFEUR EST INACTIF:'+NL+
-    '  → Son solde est probablement a zero ou epuisé'+NL+
-    '  → Il faut le convaincre de recharger'+NL+
-    '  → Lui expliquer le ratio: 1 FCFA rechargé = 5.56 FCFA de CA potentiel'+NL+
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'+NL+NL+
+    '💡 MODELE ECONOMIQUE YANGO — RECHARGE SOLDE:'+NL+
+    'Les chauffeurs rechargent leur solde pour recevoir des commandes.'+NL+
+    'Commission totale 18% = Yango 15% + Partenaire '+commPart+'%'+NL+
+    'FORMULE: Solde recharge / 0.18 = Chiffre d affaires genere'+NL+
+    '  Ex: 1 000 FCFA recharges → 5 556 FCFA de CA'+NL+
+    '  Ex: 7 200 FCFA recharges → 40 000 FCFA de CA'+NL+
+    '  Ex: 18 000 FCFA recharges → 100 000 FCFA de CA'+NL+
+    'GAIN CHAUFFEUR: CA × 82% (il garde 82% de ses courses)'+NL+
+    'GAIN PARTENAIRE: CA × '+commPart+'% (notre commission)'+NL+NL+
 
-    '🚖 CONTEXTE VTC SENEGAL:'+NL+
-    '- Zones Dakar: Plateau, Almadies, Sacre-Coeur, Yoff, Guediawaye, Pikine'+NL+
-    '- Paiements: Wave/Orange Money preferés'+NL+
-    '- Periodes cles: Ramadan, Tabaski, Korite, weekends actifs'+NL+
-    '- Psychologie: respect, teranga, confiance, tutoiement respectueux'+NL+NL+
+    '📊 PARC ACTUEL: '+parcNom+NL+
+    total.toLocaleString()+' chauffeurs inscrits | '+actifs+' actifs | '+dormants+' a relancer'+NL+NL+
 
-    '📋 OBJECTIFS AGENTS - '+parcNom+':'+NL+
+    '📋 OBJECTIFS AGENTS:'+NL+
     'Jour: '+oa.rappelsJour+' rappels | '+oa.reactivJour+' reactivations | '+oa.activJour+' activations'+NL+
     'Mois: '+oa.rappelsMois+' rappels | '+oa.reactivMois+' reactivations | '+oa.activMois+' activations'+NL+NL+
 
-    '💰 BONUS CHAUFFEURS (JAMAIS reduire commission '+commPart+'%):'+NL+
-    '🥈 25k-50k FCFA/mois generes → +2 500 FCFA bonus'+NL+
-    '🥇 50k-100k → +7 500 FCFA | 💎 100k-200k → +20 000 FCFA | 👑 200k+ → +50 000 FCFA VIP'+NL+NL+
+    '💰 BONUS RECHARGE — NOTRE AVANTAGE CONCURRENTIEL:'+NL+
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'+NL+
+    'OFFRE BONUS: Pour chaque 10 000 FCFA recharges → +500 FCFA OFFERTS'+NL+
+    '  Exemple: Recharge 10 000 FCFA → recoit 10 500 FCFA de solde'+NL+
+    '  Exemple: Recharge 20 000 FCFA → recoit 21 000 FCFA de solde'+NL+
+    '  Exemple: Recharge 50 000 FCFA → recoit 52 500 FCFA de solde'+NL+
+    'FORMULE BONUS: (Montant recharge / 10 000) × 500 FCFA offerts'+NL+
+    'IMPACT SUR CA: (Montant + Bonus) / 0.18 = CA genere'+NL+
+    '  Ex: 10 000 + 500 bonus = 10 500 / 0.18 = 58 333 FCFA de CA'+NL+
+    '  vs sans bonus: 10 000 / 0.18 = 55 556 FCFA de CA'+NL+
+    '  GAIN SUPPLEMENTAIRE: 2 777 FCFA de CA grace au bonus!'+NL+NL+
+    'SCRIPT POUR CONVAINCRE AVEC LE BONUS:'+NL+
+    '  "Recharge 10 000 FCFA, on te donne 500 FCFA en plus = 10 500 de solde!'+NL+
+    '   Tu peux faire 58 333 FCFA de courses et garder 47 833 FCFA net."'+NL+
+    '  "Plus tu recharges, plus tu gagnes de bonus gratuits!"'+NL+
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'+NL+NL+
+    '🏆 BONUS PERFORMANCES MENSUELLES:'+NL+
+    '🥈 25k-50k FCFA/mois generes → +2 500 FCFA | 🥇 50k-100k → +7 500 FCFA'+NL+
+    '💎 100k-200k → +20 000 FCFA | 👑 200k+ → +50 000 FCFA VIP'+NL+NL+
 
-    '🎯 MISSIONS FATHY:'+NL+
-    '1. Chercher chauffeur par NOM/TEL/PERMIS → donner TOUS ses details+palier bonus'+NL+
-    '2. Taches URGENTES avec noms+telephones+gain FCFA'+NL+
-    '3. Scripts appel: convaincre de recharger avec calculs precis'+NL+
-    '4. Calculer combien recharger pour atteindre un objectif de CA'+NL+
-    '5. Evaluer agents et donner conseils management'+NL+NL+
+    '🚖 CONTEXTE TERRAIN SENEGAL:'+NL+
+    'Zones: Dakar Plateau, Almadies, Sacre-Coeur, Yoff, Guediawaye, Pikine'+NL+
+    'Paiements: Wave/Orange Money preferés par les chauffeurs'+NL+
+    'Periodes cles: Ramadan, Tabaski, Korite, weekends tres actifs'+NL+
+    'Psychologie: respect, teranga, tutoiement respectueux'+NL+NL+
 
-    '🚨 REGLES ABSOLUES:'+NL+
-    '- JAMAIS reduire commission | TOUJOURS donner tel+nom | TOUJOURS calculer FCFA'+NL+
-    '- Quand tu parles recharge: TOUJOURS montrer le ratio 1/0.18 et le gain net chauffeur'+NL+
-    '- Repondre TOUJOURS en francais, max 4 actions concretes';
+    '🎯 TES MISSIONS FATHY:'+NL+
+    '1. Aider agents a trouver et relancer les chauffeurs inactifs'+NL+
+    '2. Scripts d appel: convaincre de recharger (calculs FCFA precis)'+NL+
+    '3. Si blocage/sanction: "Contacter Support Yango" → JAMAIS promettre deblocage'+NL+
+    '4. Evaluer performance agents et donner conseils'+NL+
+    '5. Calculer revenus et commissions avec formule exacte'+NL+NL+
+
+    '💬 STYLE: Chaleureux, direct, precis en FCFA. Max 4 actions concretes.'+NL+
+    'TOUJOURS rappeler notre role de PARTENAIRE quand blocage/sanction mentionne.';
 }
 
 // Historique de conversation pour le contexte
@@ -5781,6 +5812,36 @@ async function renderDashboardAgents(){
   } catch(e) {
     console.warn('Dashboard agents:', e.message);
   }
+}
+
+
+// ══════════════════════════════
+// CALCULATEUR BONUS RECHARGE
+// ══════════════════════════════
+function calcBonus(){
+  var inp = document.getElementById('calc-recharge');
+  var res = document.getElementById('bonus-result');
+  if(!inp || !res) return;
+  var montant = parseFloat(inp.value) || 0;
+  if(montant <= 0){ res.innerHTML=''; return; }
+
+  var bonus = Math.floor(montant / 10000) * 500;
+  var total = montant + bonus;
+  var ca = Math.round(total / 0.18);
+  var gainChauffeur = Math.round(ca * 0.82);
+  var gainPartenaire = Math.round(ca * 0.03);
+
+  res.innerHTML =
+    '<span style="color:#22d3a0;font-weight:700;">+'+bonus.toLocaleString()+' FCFA bonus</span>'+
+    ' = <span style="color:#f5c518;font-weight:700;">'+total.toLocaleString()+' FCFA solde</span>'+
+    '<br><span style="font-size:11px;color:var(--mu);">CA: <strong style="color:var(--text)">'+ca.toLocaleString()+' FCFA</strong>'+
+    ' | Gain chauffeur: <strong style="color:#22d3a0">'+gainChauffeur.toLocaleString()+' FCFA</strong>'+
+    ' | Votre commission: <strong style="color:#f5c518">'+gainPartenaire.toLocaleString()+' FCFA</strong></span>';
+}
+
+// Initialiser le calcul au chargement du panel
+function initCalcBonus(){
+  setTimeout(calcBonus, 100);
 }
 
 
