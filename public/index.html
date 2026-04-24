@@ -393,6 +393,7 @@ function doLogin(){
     <div class="ni" onclick="nav('import')"><span class="ni-ic">📥</span>Import CSV</div>
     <div class="ni" onclick="nav('finances')"><span class="ni-ic">💰</span>Finances</div>
     <div class="ni" onclick="nav('equipe')"><span class="ni-ic">👥</span>Équipe</div>
+    <div class="ni" onclick="nav('acces')"><span class="ni-ic">🔐</span>Gestion Accès<span class="ni-badge red" id="badge-online" style="display:none">0</span></div>
     <div class="ni" onclick="nav('settings')"><span class="ni-ic">⚙️</span>Paramètres</div>
   </div>
   <div class="sb-bot">
@@ -1314,6 +1315,88 @@ function doLogin(){
     </div>
   </div>
 
+  <!-- ══ GESTION ACCÈS ══ -->
+  <div class="page" id="page-acces">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#0f0c29,#1a1040);border:1px solid rgba(245,197,24,.3);border-radius:var(--r3);padding:20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,#f5c518,#ff6b35);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🔐</div>
+      <div style="flex:1;">
+        <div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#f5c518;">Gestion des Accès</div>
+        <div style="font-size:12px;color:var(--mu2);margin-top:3px;">Créez des comptes · Affectez les parcs · Suivez les connexions</div>
+      </div>
+      <button class="btn btn-p" onclick="toggleFormAcces()" id="btn-toggle-form2" style="font-size:12px;">➕ Nouvel accès</button>
+    </div>
+
+    <!-- SESSIONS EN TEMPS RÉEL -->
+    <div class="card mb16">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="ct" style="margin:0;">🟢 Connexions en temps réel</div>
+          <span id="sessions-counter2" style="background:rgba(34,211,160,.15);color:#22d3a0;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">— en ligne</span>
+        </div>
+        <button class="btn btn-g btn-sm" onclick="refreshSessionsView2()" style="font-size:11px;">🔄 Actualiser</button>
+      </div>
+      <div style="font-size:11px;color:var(--mu);margin-bottom:12px;">Mise à jour automatique toutes les 15 secondes</div>
+      <div id="sessions-live-list2">
+        <div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">⏳ Chargement...</div>
+      </div>
+    </div>
+
+    <!-- LISTE DES COMPTES -->
+    <div class="card mb16">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div class="ct" style="margin:0;">👥 Comptes agents</div>
+        <button class="btn btn-g btn-sm" onclick="forceSyncUsers()" style="font-size:11px;">🔄 Sync serveur</button>
+      </div>
+      <div id="acces-agents-list2"></div>
+    </div>
+
+    <!-- FORMULAIRE CRÉATION -->
+    <div id="form-acces2" style="display:none;" class="card mb16">
+      <div style="font-size:14px;font-weight:800;color:var(--acc);margin-bottom:16px;">➕ Créer un accès agent</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label class="form-label">👤 Nom complet</label>
+          <input class="form-input" id="acces-nom2" placeholder="Ex: Aliou Cisse"/>
+        </div>
+        <div>
+          <label class="form-label">@ Identifiant</label>
+          <input class="form-input" id="acces-username2" placeholder="Ex: aliou" oninput="this.value=this.value.toLowerCase().replace(/\s/g,'')"/>
+        </div>
+        <div>
+          <label class="form-label">🔑 Mot de passe</label>
+          <div style="position:relative;">
+            <input class="form-input" type="password" id="acces-password2" placeholder="Mot de passe" style="padding-right:40px;"/>
+            <button onclick="var i=document.getElementById('acces-password2');i.type=i.type==='password'?'text':'password'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);">👁</button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">🎯 Rôle</label>
+          <select class="form-input" id="acces-role2">
+            <option value="agent">👤 Agent</option>
+            <option value="superviseur">🎯 Superviseur</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="form-label">🚖 Parcs assignés</label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:6px;" id="acces-parcs2"></div>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;cursor:pointer;font-size:12px;color:var(--mu2);">
+          <input type="checkbox" id="acces-all2" onchange="document.querySelectorAll('.parc-check2').forEach(function(c){c.checked=this.checked;}.bind(this))"> Tous les parcs
+        </label>
+      </div>
+      <div style="background:rgba(245,197,24,.08);border-radius:8px;padding:10px;font-size:11px;color:var(--mu2);margin-bottom:12px;">
+        ⚠️ Les agents ne voient jamais : Finances · CA · Commissions · Paramètres
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-p" onclick="ajouterAcces2()">🔐 Créer l'accès</button>
+        <button class="btn btn-g" onclick="toggleFormAcces()">Annuler</button>
+      </div>
+    </div>
+
+  </div><!-- end page-acces -->
+
   </div><!-- end content -->
 </div><!-- end main -->
 
@@ -1696,7 +1779,7 @@ const TODAY=new Date().toISOString().split('T')[0];
 // ═══════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════
-const TITLES={dashboard:'Dashboard',rappels:'Rappels & Alertes',chauffeurs:'Chauffeurs CRM',messages:'WhatsApp / SMS',coach:'FATHY',import:'Import CSV',finances:'Finances',equipe:'Équipe & Agents'};
+const TITLES={dashboard:'Dashboard',rappels:'Rappels & Alertes',chauffeurs:'Chauffeurs CRM',messages:'WhatsApp / SMS',coach:'FATHY',import:'Import CSV',finances:'Finances',equipe:'Équipe & Agents', acces:'Gestion des Accès'};
 // nav() défini dans paramètres
 function filterNav(seg){currentFilter=seg;nav('chauffeurs');renderTable();}
 
@@ -3180,10 +3263,19 @@ function nav(id){
       populateParcsForm();
       renderParcsSettings();
       selectColor('#f5c518');
-      startSessionsRefresh(); // Démarrer refresh sessions
+      startSessionsRefresh();
     }, 100);
-  } else {
-    stopSessionsRefresh(); // Arrêter refresh quand on quitte settings
+  }
+  if(id==='acces'){
+    renderAccesPage();
+    // Auto-refresh sessions toutes les 15s
+    if(window._accesRefresh) clearInterval(window._accesRefresh);
+    window._accesRefresh = setInterval(function(){
+      refreshSessionsView2();
+    }, 15000);
+  } else if(id!=='settings') {
+    if(window._accesRefresh){ clearInterval(window._accesRefresh); window._accesRefresh=null; }
+    stopSessionsRefresh();
   }
   if(id==='equipe'){
     renderLeaderboard();renderAgents();renderRapportAgents();
@@ -4267,7 +4359,7 @@ var AUTH_USERS = JSON.parse(localStorage.getItem('yango_auth_users') || JSON.str
 var CURRENT_USER = JSON.parse(sessionStorage.getItem('yango_user') || 'null');
 
 var ROLE_PERMISSIONS = {
-  directeur: {pages:['dashboard','rappels','chauffeurs','messages','coach','import','finances','equipe','settings'],voirFinances:true,label:'👑 Directeur',color:'#f5c518'},
+  directeur: {pages:['dashboard','rappels','chauffeurs','messages','coach','import','finances','equipe','acces','settings'],voirFinances:true,label:'👑 Directeur',color:'#f5c518'},
   superviseur: {pages:['dashboard','rappels','chauffeurs','messages','coach','equipe'],voirFinances:false,label:'🎯 Superviseur',color:'#a78bfa'},
   agent: {pages:['dashboard','rappels','chauffeurs','messages','coach','equipe'],voirFinances:false,label:'👤 Agent',color:'#22d3a0'}
 };
@@ -5245,6 +5337,187 @@ function autoFillParcId(){
     id.value = nom.value.toLowerCase()
       .normalize('NFD').replace(/\p{Diacritic}/gu,'')
       .replace(/\s+/g,'').replace(/[^a-z0-9]/g,'');
+  }
+}
+
+
+// ══════════════════════════════════════════
+// SESSIONS — PING DE PRÉSENCE
+// ══════════════════════════════════════════
+function startSessionPing(){
+  if(window._pingInterval) clearInterval(window._pingInterval);
+  sendSessionPing();
+  window._pingInterval = setInterval(sendSessionPing, 30000);
+}
+function sendSessionPing(){
+  if(!CURRENT_USER) return;
+  fetch('/api/session/ping',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      userId:   CURRENT_USER.id,
+      nom:      CURRENT_USER.nom||CURRENT_USER.username,
+      username: CURRENT_USER.username,
+      role:     CURRENT_USER.role,
+      parcId:   typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC?CURRENT_PARC.id:'—',
+      parcNom:  typeof CURRENT_PARC!=='undefined'&&CURRENT_PARC?CURRENT_PARC.nom:'—'
+    })
+  }).catch(function(){});
+}
+
+// ══════════════════════════════════════════
+// PAGE GESTION ACCÈS
+// ══════════════════════════════════════════
+function renderAccesPage(){
+  renderGestionAcces2();
+  refreshSessionsView2();
+  populateParcsForm2();
+  fetch('/api/sessions').then(function(r){return r.json();}).then(function(d){
+    var online=(d.sessions||[]).filter(function(s){
+      return (new Date()-new Date(s.derniereActivite))/1000<60;
+    }).length;
+    var badge=document.getElementById('badge-online');
+    if(badge){badge.textContent=online;badge.style.display=online>0?'flex':'none';}
+  }).catch(function(){});
+}
+
+function populateParcsForm2(){
+  var container=document.getElementById('acces-parcs2');
+  if(!container) return;
+  var list=typeof PARCS_LIST!=='undefined'&&PARCS_LIST.length?PARCS_LIST:[
+    {id:'dakar',nom:'Dakar',couleur:'#f5c518'},
+    {id:'thies',nom:'Thiès',couleur:'#22d3a0'},
+    {id:'mbour',nom:'Mbour',couleur:'#a78bfa'},
+    {id:'kaolack',nom:'Kaolack',couleur:'#fb923c'},
+    {id:'ziguinchor',nom:'Ziguinchor',couleur:'#f87171'}
+  ];
+  container.innerHTML='';
+  list.filter(function(p){return p.actif!==false;}).forEach(function(p){
+    var lbl=document.createElement('label');
+    lbl.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--s2);border:1px solid '+p.couleur+'44;border-radius:8px;cursor:pointer;font-size:12px;';
+    lbl.innerHTML='<input type="checkbox" class="parc-check2" data-id="'+p.id+'" style="accent-color:'+p.couleur+';width:15px;height:15px;"><span style="color:'+p.couleur+';font-weight:600;">🚖 '+p.nom+'</span>';
+    container.appendChild(lbl);
+  });
+  var dk=container.querySelector('[data-id="dakar"]');
+  if(dk) dk.checked=true;
+}
+
+async function ajouterAcces2(){
+  var nom=(document.getElementById('acces-nom2')||{}).value||'';
+  var user=(document.getElementById('acces-username2')||{}).value||'';
+  var pass=(document.getElementById('acces-password2')||{}).value||'';
+  var role=(document.getElementById('acces-role2')||{}).value||'agent';
+  nom=nom.trim();user=user.trim().toLowerCase();pass=pass.trim();
+  if(!nom||!user||!pass){showToast('⚠️','Remplissez tous les champs','error');return;}
+  if(AUTH_USERS.find(function(u){return u.username===user;})){showToast('⚠️','@'+user+' existe déjà','error');return;}
+  var allCheck=document.getElementById('acces-all2');
+  var parcs=[];
+  if(allCheck&&allCheck.checked){parcs=['all'];}
+  else{
+    document.querySelectorAll('.parc-check2:checked').forEach(function(c){parcs.push(c.dataset.id);});
+    if(!parcs.length) parcs=['dakar'];
+  }
+  AUTH_USERS.push({id:'u_'+Date.now(),username:user,password:pass,nom:nom,role:role,parcs:parcs,actif:true});
+  localStorage.setItem('yango_auth_users',JSON.stringify(AUTH_USERS));
+  try{
+    var r=await fetch('/api/users-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({users:AUTH_USERS})});
+    var d=await r.json();
+    if(d.success) showToast('✅','@'+user+' créé — Parcs: '+parcs.join(', '),'success');
+    else showToast('⚠️','Erreur serveur','error');
+  }catch(e){showToast('⚠️',e.message,'error');}
+  ['acces-nom2','acces-username2','acces-password2'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var f=document.getElementById('form-acces2');if(f)f.style.display='none';
+  var btn=document.getElementById('btn-toggle-form2');if(btn)btn.textContent='➕ Nouvel accès';
+  renderAccesPage();
+}
+
+function renderGestionAcces2(){
+  var el=document.getElementById('acces-agents-list2');
+  if(!el) return;
+  if(!AUTH_USERS.length){
+    el.innerHTML='<div style="text-align:center;color:var(--mu);padding:20px;font-size:12px;">Aucun compte créé</div>';
+    return;
+  }
+  el.innerHTML='';
+  AUTH_USERS.forEach(function(u){
+    var perms=ROLE_PERMISSIONS[u.role]||{};
+    var parcsArr=(u.parcs||[]).includes('all')?null:(u.parcs||[]);
+    var row=document.createElement('div');
+    row.style.cssText='background:var(--s2);border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:3px solid '+(perms.color||'#666')+';';
+    // TOP
+    var top=document.createElement('div');
+    top.style.cssText='display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;';
+    top.innerHTML=
+      '<div style="width:42px;height:42px;background:'+(perms.color||'#888')+';border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">'+(u.role==='directeur'?'👑':u.role==='superviseur'?'🎯':'👤')+'</div>'+
+      '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">'+u.nom+'</div><div style="font-size:11px;color:var(--mu);">@'+u.username+' · '+(perms.label||u.role)+'</div></div>'+
+      '<span style="padding:3px 10px;border-radius:20px;font-size:11px;background:'+(u.actif!==false?'rgba(34,211,160,.15)':'rgba(248,113,113,.15)')+';color:'+(u.actif!==false?'var(--green)':'var(--red)')+';">'+(u.actif!==false?'✅ Actif':'⛔ Suspendu')+'</span>';
+    row.appendChild(top);
+    // PARCS
+    var pd=document.createElement('div');
+    pd.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;';
+    pd.innerHTML='<span style="font-size:11px;color:var(--mu);">Parcs:</span>';
+    var pList=parcsArr||PARCS_LIST.map(function(p){return p.id;});
+    pList.forEach(function(pid){
+      var parc=typeof PARCS_LIST!=='undefined'?PARCS_LIST.find(function(x){return x.id===pid;}):null;
+      var col=parc?parc.couleur:'#f5c518';
+      var nom=parc?parc.nom:(parcsArr?pid:'Tous');
+      var sp=document.createElement('span');
+      sp.style.cssText='background:'+col+'22;color:'+col+';border:1px solid '+col+'44;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;';
+      sp.textContent='🚖 '+nom;
+      pd.appendChild(sp);
+    });
+    row.appendChild(pd);
+    // ACTIONS
+    if(u.id!=='dir_001'){
+      var uid=u.id;
+      var ac=document.createElement('div');
+      ac.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
+      var b1=document.createElement('button');b1.className='btn btn-p btn-sm';b1.style.fontSize='11px';b1.textContent='🚖 Parcs';b1.onclick=function(){editUserParcs(uid);};ac.appendChild(b1);
+      var b2=document.createElement('button');b2.className='btn btn-g btn-sm';b2.style.fontSize='11px';b2.textContent='🔑 MDP';b2.onclick=function(){changerMdpAgent(uid);};ac.appendChild(b2);
+      var b3=document.createElement('button');b3.className='btn btn-g btn-sm';b3.style.fontSize='11px';b3.textContent=u.actif!==false?'⛔ Suspendre':'✅ Activer';b3.onclick=function(){toggleUserActif(uid);renderAccesPage();};ac.appendChild(b3);
+      var b4=document.createElement('button');b4.className='btn btn-r btn-sm';b4.style.fontSize='11px';b4.textContent='🗑';b4.onclick=function(){supprimerUser(uid);renderAccesPage();};ac.appendChild(b4);
+      row.appendChild(ac);
+    } else {
+      var sp2=document.createElement('span');sp2.style.cssText='font-size:11px;color:var(--mu);';sp2.textContent='🔒 Compte principal';row.appendChild(sp2);
+    }
+    el.appendChild(row);
+  });
+}
+
+async function refreshSessionsView2(){
+  var el=document.getElementById('sessions-live-list2');
+  var counter=document.getElementById('sessions-counter2');
+  var badge=document.getElementById('badge-online');
+  if(!el) return;
+  try{
+    var r=await fetch('/api/sessions');
+    var data=await r.json();
+    var sessions=data.sessions||[];
+    var now=new Date();
+    var online=sessions.filter(function(s){return (now-new Date(s.derniereActivite))/1000<60;}).length;
+    if(counter) counter.textContent=online+' en ligne / '+sessions.length;
+    if(badge){badge.textContent=online;badge.style.display=online>0?'flex':'none';}
+    if(!sessions.length){
+      el.innerHTML='<div style="text-align:center;color:var(--mu);padding:24px;font-size:13px;">👥 Aucun agent connecté actuellement</div>';
+      return;
+    }
+    el.innerHTML='';
+    sessions.sort(function(a,b){return new Date(b.derniereActivite)-new Date(a.derniereActivite);});
+    sessions.forEach(function(s){
+      var diff=Math.round((now-new Date(s.derniereActivite))/1000);
+      var diffTxt=diff<60?'Il y a '+diff+'s':'Il y a '+Math.round(diff/60)+'min';
+      var isOnline=diff<60;
+      var roleIco=s.role==='directeur'?'👑':s.role==='superviseur'?'🎯':'👤';
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--s2);border-radius:10px;margin-bottom:8px;border-left:3px solid '+(isOnline?'#22d3a0':'var(--b1)')+';flex-wrap:wrap;';
+      row.innerHTML=
+        '<div style="width:12px;height:12px;border-radius:50%;flex-shrink:0;background:'+(isOnline?'#22d3a0':'#555')+';'+(isOnline?'box-shadow:0 0 8px #22d3a0;animation:fathy-float 2s ease-in-out infinite;':'')+'"></div>'+
+        '<span style="font-size:22px;">'+roleIco+'</span>'+
+        '<div style="flex:1;min-width:120px;"><div style="font-weight:700;font-size:13px;">'+s.nom+'</div><div style="font-size:11px;color:var(--mu);">@'+s.username+' · '+(s.role||'')+'</div></div>'+
+        '<div style="text-align:center;min-width:90px;"><div style="font-size:10px;color:var(--mu);">Parc actif</div><div style="font-size:13px;font-weight:700;color:var(--acc);">🚖 '+(s.parcNom||'—')+'</div></div>'+
+        '<div style="text-align:right;min-width:80px;"><div style="font-size:12px;font-weight:700;color:'+(isOnline?'#22d3a0':'var(--mu)')+';">'+(isOnline?'🟢 En ligne':'⚪ Inactif')+'</div><div style="font-size:10px;color:var(--mu);">'+diffTxt+'</div></div>';
+      el.appendChild(row);
+    });
+  }catch(e){
+    if(el) el.innerHTML='<div style="color:var(--red);text-align:center;padding:16px;font-size:12px;">⚠️ '+e.message+'</div>';
   }
 }
 
