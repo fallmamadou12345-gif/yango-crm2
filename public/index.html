@@ -3248,6 +3248,12 @@ function updateSaveStatus(){
   var el2=document.getElementById('save-status');
   if(el2) el2.textContent='Sauvegarde auto · '+t;
   updateSaveCounts();
+  // Section agents pour directeur
+  if(CURRENT_USER&&CURRENT_USER.role==='directeur'){
+    var das=document.getElementById('dashboard-agents-section');
+    if(das) das.style.display='block';
+    renderDashboardAgents();
+  }
 }
 
 function updateSaveCounts(){
@@ -5672,6 +5678,108 @@ async function refreshSessionsView2(){
 
   } catch(e) {
     if(el) el.innerHTML = '<div style="color:var(--red);text-align:center;padding:20px;font-size:12px;">⚠️ Erreur: '+e.message+'</div>';
+  }
+}
+
+
+// ══════════════════════════════════════════════
+// DASHBOARD AGENTS — MINI CARDS TEMPS RÉEL
+// ══════════════════════════════════════════════
+async function renderDashboardAgents(){
+  var el = document.getElementById('dashboard-agents-list');
+  if(!el) return;
+
+  try{
+    var r = await fetch('/api/sessions');
+    var data = await r.json();
+    var sessions = data.sessions || [];
+    var now = new Date();
+
+    // Fusionner sessions actives avec liste AUTH_USERS
+    var allAgents = (AUTH_USERS||[]).filter(function(u){ return u.id !== 'dir_001'; });
+    if(!allAgents.length){ el.style.display='none'; return; }
+
+    el.innerHTML = '';
+    allAgents.forEach(function(agent){
+      var session = sessions.find(function(s){ return s.userId === agent.id; });
+      var isOnline = session && (now - new Date(session.derniereActivite)) / 1000 < 60;
+      var perms = ROLE_PERMISSIONS[agent.role] || {};
+
+      // Score
+      var sc = typeof SCORES!=='undefined'&&SCORES[agent.id] ? SCORES[agent.id] : {};
+      var pts = sc.points || 0;
+      var rappels = (session&&session.rappels) || sc.rappels || 0;
+      var reactives = (session&&session.reactives) || sc.reactives || 0;
+
+      // Objectifs journaliers
+      var oa = typeof OBJECTIFS_AGENTS!=='undefined' ? OBJECTIFS_AGENTS : {rappelsJour:10, reactivJour:3};
+      var rappelPct = oa.rappelsJour > 0 ? Math.min(100, Math.round(rappels/oa.rappelsJour*100)) : 0;
+
+      // Page courante
+      var pageLabels = {dashboard:'Dashboard',rappels:'Rappels',chauffeurs:'Chauffeurs',
+        messages:'Messages',coach:'FATHY',equipe:'Équipe',import:'Import'};
+      var pageLbl = session ? (pageLabels[session.pageCourante]||session.pageCourante||'—') : '—';
+
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--s2);border-radius:12px;padding:12px 14px;border-left:3px solid '+(isOnline?perms.color||'#22d3a0':'var(--b1)')+';cursor:pointer;transition:all .2s;';
+      card.onclick = function(){ nav('acces'); };
+      card.onmouseover = function(){ this.style.background='var(--s1)'; };
+      card.onmouseout = function(){ this.style.background='var(--s2)'; };
+
+      card.innerHTML =
+        // Ligne 1: Nom + statut
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'+
+          '<div style="display:flex;align-items:center;gap:8px;">'+
+            '<span style="font-size:18px;">'+(agent.role==='superviseur'?'🎯':'👤')+'</span>'+
+            '<div>'+
+              '<div style="font-weight:700;font-size:12px;line-height:1.2;">'+agent.nom+'</div>'+
+              '<div style="font-size:10px;color:var(--mu);">@'+agent.username+'</div>'+
+            '</div>'+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:4px;">'+
+            '<div style="width:8px;height:8px;border-radius:50%;background:'+(isOnline?'#22d3a0':'#555')+';'+(isOnline?'box-shadow:0 0 5px #22d3a0;':'')+'"></div>'+
+            '<span style="font-size:10px;font-weight:600;color:'+(isOnline?'#22d3a0':'var(--mu)')+';">'+(isOnline?'En ligne':'Hors ligne')+'</span>'+
+          '</div>'+
+        '</div>'+
+        // Ligne 2: Stats
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;">'+
+          '<div style="background:var(--s0);border-radius:6px;padding:5px;text-align:center;">'+
+            '<div style="font-size:14px;font-weight:800;color:var(--acc);">'+pts+'</div>'+
+            '<div style="font-size:9px;color:var(--mu);">pts</div>'+
+          '</div>'+
+          '<div style="background:var(--s0);border-radius:6px;padding:5px;text-align:center;">'+
+            '<div style="font-size:14px;font-weight:800;color:#22d3a0;">'+rappels+'</div>'+
+            '<div style="font-size:9px;color:var(--mu);">rappels</div>'+
+          '</div>'+
+          '<div style="background:var(--s0);border-radius:6px;padding:5px;text-align:center;">'+
+            '<div style="font-size:14px;font-weight:800;color:#fb923c;">'+reactives+'</div>'+
+            '<div style="font-size:9px;color:var(--mu);">réactivés</div>'+
+          '</div>'+
+        '</div>'+
+        // Ligne 3: Parc + page + barre progression
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+          '<span style="font-size:10px;color:var(--acc);font-weight:600;">🚖 '+(isOnline&&session?session.parcNom:(agent.parcs&&!agent.parcs.includes('all')?agent.parcs[0]:'—'))+'</span>'+
+          '<span style="font-size:10px;color:var(--mu);">'+(isOnline?'📍 '+pageLbl:'—')+'</span>'+
+        '</div>'+
+        '<div style="background:var(--s0);border-radius:4px;height:4px;overflow:hidden;">'+
+          '<div style="background:'+(rappelPct>=100?'#22d3a0':rappelPct>=50?'#f5c518':'#fb923c')+';height:100%;width:'+rappelPct+'%;border-radius:4px;transition:width .5s;"></div>'+
+        '</div>'+
+        '<div style="font-size:9px;color:var(--mu);margin-top:2px;">'+rappelPct+'% objectif rappels</div>';
+
+      el.appendChild(card);
+    });
+
+    // Auto-refresh toutes les 30s si on est sur le dashboard
+    if(!window._dashAgentsRefresh){
+      window._dashAgentsRefresh = setInterval(function(){
+        if(window._currentPage==='dashboard'&&CURRENT_USER&&CURRENT_USER.role==='directeur'){
+          renderDashboardAgents();
+        }
+      }, 30000);
+    }
+
+  } catch(e) {
+    console.warn('Dashboard agents:', e.message);
   }
 }
 
