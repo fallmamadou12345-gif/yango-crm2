@@ -1849,7 +1849,13 @@ const TODAY=new Date().toISOString().split('T')[0];
 // ═══════════════════════════════════════════
 const TITLES={dashboard:'Dashboard',rappels:'Rappels & Alertes',chauffeurs:'Chauffeurs CRM',messages:'WhatsApp / SMS',coach:'FATHY',import:'Import CSV',finances:'Finances',equipe:'Équipe & Agents', acces:'Gestion des Accès'};
 // nav() défini dans paramètres
-function filterNav(seg){currentFilter=seg;nav('chauffeurs');renderTable();}
+function filterNav(seg){
+  currentFilter=seg;
+  window._searchQuery='';
+  var inp=document.getElementById('gsearch');
+  if(inp) inp.value='';
+  nav('chauffeurs');
+}
 
 // ═══════════════════════════════════════════
 // DASHBOARD
@@ -2113,21 +2119,40 @@ function setFilter(f){
   currentFilter=f;currentPage=1;
   document.querySelectorAll('[id^="f-"]').forEach(b=>b.style.fontWeight='400');
   const btn=document.getElementById('f-'+f);if(btn)btn.style.fontWeight='700';
-  renderTable();
+  renderTable(window._searchQuery||'');
 }
 function getFiltered(q){
-  q=q||'';
+  // Use passed query OR global search var
+  q = (q !== undefined && q !== null) ? q : (window._searchQuery || '');
+  q = (q||'').trim();
   var d=DRIVERS.slice();
+  // Apply segment filter
   if(currentFilter==='tous'){ /* tous */ }
   else if(currentFilter==='Actif'){
     d=d.filter(function(x){return x.segment==='Actif 2j'||x.segment==='Actif 7j'||x.segment==='Alerte 14j'||x.segment==='Alerte 30j';});
   } else {
     d=d.filter(function(x){return x.segment===currentFilter;});
   }
-  if(q) d=d.filter(function(x){return x.name.toLowerCase().includes(q.toLowerCase())||(x.phone||'').includes(q);});
+  // Apply text search across all relevant fields
+  if(q){
+    var ql=q.toLowerCase().replace(/\s/g,'');
+    d=d.filter(function(x){
+      var name=(x.name||'').toLowerCase().replace(/\s/g,'');
+      var phone=(x.phone||'').replace(/[\s\-\.]/g,'');
+      var permis=(x.permis||'').toLowerCase();
+      var plaque=(x.plaque||'').toLowerCase().replace(/\s/g,'');
+      var vehicule=(x.vehicule||'').toLowerCase();
+      return name.includes(ql)
+          || phone.includes(ql)
+          || permis.includes(ql)
+          || plaque.includes(ql)
+          || vehicule.includes(ql);
+    });
+  }
   return d;
 }
-function renderTable(q=''){
+function renderTable(q){
+  if(q === undefined || q === null) q = window._searchQuery || '';
   filteredDrivers=getFiltered(q);
   // Appliquer le tri
   filteredDrivers.sort(function(a,b){
@@ -2311,7 +2336,18 @@ function fmtPhone(p){
 }
 function prevPage(){if(currentPage>1){currentPage--;renderTable();}}
 function nextPage(){if(currentPage*PER<filteredDrivers.length){currentPage++;renderTable();}}
-function searchDrivers(q){currentPage=1;if(q.length>1){filterNav('tous');renderTable(q);}else renderTable();}
+function searchDrivers(q){
+  currentPage=1;
+  window._searchQuery = q;
+  if(q && q.length>0){
+    currentFilter='tous';
+    // Remettre le bouton Tous actif
+    document.querySelectorAll('[id^="f-"]').forEach(function(b){b.style.fontWeight='400';});
+    var tousBtn=document.getElementById('f-tous');
+    if(tousBtn) tousBtn.style.fontWeight='700';
+  }
+  renderTable(q);
+}
 
 // ═══════════════════════════════════════════
 // PANEL
@@ -3346,7 +3382,7 @@ function nav(id){
   // Synchroniser les données à chaque changement de page
   var stats=calcStats();
   updateAllPageStats(stats);
-  if(id==='chauffeurs') renderTable();
+  if(id==='chauffeurs') renderTable(window._searchQuery||'');
   if(id==='rappels'){renderReminders();updateRemBadges();}
   if(id==='dashboard') renderDashboard();
   if(id==='settings'){
