@@ -1531,6 +1531,36 @@ function doLogin(){
         </div>
       </div>
 
+      <!-- NOTES & SUIVI -->
+      <div style="background:var(--s2);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:var(--acc);">📝 Notes & Suivi</div>
+          <span id="p-notes-count" style="font-size:10px;color:var(--mu);"></span>
+        </div>
+        <!-- Historique des notes -->
+        <div id="p-notes-history" style="max-height:180px;overflow-y:auto;margin-bottom:10px;"></div>
+        <!-- Ajouter une note -->
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div style="flex:1;">
+            <textarea id="p-note-input" placeholder="Ajouter une note de suivi..." 
+              style="width:100%;background:var(--s0);border:1px solid var(--b1);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;resize:none;height:60px;font-family:inherit;outline:none;box-sizing:border-box;"
+              onkeydown="if(event.ctrlKey&&event.key==='Enter')addDriverNote()"></textarea>
+            <div style="font-size:10px;color:var(--mu);margin-top:2px;">Ctrl+Entrée pour enregistrer</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <select id="p-note-type" style="background:var(--s0);border:1px solid var(--b1);border-radius:8px;padding:6px 8px;color:var(--text);font-size:11px;outline:none;">
+              <option value="appel">📞 Appel</option>
+              <option value="positif">✅ Positif</option>
+              <option value="negatif">❌ Problème</option>
+              <option value="recharge">💰 Recharge</option>
+              <option value="blocage">🚫 Blocage</option>
+              <option value="info">ℹ️ Info</option>
+            </select>
+            <button class="btn btn-p btn-sm" onclick="addDriverNote()" style="font-size:11px;white-space:nowrap;">💾 Sauver</button>
+          </div>
+        </div>
+      </div>
+
       <!-- STATUT -->
       <div class="psec">
         <div class="psect">📍 Statut contact</div>
@@ -5842,6 +5872,145 @@ function calcBonus(){
 // Initialiser le calcul au chargement du panel
 function initCalcBonus(){
   setTimeout(calcBonus, 100);
+}
+
+
+// ══════════════════════════════════════════
+// NOTES & SUIVI PAR CHAUFFEUR
+// ══════════════════════════════════════════
+
+function getDriverNotes(driverId){
+  var allNotes = JSON.parse(localStorage.getItem('yango_notes_v2') || '{}');
+  return allNotes[driverId] || [];
+}
+
+function saveDriverNotes(driverId, notesList){
+  var allNotes = JSON.parse(localStorage.getItem('yango_notes_v2') || '{}');
+  allNotes[driverId] = notesList;
+  localStorage.setItem('yango_notes_v2', JSON.stringify(allNotes));
+  // Sync avec notes global
+  if(typeof notes !== 'undefined'){
+    notes[driverId] = (notesList[0] || {}).text || '';
+  }
+}
+
+function renderDriverNotes(driverId){
+  var el = document.getElementById('p-notes-history');
+  var countEl = document.getElementById('p-notes-count');
+  if(!el) return;
+  
+  var notesList = getDriverNotes(driverId);
+  
+  if(countEl) countEl.textContent = notesList.length + ' note(s)';
+  
+  if(!notesList.length){
+    el.innerHTML = '<div style="text-align:center;color:var(--mu);padding:12px;font-size:12px;">Aucune note — ajoutez le premier suivi</div>';
+    return;
+  }
+
+  var typeConfig = {
+    appel:   {ico:'📞', col:'#60a5fa', bg:'rgba(96,165,250,.1)'},
+    positif: {ico:'✅', col:'#22d3a0', bg:'rgba(34,211,160,.1)'},
+    negatif: {ico:'❌', col:'#f87171', bg:'rgba(248,113,113,.1)'},
+    recharge:{ico:'💰', col:'#f5c518', bg:'rgba(245,197,24,.1)'},
+    blocage: {ico:'🚫', col:'#fb923c', bg:'rgba(251,146,60,.1)'},
+    info:    {ico:'ℹ️', col:'#a78bfa', bg:'rgba(167,139,250,.1)'}
+  };
+
+  el.innerHTML = '';
+  // Afficher du plus recent au plus ancien
+  notesList.slice().reverse().forEach(function(note, revIdx){
+    var realIdx = notesList.length - 1 - revIdx;
+    var cfg = typeConfig[note.type] || typeConfig.info;
+    var div = document.createElement('div');
+    div.style.cssText = 'background:'+cfg.bg+';border-left:3px solid '+cfg.col+';border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:6px;';
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';
+    var typeSpan = document.createElement('span');
+    typeSpan.style.cssText = 'font-size:11px;font-weight:700;color:'+cfg.col+';';
+    typeSpan.textContent = cfg.ico+' '+note.typeLabel;
+    var metaSpan = document.createElement('span');
+    metaSpan.style.cssText = 'font-size:10px;color:var(--mu);display:flex;align-items:center;gap:6px;';
+    metaSpan.textContent = formatNoteDate(note.date)+(note.agent?' · '+note.agent:'');
+    var delBtn = document.createElement('button');
+    delBtn.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--mu);font-size:12px;padding:0 0 0 6px;';
+    delBtn.textContent = '✕';
+    (function(id,i){delBtn.onclick=function(){deleteDriverNote(id,i);};})(driverId,realIdx);
+    metaSpan.appendChild(delBtn);
+    header.appendChild(typeSpan);
+    header.appendChild(metaSpan);
+    var body = document.createElement('div');
+    body.style.cssText = 'font-size:12px;color:var(--text);line-height:1.5;white-space:pre-wrap;';
+    body.textContent = note.text;
+    div.appendChild(header);
+    div.appendChild(body);
+    el.appendChild(div);
+  });
+}
+
+function formatNoteDate(dateStr){
+  if(!dateStr) return '—';
+  var d = new Date(dateStr);
+  var now = new Date();
+  var diff = Math.round((now - d) / 1000);
+  if(diff < 60) return 'Il y a '+diff+'s';
+  if(diff < 3600) return 'Il y a '+Math.round(diff/60)+'min';
+  if(diff < 86400) return 'Il y a '+Math.round(diff/3600)+'h';
+  if(diff < 604800) return 'Il y a '+Math.round(diff/86400)+'j';
+  return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+}
+
+function escapeHtml(str){
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function addDriverNote(){
+  if(!currentDriver) return;
+  var inp = document.getElementById('p-note-input');
+  var typeEl = document.getElementById('p-note-type');
+  if(!inp || !typeEl) return;
+  
+  var text = inp.value.trim();
+  if(!text){ showToast('⚠️','Écrivez une note avant de sauvegarder','error'); return; }
+
+  var typeMap = {
+    appel:'Appel', positif:'Positif', negatif:'Problème',
+    recharge:'Recharge', blocage:'Blocage', info:'Info'
+  };
+  var notesList = getDriverNotes(currentDriver.id||currentDriver.permis||currentDriver.phone);
+  var agentName = typeof CURRENT_USER!=='undefined'&&CURRENT_USER ? (CURRENT_USER.nom||CURRENT_USER.username) : '';
+
+  notesList.push({
+    text: text,
+    type: typeEl.value,
+    typeLabel: typeMap[typeEl.value] || typeEl.value,
+    date: new Date().toISOString(),
+    agent: agentName
+  });
+
+  var dId = currentDriver.id||currentDriver.permis||currentDriver.phone;
+  saveDriverNotes(dId, notesList);
+  inp.value = '';
+  renderDriverNotes(dId);
+  showToast('📝', 'Note sauvegardée !', 'success');
+  
+  // Sauvegarder dans le parc
+  setTimeout(function(){ try{ saveParcData(); }catch(e){} }, 500);
+}
+
+function deleteDriverNote(driverId, idx){
+  if(!confirm('Supprimer cette note ?')) return;
+  var notesList = getDriverNotes(driverId);
+  notesList.splice(idx, 1);
+  saveDriverNotes(driverId, notesList);
+  renderDriverNotes(driverId);
+  showToast('🗑','Note supprimée','success');
+}
+
+// Afficher les notes dans le panel lors de l'ouverture
+function loadDriverNotePanel(driver){
+  var dId = driver.id||driver.permis||driver.phone;
+  renderDriverNotes(dId);
 }
 
 
