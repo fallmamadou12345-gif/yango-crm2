@@ -1440,8 +1440,9 @@ function doLogin(){
           <div class="si2"><div class="sv" id="p-ord">—</div><div class="sl">Courses</div></div>
           <div class="si2"><div class="sv" id="p-days" style="color:var(--orange)">—</div><div class="sl">Jours inactif</div></div>
           <div class="si2"><div class="sv" id="p-comm" style="color:var(--acc)">—</div><div class="sl">Comm./mois</div></div>
-          <div class="si2"><div class="sv" id="p-status-pill">—</div><div class="sl">Statut</div></div>
+          <div class="si2"><div class="sv" id="p-note-yango" style="color:var(--green)">—</div><div class="sl">⭐ Note Yango</div></div>
         </div>
+        <div id="p-commentaire-row" style="display:none;margin-top:6px;background:var(--s2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--mu2);"></div>
       </div>
 
       <!-- INFOS CHAUFFEUR -->
@@ -1470,19 +1471,23 @@ function doLogin(){
           <div style="font-size:10px;color:var(--mu);margin-top:5px;">
             Numéro de permis — modifiable et sauvegardé automatiquement
           </div>
-          <!-- Notice réimport -->
-          <div id="p-reimport-notice" style="display:none;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:8px 12px;margin-top:8px;font-size:11px;color:#fbbf24;">
-            ⚠️ Permis/Véhicule/Plaque non disponibles — <strong>Réimportez votre CSV</strong> dans Import CSV pour voir ces données.
-          </div>
-          <!-- Véhicule et plaque depuis CSV -->
+          <!-- Véhicule et plaque — saisie manuelle si pas dans CSV -->
           <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div style="background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;">
-              <div style="font-size:10px;color:var(--mu);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">🚗 Véhicule</div>
-              <div id="p-vehicule-disp" style="font-size:14px;font-weight:700;color:var(--text)">—</div>
+            <div style="background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:10px 12px;">
+              <div style="font-size:10px;color:var(--mu);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">🚗 Véhicule</div>
+              <div id="p-vehicule-disp" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">—</div>
+              <input id="p-vehicule-input" class="form-input" type="text" placeholder="Ex: Toyota Corolla"
+                style="font-size:11px;padding:5px 8px;display:none;"
+                oninput="saveVehicule(this.value)"/>
+              <div id="p-vehicule-edit-btn" onclick="toggleVehiculeEdit()" style="font-size:10px;color:var(--acc);cursor:pointer;margin-top:2px;">✏️ Modifier</div>
             </div>
-            <div style="background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;">
-              <div style="font-size:10px;color:var(--mu);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">🔢 Plaque</div>
-              <div id="p-plaque-disp" style="font-size:16px;font-weight:800;color:var(--acc);font-family:'IBM Plex Mono',monospace;letter-spacing:2px">—</div>
+            <div style="background:var(--s0);border:1px solid var(--b1);border-radius:10px;padding:10px 12px;">
+              <div style="font-size:10px;color:var(--mu);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">🔢 Plaque</div>
+              <div id="p-plaque-disp" style="font-size:14px;font-weight:800;color:var(--acc);font-family:'IBM Plex Mono',monospace;letter-spacing:2px;margin-bottom:4px;">—</div>
+              <input id="p-plaque-input" class="form-input" type="text" placeholder="Ex: DK 1234 AB"
+                style="font-size:11px;padding:5px 8px;display:none;font-family:'IBM Plex Mono',monospace;"
+                oninput="savePlaque(this.value)"/>
+              <div id="p-plaque-edit-btn" onclick="togglePlaqueEdit()" style="font-size:10px;color:var(--acc);cursor:pointer;margin-top:2px;">✏️ Modifier</div>
             </div>
           </div>
         </div>
@@ -2401,6 +2406,15 @@ function openPanel(d){
   var plaqueEl=document.getElementById('p-plaque-disp');
   if(vehEl) vehEl.textContent=d.vehicule||'—';
   if(plaqueEl) plaqueEl.textContent=d.plaque||'—';
+  // Reset edit mode
+  var vinp=document.getElementById('p-vehicule-input');
+  var pinp=document.getElementById('p-plaque-input');
+  if(vinp){vinp.style.display='none'; if(vehEl) vehEl.style.display='block';}
+  if(pinp){pinp.style.display='none'; if(plaqueEl) plaqueEl.style.display='block';}
+  var veBtn=document.getElementById('p-vehicule-edit-btn');
+  var plBtn=document.getElementById('p-plaque-edit-btn');
+  if(veBtn) veBtn.textContent='✏️ Modifier';
+  if(plBtn) plBtn.textContent='✏️ Modifier';
   // Grand affichage permis
   var permisBig=document.getElementById('p-permis-big');
   if(permisBig){
@@ -2429,6 +2443,17 @@ function openPanel(d){
     };
   }
   document.getElementById('p-days').textContent=ds!==null?ds+'j':'—';
+  var noteEl=document.getElementById('p-note-yango');
+  if(noteEl) noteEl.textContent=d.noteYango&&d.noteYango>0?('★ '+d.noteYango.toFixed(2)):'—';
+  var commRow=document.getElementById('p-commentaire-row');
+  if(commRow){
+    if(d.commentaire&&d.commentaire.length>1){
+      commRow.style.display='block';
+      commRow.innerHTML='💬 <strong>Commentaire Yango:</strong> '+d.commentaire+(d.agentResp?' <span style="color:var(--acc)">· '+d.agentResp+'</span>':'');
+    } else {
+      commRow.style.display='none';
+    }
+  }
   document.getElementById('p-comm').textContent=estM;
   document.getElementById('p-status-pill').innerHTML=`<span class="pill ${d.segment==='Actif'?'g':d.segment.includes('Dormant')?'o':'r'}" style="font-size:10px;">${d.segment}</span>`;
   // Default rappel date = demain
@@ -2808,6 +2833,12 @@ function processImport(file,type){
         var colDate=findCol(headers,['Date de la dernière commande','derniere commande','Last order date','dernière commande']);
         var colVille=findCol(headers,['Ville','ville','City','city']);
         var colSolde=findCol(headers,['Solde','solde','Balance']);
+        var colPermis=findCol(headers,['Permis de conduire','permis','license','licence','driving license','Numéro de permis','license_number']);
+        var colPlaque=findCol(headers,["Numéro de la plaque d'immatriculation du véhicule",'immatriculation','plaque','Plaque','plate','license plate','Registration','matricule']);
+        var colNote=findCol(headers,['Note','note','rating','évaluation']);
+        var colCommentaire=findCol(headers,['Commentaire','commentaire','comment','Comment']);
+        var colAgent=findCol(headers,["Employé responsable",'agent','Agent']);
+        var colVeh=findCol(headers,['Véhicule','vehicule','vehicle','Voiture','car','model','Vehicle Model']);
 
         var newDrivers=[];
         var errors=0;
@@ -2823,12 +2854,13 @@ function processImport(file,type){
             var ville=colVille>=0?clean(cols[colVille]):'Dakar';
             var solde=colSolde>=0?parseFloat(clean(cols[colSolde]).replace(',','.'))||0:0;
             var seg=calcSegment(orders,lastDate);
-            var permis=findCol(headers,['Permis de conduire','permis','license'])>=0?clean(cols[findCol(headers,['Permis de conduire','permis','license'])]):'' ;
-            var colPlaque=findCol(headers,['immatriculation','plaque','Plaque']);
+            var permis=colPermis>=0?clean(cols[colPermis]):'' ;
             var plaque=colPlaque>=0?clean(cols[colPlaque]):'' ;
-            var colVeh=findCol(headers,['Véhicule','vehicule','vehicle','Voiture']);
             var vehicule=colVeh>=0?clean(cols[colVeh]):'' ;
-            newDrivers.push({name:name,phone:phone,orders:orders,lastDate:lastDate,segment:seg,city:ville||'Dakar',solde:solde,permis:permis,plaque:plaque,vehicule:vehicule});
+            var noteYango=colNote>=0?parseFloat(clean(cols[colNote]).replace(',','.'))||0:0;
+            var commentaire=colCommentaire>=0?clean(cols[colCommentaire]):'' ;
+            var agentResp=colAgent>=0?clean(cols[colAgent]):'' ;
+            newDrivers.push({name:name,phone:phone,orders:orders,lastDate:lastDate,segment:seg,city:ville||'Dakar',solde:solde,permis:permis,plaque:plaque,vehicule:vehicule,noteYango:noteYango,commentaire:commentaire,agentResp:agentResp});
           }catch(e){errors++;}
         }
 
@@ -3710,6 +3742,65 @@ function getSortValue(d, col){
 
 
 // ─── PERMIS ──────────────────────────────────
+// ─── SAISIE MANUELLE VÉHICULE / PLAQUE ──────────────────
+var vehiculeTimer=null;
+var plaqueTimer=null;
+
+function toggleVehiculeEdit(){
+  var inp=document.getElementById('p-vehicule-input');
+  var disp=document.getElementById('p-vehicule-disp');
+  var btn=document.getElementById('p-vehicule-edit-btn');
+  if(!inp) return;
+  var editing=inp.style.display!=='none';
+  inp.style.display=editing?'none':'block';
+  disp.style.display=editing?'block':'none';
+  btn.textContent=editing?'✏️ Modifier':'✅ Fermer';
+  if(!editing){ inp.value=currentDriver&&currentDriver.vehicule||''; inp.focus(); }
+}
+
+function togglePlaqueEdit(){
+  var inp=document.getElementById('p-plaque-input');
+  var disp=document.getElementById('p-plaque-disp');
+  var btn=document.getElementById('p-plaque-edit-btn');
+  if(!inp) return;
+  var editing=inp.style.display!=='none';
+  inp.style.display=editing?'none':'block';
+  disp.style.display=editing?'block':'none';
+  btn.textContent=editing?'✏️ Modifier':'✅ Fermer';
+  if(!editing){ inp.value=currentDriver&&currentDriver.plaque||''; inp.focus(); }
+}
+
+function saveVehicule(val){
+  if(!currentDriver) return;
+  clearTimeout(vehiculeTimer);
+  vehiculeTimer=setTimeout(function(){
+    currentDriver.vehicule=val.trim();
+    // Mettre à jour dans DRIVERS
+    var d=DRIVERS.find(function(x){return x.phone===currentDriver.phone&&x.name===currentDriver.name;});
+    if(d) d.vehicule=val.trim();
+    // Afficher
+    var disp=document.getElementById('p-vehicule-disp');
+    if(disp) disp.textContent=val.trim()||'—';
+    // Sauvegarder
+    try{ saveParcData(); }catch(e){}
+    showToast('🚗','Véhicule sauvegardé !','success');
+  }, 800);
+}
+
+function savePlaque(val){
+  if(!currentDriver) return;
+  clearTimeout(plaqueTimer);
+  plaqueTimer=setTimeout(function(){
+    currentDriver.plaque=val.trim().toUpperCase();
+    var d=DRIVERS.find(function(x){return x.phone===currentDriver.phone&&x.name===currentDriver.name;});
+    if(d) d.plaque=val.trim().toUpperCase();
+    var disp=document.getElementById('p-plaque-disp');
+    if(disp) disp.textContent=val.trim().toUpperCase()||'—';
+    try{ saveParcData(); }catch(e){}
+    showToast('🔢','Plaque sauvegardée !','success');
+  }, 800);
+}
+
 var permisTimer=null;
 function savePermis(val){
   if(!currentDriver) return;
