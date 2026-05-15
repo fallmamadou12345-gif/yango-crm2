@@ -436,6 +436,7 @@ function doLogin(){
     <div class="tba">
       <span style="font-size:11px;color:var(--mu);" id="last-save-txt"></span>
       <button class="btn btn-g" onclick="nav('import')">📥 Import</button>
+      <button class="btn btn-g" onclick="forceSyncNow()" id="btn-sync" title="Actualiser les données depuis le serveur" style="background:rgba(34,211,160,.1);border-color:rgba(34,211,160,.3);color:#22d3a0;">🔄 Sync</button>
       <button class="btn btn-p" onclick="nav('messages')">📱 Envoyer messages</button>
     </div>
   </div>
@@ -1788,6 +1789,67 @@ async function save(){
   }
 }
 
+// ══════════════════════════════════════════
+// SYNC INSTANTANÉ — Rechargement depuis serveur
+// ══════════════════════════════════════════
+async function forceSyncNow(){
+  var btn = document.getElementById('btn-sync');
+  if(btn){ btn.textContent='⏳ Sync...'; btn.disabled=true; }
+  
+  if(!CURRENT_PARC || !CURRENT_PARC.id){
+    showToast('⚠️','Sélectionnez un parc d abord','error');
+    if(btn){ btn.textContent='🔄 Sync'; btn.disabled=false; }
+    return;
+  }
+  
+  try {
+    // Vider les données actuelles
+    DRIVERS.length = 0;
+    notes = {}; reminders = []; cstatus = {}; callLogs = {}; importHist = [];
+    while(AGENTS.length) AGENTS.pop();
+    
+    // Recharger depuis le serveur
+    await loadParcData(CURRENT_PARC.id);
+    
+    // Rafraîchir tout
+    renderTable();
+    renderDashboard();
+    updateRemBadges();
+    updateAllPageStats(calcStats());
+    
+    var count = DRIVERS.length;
+    showToast('🔄', count.toLocaleString()+' chauffeurs synchronisés depuis le serveur !', 'success');
+    updateSaveStatus();
+  } catch(e) {
+    showToast('❌','Erreur sync: '+e.message,'error');
+  }
+  
+  if(btn){ btn.textContent='🔄 Sync'; btn.disabled=false; }
+}
+
+// Auto-sync toutes les 60s si page chauffeurs ouverte
+function startAutoSync(){
+  if(window._autoSyncInterval) clearInterval(window._autoSyncInterval);
+  window._autoSyncInterval = setInterval(async function(){
+    if(window._currentPage === 'chauffeurs' && CURRENT_PARC && CURRENT_PARC.id !== 'all'){
+      // Sync silencieux (pas de toast)
+      try{
+        var r = await fetch('/api/parcs/'+CURRENT_PARC.id+'/data', {cache:'no-store'});
+        var json = await r.json();
+        if(json.success && json.data && json.data.drivers && json.data.drivers.length > DRIVERS.length){
+          // Nouvelles données disponibles
+          DRIVERS.length=0;
+          json.data.drivers.forEach(function(d){ DRIVERS.push(d); });
+          renderTable();
+          updateAllPageStats(calcStats());
+          var el=document.getElementById('last-save-txt');
+          if(el) el.textContent='Sync auto ✅ · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+        }
+      }catch(e){}
+    }
+  }, 60000); // toutes les 60s
+}
+
 function updateSaveStatus(){
   const now=new Date();
   const t=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
@@ -1808,41 +1870,7 @@ function updateSaveCounts(){
 // ═══════════════════════════════════════════
 // DRIVERS DATA
 // ═══════════════════════════════════════════
-const DRIVERS = [
-  {name:'Gueye Alassane',phone:'771234567',orders:23025,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
-  {name:'Alioune Seck',phone:'762345678',orders:18895,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
-  {name:'DIOUF ABDOU',phone:'703456789',orders:15296,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
-  {name:'THIAW TALLA',phone:'774567890',orders:14332,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
-  {name:'MPAMY FRANCOIS',phone:'765678901',orders:14092,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
-  {name:'Sarr Cheikh',phone:'706789012',orders:13101,lastDate:'2026-03-08',segment:'Actif',city:'Dakar'},
-  {name:'Diop Mor',phone:'777890123',orders:12654,lastDate:'2026-03-13',segment:'Actif',city:'Dakar'},
-  {name:'SENE MBAR',phone:'761112233',orders:10448,lastDate:'2026-01-11',segment:'Dormant récent',city:'Dakar'},
-  {name:'Thiam Cheikh Amadou Bamba',phone:'702223344',orders:9929,lastDate:'2026-02-23',segment:'Dormant récent',city:'Dakar'},
-  {name:'dieng papa mor',phone:'773334455',orders:9696,lastDate:'2026-03-04',segment:'Dormant récent',city:'Dakar'},
-  {name:'DIOP KHADIM',phone:'764445566',orders:9419,lastDate:'2026-02-01',segment:'Dormant récent',city:'Dakar'},
-  {name:'THIOUNE NDIAGA',phone:'776667788',orders:8153,lastDate:'2026-02-27',segment:'Dormant récent',city:'Dakar'},
-  {name:'SENE MODOU',phone:'767778899',orders:8075,lastDate:'2026-01-31',segment:'Dormant récent',city:'Dakar'},
-  {name:'NDIAYE BOUNA',phone:'708889900',orders:7685,lastDate:'2026-01-11',segment:'Dormant récent',city:'Dakar'},
-  {name:'Cisse Omar',phone:'779990011',orders:7153,lastDate:'2026-02-10',segment:'Dormant récent',city:'Dakar'},
-  {name:'Ba Mamadou',phone:'771002030',orders:5200,lastDate:'2025-09-01',segment:'Perdu',city:'Dakar'},
-  {name:'Ndiaye Fatou',phone:'762003040',orders:3100,lastDate:'2025-06-15',segment:'Perdu',city:'Mbour'},
-  {name:'Diallo Ibrahim',phone:'703004050',orders:0,lastDate:null,segment:'Jamais actif',city:'Dakar'},
-  {name:'Sy Oumar',phone:'774005060',orders:0,lastDate:null,segment:'Jamais actif',city:'Dakar'},
-  {name:'Fall Cheikh',phone:'765006070',orders:1200,lastDate:'2025-08-20',segment:'Dormant',city:'Dakar'},
-];
-const SEGS=['Actif','Dormant récent','Dormant','Perdu','Jamais actif'];
-const NMS=['Diop','Sall','Ndiaye','Fall','Gueye','Sarr','Mbaye','Cisse','Diouf','Ba','Thiaw','Sene','Ndour','Faye'];
-const FNS=['Moussa','Ibrahima','Cheikh','Abdou','Alioune','Omar','Modou','Pape','Mamadou','Fatou','Aminata','Rokhaya'];
-const PHONES=['771','762','703','774','765','706','777','768'];
-for(let i=0;i<80;i++){
-  const seg=SEGS[Math.floor(Math.random()*SEGS.length)];
-  const ord=seg==='Jamais actif'?0:Math.floor(Math.random()*8000)+100;
-  const name=FNS[Math.floor(Math.random()*FNS.length)]+' '+NMS[Math.floor(Math.random()*NMS.length)];
-  const days=seg==='Actif'?Math.floor(Math.random()*25)+1:seg==='Dormant récent'?Math.floor(Math.random()*55)+31:Math.floor(Math.random()*300)+91;
-  const d=new Date('2026-04-05');d.setDate(d.getDate()-days);
-  const ph=PHONES[Math.floor(Math.random()*PHONES.length)]+''+Math.floor(Math.random()*9000000+1000000);
-  DRIVERS.push({name,phone:ph,orders:ord,lastDate:seg==='Jamais actif'?null:d.toISOString().split('T')[0],segment:seg,city:'Dakar'});
-}
+const DRIVERS = []; // Données chargées depuis le serveur via loadParcData()
 
 let currentDriver=null,currentFilter='tous',currentPage=1,filteredDrivers=[];
 let msgTarget='',msgChannel='wa';
@@ -3369,6 +3397,67 @@ function askCoach(q){
 // ═══════════════════════════════════════════
 // SAVE STATUS
 // ═══════════════════════════════════════════
+// ══════════════════════════════════════════
+// SYNC INSTANTANÉ — Rechargement depuis serveur
+// ══════════════════════════════════════════
+async function forceSyncNow(){
+  var btn = document.getElementById('btn-sync');
+  if(btn){ btn.textContent='⏳ Sync...'; btn.disabled=true; }
+  
+  if(!CURRENT_PARC || !CURRENT_PARC.id){
+    showToast('⚠️','Sélectionnez un parc d abord','error');
+    if(btn){ btn.textContent='🔄 Sync'; btn.disabled=false; }
+    return;
+  }
+  
+  try {
+    // Vider les données actuelles
+    DRIVERS.length = 0;
+    notes = {}; reminders = []; cstatus = {}; callLogs = {}; importHist = [];
+    while(AGENTS.length) AGENTS.pop();
+    
+    // Recharger depuis le serveur
+    await loadParcData(CURRENT_PARC.id);
+    
+    // Rafraîchir tout
+    renderTable();
+    renderDashboard();
+    updateRemBadges();
+    updateAllPageStats(calcStats());
+    
+    var count = DRIVERS.length;
+    showToast('🔄', count.toLocaleString()+' chauffeurs synchronisés depuis le serveur !', 'success');
+    updateSaveStatus();
+  } catch(e) {
+    showToast('❌','Erreur sync: '+e.message,'error');
+  }
+  
+  if(btn){ btn.textContent='🔄 Sync'; btn.disabled=false; }
+}
+
+// Auto-sync toutes les 60s si page chauffeurs ouverte
+function startAutoSync(){
+  if(window._autoSyncInterval) clearInterval(window._autoSyncInterval);
+  window._autoSyncInterval = setInterval(async function(){
+    if(window._currentPage === 'chauffeurs' && CURRENT_PARC && CURRENT_PARC.id !== 'all'){
+      // Sync silencieux (pas de toast)
+      try{
+        var r = await fetch('/api/parcs/'+CURRENT_PARC.id+'/data', {cache:'no-store'});
+        var json = await r.json();
+        if(json.success && json.data && json.data.drivers && json.data.drivers.length > DRIVERS.length){
+          // Nouvelles données disponibles
+          DRIVERS.length=0;
+          json.data.drivers.forEach(function(d){ DRIVERS.push(d); });
+          renderTable();
+          updateAllPageStats(calcStats());
+          var el=document.getElementById('last-save-txt');
+          if(el) el.textContent='Sync auto ✅ · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+        }
+      }catch(e){}
+    }
+  }, 60000); // toutes les 60s
+}
+
 function updateSaveStatus(){
   var now=new Date();
   var t=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
@@ -4663,6 +4752,8 @@ function loginSuccess(found){
   var btn=document.getElementById('login-btn');if(btn){btn.textContent='Se connecter →';btn.disabled=false;}
   applyUserPermissions(found);
   showToast('👋','Bienvenue '+(found.nom||found.username)+' !','success');
+  // Démarrer la sync automatique
+  setTimeout(startAutoSync, 5000);
 }
 
 function doLogout(){
@@ -5180,7 +5271,11 @@ async function selectParc(parcId){
   var sb = document.querySelector('.sb');
   if(sb) sb.style.display = '';
 
-  showToast('🚖', 'Parc '+CURRENT_PARC.nom+' — '+DRIVERS.length.toLocaleString()+' chauffeurs', 'success');
+  var cnt = DRIVERS.length;
+  showToast('🚖', 'Parc '+CURRENT_PARC.nom+' — '+cnt.toLocaleString()+' chauffeurs chargés', 'success');
+  // Mettre à jour le compteur dans la topbar
+  var tblCount = document.getElementById('tbl-count');
+  if(tblCount) tblCount.textContent = cnt.toLocaleString()+' chauffeurs';
   // FATHY toujours visible après sélection du parc
   setTimeout(function(){
     var fb=document.getElementById('fathy-bubble');
@@ -6142,6 +6237,8 @@ function loadDriverNotePanel(driver){
 
 
 async function init(){
+  // Initialiser la query de recherche
+  window._searchQuery = '';
   // Vérifier authentification
   if(!checkAuth()) return;
 }
