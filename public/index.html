@@ -1741,22 +1741,22 @@ async function forceSyncNow(){
   }
   
   try {
-    // Vider les données actuelles
-    DRIVERS.length = 0;
-    notes = {}; reminders = []; cstatus = {}; callLogs = {}; importHist = [];
-    while(AGENTS.length) AGENTS.pop();
+    showToast('⏳','Chargement depuis Render...','success');
     
-    // Recharger depuis le serveur
+    // Vider et recharger complètement
     await loadParcData(CURRENT_PARC.id);
+    _lastSyncTimestamp = new Date().toISOString();
     
-    // Rafraîchir tout
-    renderTable();
+    // Rafraîchir toute l'interface
+    renderTable(window._searchQuery||'');
     renderDashboard();
     updateRemBadges();
     updateAllPageStats(calcStats());
+    updateSaveCounts();
     
     var count = DRIVERS.length;
-    showToast('🔄', count.toLocaleString()+' chauffeurs synchronisés depuis le serveur !', 'success');
+    var remCount = reminders.filter(function(r){return !r.done;}).length;
+    showToast('🔄', count.toLocaleString()+' chauffeurs · '+remCount+' rappels chargés', 'success');
     updateSaveStatus();
   } catch(e) {
     showToast('❌','Erreur sync: '+e.message,'error');
@@ -1765,27 +1765,47 @@ async function forceSyncNow(){
   if(btn){ btn.textContent='🔄 Sync'; btn.disabled=false; }
 }
 
-// Auto-sync toutes les 60s si page chauffeurs ouverte
+// Auto-sync toutes les 30s — toujours prendre les données les plus récentes
+var _lastSyncTimestamp = null;
+
 function startAutoSync(){
   if(window._autoSyncInterval) clearInterval(window._autoSyncInterval);
   window._autoSyncInterval = setInterval(async function(){
-    if(window._currentPage === 'chauffeurs' && CURRENT_PARC && CURRENT_PARC.id !== 'all'){
-      // Sync silencieux (pas de toast)
-      try{
-        var r = await fetch('/api/parcs/'+CURRENT_PARC.id+'/data', {cache:'no-store'});
-        var json = await r.json();
-        if(json.success && json.data && json.data.drivers && json.data.drivers.length > DRIVERS.length){
-          // Nouvelles données disponibles
-          DRIVERS.length=0;
-          json.data.drivers.forEach(function(d){ DRIVERS.push(d); });
-          renderTable();
-          updateAllPageStats(calcStats());
-          var el=document.getElementById('last-save-txt');
-          if(el) el.textContent='Sync auto ✅ · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    if(!CURRENT_PARC || CURRENT_PARC.id === 'all') return;
+    try{
+      var r = await fetch('/api/parcs/'+CURRENT_PARC.id+'/data', {cache:'no-store'});
+      var json = await r.json();
+      if(!json.success || !json.data) return;
+      
+      var serverTimestamp = json.data.updatedAt;
+      
+      // Recharger si: timestamp serveur plus récent OU plus de chauffeurs sur serveur
+      var serverCount = (json.data.drivers||[]).length;
+      var needSync = serverCount !== DRIVERS.length ||
+                    (serverTimestamp && _lastSyncTimestamp && serverTimestamp > _lastSyncTimestamp);
+      
+      if(needSync && serverCount > 0){
+        DRIVERS.length=0;
+        json.data.drivers.forEach(function(d){ DRIVERS.push(d); });
+        // Restaurer aussi les autres données
+        if(json.data.notes) notes = json.data.notes;
+        if(json.data.reminders) reminders = json.data.reminders;
+        if(json.data.callLogs) callLogs = json.data.callLogs;
+        if(json.data.notesV2) {
+          try{ localStorage.setItem('yango_notes_v2', JSON.stringify(json.data.notesV2)); }catch(e){}
         }
-      }catch(e){}
-    }
-  }, 60000); // toutes les 60s
+        _lastSyncTimestamp = serverTimestamp;
+        renderTable(window._searchQuery||'');
+        updateAllPageStats(calcStats());
+        renderDashboard();
+        updateRemBadges();
+        var el=document.getElementById('last-save-txt');
+        if(el) el.textContent='🔄 Sync '+serverCount.toLocaleString()+' · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      } else if(serverTimestamp) {
+        _lastSyncTimestamp = serverTimestamp;
+      }
+    }catch(e){ console.warn('Auto-sync:', e.message); }
+  }, 30000); // toutes les 30s
 }
 
 function updateSaveStatus(){
@@ -2853,12 +2873,16 @@ function processImport(file,type){
           updateAllPageStats(stats);
           
           // Sauvegarder TOUT sur le serveur (chauffeurs + notes + rappels)
-          save().catch(function(e){console.warn('save error:',e);});
-
           // Update import history
           var now=new Date().toLocaleString('fr-FR');
           importHist.unshift({name:file.name,date:now,total:newDrivers.length,newCount:added,updated:updated,type:'chauffeurs'});
-          save();
+          
+          // SAUVEGARDE CRITIQUE: envoyer TOUT au serveur maintenant
+          saveParcData().then(function(){
+            showToast('💾', DRIVERS.length.toLocaleString()+' chauffeurs sauvegardés sur Render !', 'success');
+          }).catch(function(e){
+            showToast('⚠️', 'Erreur sauvegarde: '+e.message, 'error');
+          });
 
           clearInterval(iv);
           document.getElementById('pb'+pidx).style.width='100%';
@@ -3363,79 +3387,12 @@ function askCoach(q){
 // ══════════════════════════════════════════
 // SYNC INSTANTANÉ — Rechargement depuis serveur
 // ══════════════════════════════════════════
-async function forceSyncNow(){
-  var btn = document.getElementById('btn-sync');
-  if(btn){ btn.textContent='⏳ Sync...'; btn.disabled=true; }
-  
-  if(!CURRENT_PARC || !CURRENT_PARC.id){
-    showToast('⚠️','Sélectionnez un parc d abord','error');
-    if(btn){ btn.textContent='🔄 Sync'; btn.disabled=false; }
-    return;
-  }
-  
-  try {
-    // Vider les données actuelles
-    DRIVERS.length = 0;
-    notes = {}; reminders = []; cstatus = {}; callLogs = {}; importHist = [];
-    while(AGENTS.length) AGENTS.pop();
-    
-    // Recharger depuis le serveur
-    await loadParcData(CURRENT_PARC.id);
-    
-    // Rafraîchir tout
-    renderTable();
-    renderDashboard();
-    updateRemBadges();
-    updateAllPageStats(calcStats());
-    
-    var count = DRIVERS.length;
-    showToast('🔄', count.toLocaleString()+' chauffeurs synchronisés depuis le serveur !', 'success');
-    updateSaveStatus();
-  } catch(e) {
-    showToast('❌','Erreur sync: '+e.message,'error');
-  }
-  
-  if(btn){ btn.textContent='🔄 Sync'; btn.disabled=false; }
-}
+
 
 // Auto-sync toutes les 60s si page chauffeurs ouverte
-function startAutoSync(){
-  if(window._autoSyncInterval) clearInterval(window._autoSyncInterval);
-  window._autoSyncInterval = setInterval(async function(){
-    if(window._currentPage === 'chauffeurs' && CURRENT_PARC && CURRENT_PARC.id !== 'all'){
-      // Sync silencieux (pas de toast)
-      try{
-        var r = await fetch('/api/parcs/'+CURRENT_PARC.id+'/data', {cache:'no-store'});
-        var json = await r.json();
-        if(json.success && json.data && json.data.drivers && json.data.drivers.length > DRIVERS.length){
-          // Nouvelles données disponibles
-          DRIVERS.length=0;
-          json.data.drivers.forEach(function(d){ DRIVERS.push(d); });
-          renderTable();
-          updateAllPageStats(calcStats());
-          var el=document.getElementById('last-save-txt');
-          if(el) el.textContent='Sync auto ✅ · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-        }
-      }catch(e){}
-    }
-  }, 60000); // toutes les 60s
-}
 
-function updateSaveStatus(){
-  var now=new Date();
-  var t=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  var el=document.getElementById('last-save-txt');
-  if(el) el.textContent='Sauvegardé à '+t;
-  var el2=document.getElementById('save-status');
-  if(el2) el2.textContent='Sauvegarde auto · '+t;
-  updateSaveCounts();
-  // Section agents pour directeur
-  if(CURRENT_USER&&CURRENT_USER.role==='directeur'){
-    var das=document.getElementById('dashboard-agents-section');
-    if(das) das.style.display='block';
-    renderDashboardAgents();
-  }
-}
+
+
 
 function updateSaveCounts(){
   var nCount=Object.values(callLogs).reduce(function(a,b){return a+b.length;},0);
