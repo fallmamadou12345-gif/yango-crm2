@@ -283,8 +283,15 @@ app.get('/api/sessions', (req, res) => {
   res.json({success:true, sessions, total: sessions.length});
 });
 
+// ─── CONFIG UTILISATEUR (objectif, thème) ───────────────
+const CONFIG_FILE = path.join(DATA_DIR,'yango_config.json');
+function readConfig(){ try{ if(fs.existsSync(CONFIG_FILE)) return JSON.parse(fs.readFileSync(CONFIG_FILE,'utf8')); }catch(e){} return {}; }
+function writeConfig(data){ try{ fs.writeFileSync(CONFIG_FILE,JSON.stringify(data,null,2)); return true; }catch(e){ return false; } }
+app.get('/api/config',(req,res)=>res.json({success:true,config:readConfig()}));
+app.post('/api/config',(req,res)=>res.json({success:writeConfig(req.body)}));
+
 // ─── SANTÉ ──────────────────────────────────────────────
-app.get('/api/health',(req,res)=>res.json({status:'OK',version:'multi-parc-v1',parcs:readParcs().parcs?.length||0}));
+app.get('/api/health',(req,res)=>res.json({status:'OK',version:'multi-parc-v2',parcs:readParcs().parcs?.length||0,drivers_dakar:(()=>{try{const d=JSON.parse(fs.readFileSync(path.join(DATA_DIR,'parc_dakar.json'),'utf8'));return d.drivers?.length||0;}catch(e){return 0;}})()}));
 
 // ─── DÉMARRAGE ──────────────────────────────────────────
 app.listen(PORT,()=>{

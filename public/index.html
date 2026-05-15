@@ -1700,91 +1700,29 @@ let callLogs = {};
 let importHist=[];
 
 async function loadFromServer(){
-  try {
-    const r = await fetch(API+'/data', {cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const json = await r.json();
-    if(json.success && json.data){
-      notes      = json.data.notes      || {};
-      reminders  = json.data.reminders  || [];
-      cstatus    = json.data.cstatus    || {};
-      callLogs   = json.data.callLogs   || {};
-      importHist = json.data.importHist || [];
-      // Restore drivers if saved
-      if(json.data.drivers && json.data.drivers.length>0){
-        DRIVERS.length=0;
-        json.data.drivers.forEach(function(d){DRIVERS.push(d);});
-        var stats=calcStats();
-        updateKPIs(stats);
-        updateAllPageStats(stats);
-      }
-      if(json.data.agents && json.data.agents.length>0){
-        AGENTS = json.data.agents;
-        localStorage.setItem('yango_agents', JSON.stringify(AGENTS));
-      }
-      // Backup dans localStorage
-      try{ localStorage.setItem('yango_bk', JSON.stringify({notes,reminders,cstatus,callLogs,importHist})); }catch(ex){}
-      // Restaurer agents
-      if(json.data.agents && json.data.agents.length>0){
-        while(AGENTS.length) AGENTS.pop();
-        json.data.agents.forEach(function(a){AGENTS.push(a);});
-        localStorage.setItem('yango_agents', JSON.stringify(AGENTS));
-      }
-      // Restaurer scores
-      if(json.data.scores){
-        Object.keys(json.data.scores).forEach(function(k){ SCORES[k]=json.data.scores[k]; });
-        localStorage.setItem('yango_scores', JSON.stringify(SCORES));
-      }
-      if(json.data.scoresHistory && json.data.scoresHistory.length>0){
-        while(SCORES_HISTORY.length) SCORES_HISTORY.pop();
-        json.data.scoresHistory.forEach(function(h){SCORES_HISTORY.push(h);});
-        localStorage.setItem('yango_scores_history', JSON.stringify(SCORES_HISTORY));
-      }
-      console.log('✅ Données chargées du disque');
-    }
-  } catch(e){
-    console.warn('Serveur non dispo, localStorage utilisé:', e.message);
-    try{
-      const v=localStorage.getItem('yango_bk');
-      if(v){
-        const d=JSON.parse(v);
-        notes=d.notes||{}; reminders=d.reminders||[];
-        cstatus=d.cstatus||{}; callLogs=d.callLogs||{};
-        importHist=d.importHist||[];
-      }
-    }catch(ex){}
+  // Cette fonction est maintenant un alias vers loadParcData
+  // Les données viennent TOUJOURS du serveur via /api/parcs/:id/data
+  if(CURRENT_PARC && CURRENT_PARC.id && CURRENT_PARC.id !== 'all'){
+    await loadParcData(CURRENT_PARC.id);
   }
 }
 
 async function save(){
-  // IMPORTANT: inclure les chauffeurs dans chaque sauvegarde
-  const payload={
-    notes,
-    reminders,
-    cstatus,
-    callLogs,
-    importHist,
-    drivers: DRIVERS.slice(0, 20000),
-    agents: AGENTS || [],
-    scores: SCORES || {},
-    scoresHistory: SCORES_HISTORY || [],
-    updatedAt: new Date().toISOString()
-  };
-  // Sauvegarder en localStorage d'abord (immédiat, survit aux rechargements)
+  // SERVEUR EN PREMIER — source de vérité unique pour tous les appareils
   try{
-    localStorage.setItem('yango_bk', JSON.stringify(payload));
-  }catch(ex){
-    console.warn('localStorage plein, sauvegarde serveur uniquement');
-  }
-  // Puis sur le serveur (survit aux mises à jour)
-  try{
-    // Sauvegarder dans le parc courant uniquement
     if(typeof saveParcData==='function' && CURRENT_PARC && CURRENT_PARC.id!=='all'){
       await saveParcData();
     }
     updateSaveStatus();
   }catch(e){
     console.warn('Sauvegarde serveur:', e.message);
+    // Fallback localStorage uniquement si serveur KO
+    try{
+      const payload={notes,reminders,cstatus,callLogs,importHist,
+        drivers:DRIVERS.slice(0,20000),agents:AGENTS||[],scores:SCORES||{},
+        updatedAt:new Date().toISOString()};
+      localStorage.setItem('yango_bk', JSON.stringify(payload));
+    }catch(ex){}
     updateSaveStatus();
   }
 }
@@ -3134,12 +3072,37 @@ function renderImportHist(){
 // ═══════════════════════════════════════════
 // PARAMÈTRES — Objectif adaptable
 // ═══════════════════════════════════════════
-var CRM_CONFIG = JSON.parse(localStorage.getItem('yango_config')||'{}');
-var OBJECTIF = CRM_CONFIG.objectif || 3000;
-var PARC_NOM = CRM_CONFIG.parcNom || 'Partenaire Dakar';
+var CRM_CONFIG = {};
+var OBJECTIF = 3000;
+var PARC_NOM = 'Partenaire Dakar';
+
+// Charger config depuis serveur au démarrage
+(async function loadConfig(){
+  try{
+    var r = await fetch('/api/config');
+    var d = await r.json();
+    if(d.success && d.config && Object.keys(d.config).length > 0){
+      CRM_CONFIG = d.config;
+      OBJECTIF = CRM_CONFIG.objectif || 3000;
+      PARC_NOM = CRM_CONFIG.parcNom || 'Partenaire Dakar';
+      // Sync local pour les accès rapides
+      localStorage.setItem('yango_config', JSON.stringify(CRM_CONFIG));
+    } else {
+      // Fallback localStorage
+      var local = JSON.parse(localStorage.getItem('yango_config')||'{}');
+      if(local.objectif){ CRM_CONFIG=local; OBJECTIF=local.objectif; PARC_NOM=local.parcNom||'Partenaire Dakar'; }
+    }
+  }catch(e){
+    var local = JSON.parse(localStorage.getItem('yango_config')||'{}');
+    if(local.objectif){ CRM_CONFIG=local; OBJECTIF=local.objectif; PARC_NOM=local.parcNom||'Partenaire Dakar'; }
+  }
+})();
 
 function saveConfig(){
+  // Cross-device: serveur + localStorage
   localStorage.setItem('yango_config', JSON.stringify(CRM_CONFIG));
+  fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(CRM_CONFIG)})
+    .catch(function(e){ console.warn('saveConfig:', e.message); });
 }
 
 function updateObjectif(val){
@@ -3656,7 +3619,8 @@ function applyConfig(){
     reactivMois:  parseInt((document.getElementById('cfg-obj-reactiv-mois')||{}).value)||60,
     activMois:    parseInt((document.getElementById('cfg-obj-activ-mois')||{}).value)||40
   };
-  localStorage.setItem('yango_objectifs', JSON.stringify(OBJECTIFS_AGENTS));
+  CRM_CONFIG.objectifsAgents = OBJECTIFS_AGENTS;
+  saveConfig(); // sauvegarde serveur + localStorage
   var stats=calcStats();
   updateKPIs(stats);
   renderSettings();
@@ -3928,7 +3892,7 @@ function getPermis(driverName){
 // Structure d'un agent:
 // { id, name, role, phone, points, actions[], tasksToday[], score, badge, joinDate }
 
-var AGENTS = JSON.parse(localStorage.getItem('yango_agents') || '[]');
+var AGENTS = []; // Chargé depuis /api/parcs/:id/data
 
 // Barème de points
 var POINTS_RULES = {
@@ -4210,14 +4174,10 @@ async function fathyDailyBrief(){
 // ═══════════════════════════════════════════
 // GESTION ÉQUIPE & SCORES AGENTS
 // ═══════════════════════════════════════════
-var AGENTS = JSON.parse(localStorage.getItem('yango_agents') || '[]');
-var SCORES = JSON.parse(localStorage.getItem('yango_scores') || '{}');
-
-// Historique mensuel des scores
-var SCORES_HISTORY = JSON.parse(localStorage.getItem('yango_scores_history') || '[]');
-
-// Suivi des réactivations (chauffeur → avant/après)
-var REACTIVATIONS = JSON.parse(localStorage.getItem('yango_reactivations') || '{}');
+// AGENTS/SCORES/HISTORY déjà déclarés plus haut — chargés depuis /api/parcs/:id/data
+var SCORES = {};
+var SCORES_HISTORY = [];
+var REACTIVATIONS = {};
 
 // Mois courant (YYYY-MM)
 function getCurrentMonth(){
@@ -4228,13 +4188,10 @@ function getCurrentMonth(){
 var CURRENT_MONTH = getCurrentMonth();
 
 function saveScoresData(){
-  localStorage.setItem('yango_scores', JSON.stringify(SCORES));
-  localStorage.setItem('yango_scores_history', JSON.stringify(SCORES_HISTORY));
-  localStorage.setItem('yango_reactivations', JSON.stringify(REACTIVATIONS));
-  // Sync vers serveur
+  // Source de vérité: serveur Render uniquement
+  try{ saveParcData(); }catch(e){}
   fetch('/api/scores', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
+    method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({scores:SCORES, history:SCORES_HISTORY, reactivations:REACTIVATIONS, month:CURRENT_MONTH})
   }).catch(function(e){});
 }
@@ -4323,8 +4280,8 @@ function resetMensuel(force){
 }
 
 function saveAgentsData(){
-  localStorage.setItem('yango_agents', JSON.stringify(AGENTS));
-  localStorage.setItem('yango_scores', JSON.stringify(SCORES));
+  // Sauvegarder sur le serveur (cross-device)
+  try{ saveParcData(); }catch(e){ console.warn('saveAgentsData:', e.message); }
 }
 
 function ajouterAgent(){
@@ -5327,6 +5284,21 @@ async function loadParcData(parcId){
       if(d.scores && typeof SCORES!=='undefined'){
         Object.keys(d.scores).forEach(function(k){ SCORES[k]=d.scores[k]; });
       }
+      // Restaurer notes V2 (suivi chauffeurs) depuis serveur
+      if(d.notesV2 && Object.keys(d.notesV2).length > 0){
+        localStorage.setItem('yango_notes_v2', JSON.stringify(d.notesV2));
+      }
+      // Restaurer scores history
+      if(d.scoresHistory && d.scoresHistory.length > 0){
+        if(typeof SCORES_HISTORY!=='undefined'){
+          while(SCORES_HISTORY.length) SCORES_HISTORY.pop();
+          d.scoresHistory.forEach(function(h){ SCORES_HISTORY.push(h); });
+        }
+      }
+      // Restaurer réactivations
+      if(d.reactivations && typeof REACTIVATIONS!=='undefined'){
+        Object.keys(d.reactivations).forEach(function(k){ REACTIVATIONS[k]=d.reactivations[k]; });
+      }
       console.log('✅ Parc '+parcId+' chargé: '+(DRIVERS.length)+' chauffeurs');
     } else {
       console.log('📭 Parc '+parcId+' vide — aucun chauffeur importé');
@@ -5343,6 +5315,9 @@ async function loadParcData(parcId){
 
 async function saveParcData(){
   if(!CURRENT_PARC || CURRENT_PARC.id==='all') return;
+  // Inclure les notes de suivi par chauffeur
+  var notesV2 = {};
+  try{ notesV2 = JSON.parse(localStorage.getItem('yango_notes_v2')||'{}'); }catch(e){}
   var payload = {
     notes:      typeof notes!=='undefined'     ? notes     : {},
     reminders:  typeof reminders!=='undefined' ? reminders : [],
@@ -5352,6 +5327,9 @@ async function saveParcData(){
     drivers:    typeof DRIVERS!=='undefined'   ? DRIVERS.slice(0,20000) : [],
     agents:     typeof AGENTS!=='undefined'    ? AGENTS    : [],
     scores:     typeof SCORES!=='undefined'    ? SCORES    : {},
+    notesV2:    notesV2,
+    scoresHistory: typeof SCORES_HISTORY!=='undefined'? SCORES_HISTORY : [],
+    reactivations: typeof REACTIVATIONS!=='undefined' ? REACTIVATIONS : {},
   };
   try{
     await fetch('/api/parcs/'+CURRENT_PARC.id+'/data',{
